@@ -1,0 +1,139 @@
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { notFound, redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Download, CheckCircle, Clock } from "lucide-react";
+import { ResponseSummary } from "@/components/dashboard/response-summary";
+
+export default async function ResponsesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const session = await auth();
+  if (!session?.user?.id) redirect("/auth/signin");
+
+  const survey = await db.survey.findUnique({
+    where: { id, ownerId: session.user.id },
+    include: {
+      questions: { where: { isCheckpoint: true }, select: { id: true } },
+      sessions: {
+        include: {
+          checkpoints: { select: { validatedAt: true } },
+          card: { select: { uid: true } },
+          responses: { select: { id: true } },
+        },
+        orderBy: { startedAt: "desc" },
+      },
+    },
+  });
+
+  if (!survey) notFound();
+
+  const totalCheckpoints = survey.questions.length;
+
+  return (
+    <div className="space-y-6">
+      <ResponseSummary
+        total={survey.sessions.length}
+        completed={survey.sessions.filter((s) => s.status === "COMPLETED").length}
+        active={survey.sessions.filter((s) => s.status === "ACTIVE").length}
+      />
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Responses</h2>
+        {survey.sessions.length > 0 && (
+          <a href={`/api/survey/${id}/export`} download>
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          </a>
+        )}
+      </div>
+
+      {survey.sessions.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            No responses yet. Share the survey link to start collecting data.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Session</TableHead>
+                  <TableHead>Card</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Checkpoints</TableHead>
+                  <TableHead>Responses</TableHead>
+                  <TableHead>Started</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {survey.sessions.map((s) => {
+                  const validatedCount = s.checkpoints.filter(
+                    (cp) => cp.validatedAt !== null
+                  ).length;
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-mono text-xs">
+                        {s.id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {s.card?.uid ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s.status} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1">
+                          {validatedCount === totalCheckpoints ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          {validatedCount}/{totalCheckpoints}
+                        </span>
+                      </TableCell>
+                      <TableCell>{s.responses.length}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(s.startedAt).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "COMPLETED":
+      return <Badge variant="default">Completed</Badge>;
+    case "ACTIVE":
+      return <Badge variant="secondary">Active</Badge>;
+    case "ABANDONED":
+      return <Badge variant="outline">Abandoned</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+}

@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth.js tables ──────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── App tables ──────────────────────────────────────────────────────────────
+
+enum Role {
+  RESEARCHER
+  PARTICIPANT
+  ADMIN
+}
+
+enum SurveyStatus {
+  DRAFT
+  LIVE
+  CLOSED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  LIKERT
+  FREE_TEXT
+  MATRIX
+  RANKING
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  role          Role      @default(RESEARCHER)
+  institution   String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts       Account[]
+  authSessions   AuthSession[]
+  surveys        Survey[]
+  surveySessions SurveySession[]
+  cards          Card[]
+
+  @@map("users")
+}
+
+model Card {
+  id             String   @id @default(cuid())
+  uid            String   @unique @db.VarChar(14) // 7-byte UID as hex
+  aesKey         String   @map("aes_key") @db.VarChar(64) // 32-byte AES key as hex
+  rollingCounter Int      @default(0) @map("rolling_counter")
+  label          String?
+  ownerId        String   @map("owner_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sessions   SurveySession[]
+  checkpoints Checkpoint[]
+
+  @@map("cards")
+}
+
+model Survey {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  status      SurveyStatus @default(DRAFT)
+  ownerId     String       @map("owner_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  questions Question[]
+  sessions  SurveySession[]
+
+  @@map("surveys")
+}
+
+model Question {
+  id           String       @id @default(cuid())
+  surveyId     String       @map("survey_id")
+  position     Int
+  type         QuestionType
+  content      Json         // discriminated by type: { text, options?, scale?, rows?, columns? }
+  isCheckpoint Boolean      @default(false) @map("is_checkpoint")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  survey    Survey     @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  responses Response[]
+
+  @@unique([surveyId, position])
+  @@map("questions")
+}
+
+model SurveySession {
+  id            String        @id @default(cuid())
+  surveyId      String        @map("survey_id")
+  participantId String?       @map("participant_id")
+  cardId        String?       @map("card_id")
+  sessionSecret String        @map("session_secret") @db.VarChar(64) // 32-byte secret as hex
+  status        SessionStatus @default(ACTIVE)
+  startedAt     DateTime      @default(now()) @map("started_at")
+  completedAt   DateTime?     @map("completed_at")
+
+  survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  participant User?        @relation(fields: [participantId], references: [id])
+  card        Card?        @relation(fields: [cardId], references: [id])
+  checkpoints Checkpoint[]
+  responses   Response[]
+
+  @@map("survey_sessions")
+}
+
+model Checkpoint {
+  id          String    @id @default(cuid())
+  sessionId   String    @map("session_id")
+  questionId  String    @map("question_id")
+  cardId      String?   @map("card_id")
+  tapCounter  Int?      @map("tap_counter")
+  phraseHash  String    @map("phrase_hash") @db.VarChar(64) // SHA-256 hash of phrase
+  expiresAt   DateTime  @map("expires_at")
+  validatedAt DateTime? @map("validated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  session SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  card    Card?         @relation(fields: [cardId], references: [id])
+
+  @@unique([sessionId, questionId])
+  @@map("checkpoints")
+}
+
+model Response {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  questionId String  @map("question_id")
+  answer    Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session  SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@map("responses")
+}
