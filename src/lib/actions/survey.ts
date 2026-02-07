@@ -62,12 +62,11 @@ export async function publishSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  // Validate that survey has exactly 3 checkpoints
+  // Validate that survey has exactly 3 checkpoints and the closing one is last
   const survey = await db.survey.findUnique({
     where: { id: surveyId, ownerId: session.user.id },
     include: {
       questions: {
-        where: { isCheckpoint: true },
         orderBy: { position: "asc" },
       },
     },
@@ -76,10 +75,18 @@ export async function publishSurvey(surveyId: string) {
   if (!survey) throw new Error("Survey not found");
   if (survey.status !== "DRAFT") throw new Error("Survey is not in draft state");
 
-  const checkpoints = survey.questions;
+  const checkpoints = survey.questions.filter((q) => q.isCheckpoint);
   if (checkpoints.length !== 3) {
     throw new Error(
       `Survey must have exactly 3 checkpoints to publish (found ${checkpoints.length})`
+    );
+  }
+
+  const lastQuestion = survey.questions[survey.questions.length - 1];
+  const closingCheckpoint = checkpoints[checkpoints.length - 1];
+  if (lastQuestion.id !== closingCheckpoint.id) {
+    throw new Error(
+      "The closing checkpoint must be the last question in the survey. No questions can come after it."
     );
   }
 

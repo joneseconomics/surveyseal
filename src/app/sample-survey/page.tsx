@@ -133,9 +133,8 @@ const steps: StepType[] = [
   { kind: "checkpoint", checkpoint: 1, label: "Opening Checkpoint — Tap to begin the survey" },
   ...surveyQuestions.slice(0, 4).map((q) => ({ kind: "question" as const, question: q })),
   { kind: "checkpoint", checkpoint: 2, label: "Mid-Survey Checkpoint — Tap to continue" },
-  ...surveyQuestions.slice(4, 7).map((q) => ({ kind: "question" as const, question: q })),
+  ...surveyQuestions.slice(4).map((q) => ({ kind: "question" as const, question: q })),
   { kind: "checkpoint", checkpoint: 3, label: "Closing Checkpoint — Tap to submit" },
-  ...surveyQuestions.slice(7).map((q) => ({ kind: "question" as const, question: q })),
 ];
 
 export default function SampleSurveyPage() {
