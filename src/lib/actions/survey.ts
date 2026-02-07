@@ -116,6 +116,7 @@ export async function updateSurveySettings(formData: FormData) {
   const parsed = updateSurveySettingsSchema.parse({
     id: formData.get("id"),
     checkpointTimerSeconds: formData.get("checkpointTimerSeconds"),
+    requireLogin: formData.get("requireLogin") === "on" || formData.get("requireLogin") === "true",
     tapinApiKey: formData.get("tapinApiKey") || undefined,
     tapinCampaignId: formData.get("tapinCampaignId") || undefined,
   });
@@ -124,6 +125,7 @@ export async function updateSurveySettings(formData: FormData) {
     where: { id: parsed.id, ownerId: session.user.id },
     data: {
       checkpointTimerSeconds: parsed.checkpointTimerSeconds,
+      requireLogin: parsed.requireLogin,
       tapinApiKey: parsed.tapinApiKey ?? null,
       tapinCampaignId: parsed.tapinCampaignId ?? null,
     },

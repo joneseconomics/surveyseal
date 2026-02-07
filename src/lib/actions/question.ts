@@ -164,6 +164,45 @@ export async function reorderQuestion(questionId: string, direction: "up" | "dow
   revalidatePath(`/dashboard/surveys/${question.surveyId}`);
 }
 
+export async function importQuestionsFromCSV(data: {
+  surveyId: string;
+  questions: Array<{ type: QuestionTypeValue; content: Record<string, unknown> }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await verifyOwnership(data.surveyId, session.user.id);
+
+  if (data.questions.length === 0) throw new Error("No questions to import");
+
+  // Validate each question's content against its schema
+  for (const q of data.questions) {
+    const contentSchema = questionContentSchemas[q.type];
+    contentSchema.parse(q.content);
+  }
+
+  // Find the next available position
+  const lastQuestion = await db.question.findFirst({
+    where: { surveyId: data.surveyId },
+    orderBy: { position: "desc" },
+    select: { position: true },
+  });
+
+  const startPosition = (lastQuestion?.position ?? -1) + 1;
+
+  await db.question.createMany({
+    data: data.questions.map((q, i) => ({
+      surveyId: data.surveyId,
+      position: startPosition + i,
+      type: q.type,
+      content: q.content as unknown as Prisma.InputJsonValue,
+      isCheckpoint: false,
+    })),
+  });
+
+  revalidatePath(`/dashboard/surveys/${data.surveyId}`);
+}
+
 export async function toggleCheckpoint(questionId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -183,3 +222,4 @@ export async function toggleCheckpoint(questionId: string) {
 
   revalidatePath(`/dashboard/surveys/${question.surveyId}`);
 }
+

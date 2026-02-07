@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SurveySeal — NFC-Verified Surveys",
+  title: "SurveySeal — Human-Verified Surveys",
   description:
-    "Survey platform for academic research using NFC-based physical verification to prove respondents are human.",
+    "Survey platform using physical-tap verification to prove respondents are real humans. Built for brand feedback, polling, customer surveys, and research.",
 };
 
 export default function RootLayout({

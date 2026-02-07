@@ -43,7 +43,7 @@ const surveyQuestions: SurveyQuestion[] = [
     type: "likert",
     likertLabels: { low: "Not at all confident", high: "Extremely confident" },
     context:
-      "Research shows AI bots can now pass 99.8% of survey attention checks, making them nearly indistinguishable from human respondents.",
+      "AI bots can now pass 99.8% of survey attention checks, making them nearly indistinguishable from human respondents.",
   },
   {
     id: 2,
@@ -57,7 +57,7 @@ const surveyQuestions: SurveyQuestion[] = [
       "All of the above",
     ],
     context:
-      'The answer is "All of the above." A 2025 PNAS study demonstrated AI agents that replicate every human behavior pattern researchers use for detection — reading pace, cursor movement, even strategic typos.',
+      'The answer is "All of the above." A 2025 PNAS study demonstrated AI agents that replicate every human behavior pattern used for detection — reading pace, cursor movement, even strategic typos.',
   },
   {
     id: 3,
@@ -76,7 +76,7 @@ const surveyQuestions: SurveyQuestion[] = [
   {
     id: 4,
     question:
-      "A researcher uses CAPTCHAs, attention checks, and IP filtering on their survey. How protected is their data?",
+      "A survey uses CAPTCHAs, attention checks, and IP filtering. How protected is the data?",
     type: "multiple_choice",
     options: [
       "Fully protected — bots can't get through all three",
@@ -90,7 +90,7 @@ const surveyQuestions: SurveyQuestion[] = [
   {
     id: 5,
     question:
-      "In one study, researchers found that just 10–52 fake responses could have flipped the outcome of major election polls. What does this suggest about survey-based research?",
+      "Just 10-52 fake responses could have flipped the outcome of major election polls. What does this suggest about survey-based decisions?",
     type: "free_text",
     context:
       "Even small-scale manipulation can have outsized effects. When the margin between real and manipulated results is this thin, the integrity of every individual response matters.",
@@ -120,11 +120,11 @@ const surveyQuestions: SurveyQuestion[] = [
   {
     id: 8,
     question:
-      "How important is it for academic research to adopt new methods of verifying survey respondents?",
+      "How important is it for organizations to adopt new methods of verifying survey respondents?",
     type: "likert",
     likertLabels: { low: "Not important", high: "Critically important" },
     context:
-      "Surveys underpin research across political science, psychology, public health, economics, and more. If the data can't be trusted, the conclusions built on it can't be either. The tools need to evolve with the threat.",
+      "Surveys drive decisions across politics, business, healthcare, and more. If the data can't be trusted, the decisions built on it can't be either. The tools need to evolve with the threat.",
   },
 ];
 
@@ -242,7 +242,7 @@ export default function SampleSurveyPage() {
             </h1>
             <p className="text-muted-foreground">
               This interactive survey explores how AI bots are compromising
-              online research. You&apos;ll experience SurveySeal&apos;s
+              online surveys. You&apos;ll experience SurveySeal&apos;s
               TapIn verification at three checkpoints — just like a
               real verified survey.
             </p>
@@ -292,7 +292,7 @@ export default function SampleSurveyPage() {
               You completed all three verification checkpoints. In a real
               SurveySeal survey, each verified tap would tag your response
               as &ldquo;Human Verified with TapIn&rdquo; — exported alongside
-              your data for peer review.
+              your data for analysis.
             </p>
             <Card>
               <CardContent className="space-y-3 text-left text-sm">
@@ -479,10 +479,10 @@ export default function SampleSurveyPage() {
                       {currentStep.checkpoint === 2 &&
                         (checkpointPhase === "verified"
                           ? "The mid-survey checkpoint confirms the same person is still present halfway through — not a bot that started the survey and handed off to automation."
-                          : "The mid-survey checkpoint was skipped. Researchers can filter their data by verification status to analyze verified and unverified responses separately.")}
+                          : "The mid-survey checkpoint was skipped. You can filter your data by verification status to analyze verified and unverified responses separately.")}
                       {currentStep.checkpoint === 3 &&
                         (checkpointPhase === "verified"
-                          ? "The closing checkpoint seals the survey. All three verified taps create a chain of identity confirmation, exported alongside your data for peer review."
+                          ? "The closing checkpoint seals the survey. All three verified taps create a chain of identity confirmation, exported alongside your data."
                           : "The closing checkpoint was skipped. The final verification status depends on how many checkpoints were verified vs. skipped.")}
                     </CardDescription>
                   </CardHeader>

@@ -18,11 +18,16 @@ export const updateSurveySchema = z.object({
 export const updateSurveySettingsSchema = z.object({
   id: z.string(),
   checkpointTimerSeconds: z.coerce.number().int().min(10).max(300),
+  requireLogin: z.coerce.boolean().default(true),
   tapinApiKey: z.string().optional(),
   tapinCampaignId: z.string().optional(),
 });
 
 // ─── Question content schemas (discriminated by type) ──────────────────────
+
+const textOnlyContent = z.object({
+  text: z.string().min(1, "Question text is required"),
+});
 
 const multipleChoiceContent = z.object({
   text: z.string().min(1, "Question text is required"),
@@ -54,12 +59,43 @@ const rankingContent = z.object({
   options: z.array(z.string().min(1)).min(2, "At least 2 options required"),
 });
 
+const checkboxContent = z.object({
+  text: z.string().min(1, "Question text is required"),
+  options: z.array(z.string().min(1)).min(2, "At least 2 options required").optional(),
+});
+
+const ratingContent = z.object({
+  text: z.string().min(1, "Question text is required"),
+  maxStars: z.number().int().min(1).max(10).optional(),
+});
+
+const sliderContent = z.object({
+  text: z.string().min(1, "Question text is required"),
+  min: z.number(),
+  max: z.number(),
+  step: z.number().optional(),
+});
+
 export const questionContentSchemas = {
   MULTIPLE_CHOICE: multipleChoiceContent,
   LIKERT: likertContent,
   FREE_TEXT: freeTextContent,
   MATRIX: matrixContent,
   RANKING: rankingContent,
+  SHORT_TEXT: textOnlyContent,
+  URL: textOnlyContent,
+  EMAIL: textOnlyContent,
+  YES_NO: textOnlyContent,
+  CUSTOMER_SATISFACTION: textOnlyContent,
+  NPS: textOnlyContent,
+  CHECKBOX: checkboxContent,
+  RATING: ratingContent,
+  DATE: textOnlyContent,
+  DATE_TIME: textOnlyContent,
+  NUMBER: textOnlyContent,
+  PERCENTAGE: textOnlyContent,
+  SLIDER: sliderContent,
+  PHONE_NUMBER: textOnlyContent,
 } as const;
 
 export const questionTypes = [
@@ -68,6 +104,20 @@ export const questionTypes = [
   "FREE_TEXT",
   "MATRIX",
   "RANKING",
+  "SHORT_TEXT",
+  "URL",
+  "EMAIL",
+  "YES_NO",
+  "CUSTOMER_SATISFACTION",
+  "NPS",
+  "CHECKBOX",
+  "RATING",
+  "DATE",
+  "DATE_TIME",
+  "NUMBER",
+  "PERCENTAGE",
+  "SLIDER",
+  "PHONE_NUMBER",
 ] as const;
 
 export type QuestionTypeValue = (typeof questionTypes)[number];

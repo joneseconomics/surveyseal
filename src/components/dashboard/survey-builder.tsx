@@ -11,7 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey } from "@/lib/actions/survey";
 import { QuestionCard } from "@/components/dashboard/question-card";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
-import { Globe, Trash2, ExternalLink } from "lucide-react";
+import { ImportQuestions } from "@/components/dashboard/import-questions";
+import { Globe, Trash2, ExternalLink, Upload } from "lucide-react";
 import type { Survey, Question } from "@/generated/prisma/client";
 
 interface SurveyBuilderProps {
@@ -22,6 +23,7 @@ interface SurveyBuilderProps {
 
 export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilderProps) {
   const [showEditor, setShowEditor] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const isDraft = survey.status === "DRAFT";
   const checkpointCount = questions.filter((q) => q.isCheckpoint).length;
@@ -134,14 +136,23 @@ export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilde
             </p>
           </div>
           {isDraft && (
-            <Button
-              onClick={() => {
-                setEditingQuestion(null);
-                setShowEditor(true);
-              }}
-            >
-              Add Question
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowImport(true)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import Questions
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditingQuestion(null);
+                  setShowEditor(true);
+                }}
+              >
+                Add Question
+              </Button>
+            </div>
           )}
         </div>
 
@@ -194,6 +205,13 @@ export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilde
           }}
         />
       )}
+
+      {/* Import questions dialog */}
+      <ImportQuestions
+        surveyId={survey.id}
+        open={showImport}
+        onOpenChange={setShowImport}
+      />
     </div>
   );
 }

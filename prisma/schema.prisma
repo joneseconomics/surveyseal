@@ -74,6 +74,20 @@ enum QuestionType {
   FREE_TEXT
   MATRIX
   RANKING
+  SHORT_TEXT
+  URL
+  EMAIL
+  YES_NO
+  CUSTOMER_SATISFACTION
+  NPS
+  CHECKBOX
+  RATING
+  DATE
+  DATE_TIME
+  NUMBER
+  PERCENTAGE
+  SLIDER
+  PHONE_NUMBER
 }
 
 enum SessionStatus {
@@ -118,6 +132,7 @@ model Survey {
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   checkpointTimerSeconds Int     @default(30) @map("checkpoint_timer_seconds")
+  requireLogin           Boolean @default(true) @map("require_login")
   tapinApiKey            String? @map("tapin_api_key")
   tapinCampaignId        String? @map("tapin_campaign_id")
 

@@ -13,7 +13,7 @@ export default function SignInPage() {
           </div>
           <CardTitle className="text-2xl">Sign in to SurveySeal</CardTitle>
           <CardDescription>
-            Sign in with your university account to create and manage verified surveys.
+            Sign in to create and manage verified surveys.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

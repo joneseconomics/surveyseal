@@ -37,6 +37,20 @@ const typeLabels: Record<QuestionTypeValue, string> = {
   FREE_TEXT: "Free Text",
   MATRIX: "Matrix",
   RANKING: "Ranking",
+  SHORT_TEXT: "Short Text",
+  URL: "URL",
+  EMAIL: "Email",
+  YES_NO: "Yes / No",
+  CUSTOMER_SATISFACTION: "Customer Satisfaction",
+  NPS: "Net Promoter Score",
+  CHECKBOX: "Checkbox (Multi-Select)",
+  RATING: "Star Rating",
+  DATE: "Date",
+  DATE_TIME: "Date & Time",
+  NUMBER: "Number",
+  PERCENTAGE: "Percentage",
+  SLIDER: "Slider",
+  PHONE_NUMBER: "Phone Number",
 };
 
 export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorProps) {
@@ -66,6 +80,10 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
   const [columns, setColumns] = useState<string[]>(
     (existingContent.columns as string[]) ?? ["", ""]
   );
+  const [maxStars, setMaxStars] = useState((existingContent.maxStars as number) ?? 5);
+  const [sliderMin, setSliderMin] = useState((existingContent.min as number) ?? 0);
+  const [sliderMax, setSliderMax] = useState((existingContent.max as number) ?? 100);
+  const [sliderStep, setSliderStep] = useState((existingContent.step as number) ?? 1);
   const [isCheckpoint, setIsCheckpoint] = useState(question?.isCheckpoint ?? false);
   const [saving, setSaving] = useState(false);
 
@@ -84,11 +102,28 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
           },
         };
       case "FREE_TEXT":
+      case "SHORT_TEXT":
+      case "URL":
+      case "EMAIL":
+      case "YES_NO":
+      case "CUSTOMER_SATISFACTION":
+      case "NPS":
+      case "DATE":
+      case "DATE_TIME":
+      case "NUMBER":
+      case "PERCENTAGE":
+      case "PHONE_NUMBER":
         return { text };
       case "MATRIX":
         return { text, rows: rows.filter(Boolean), columns: columns.filter(Boolean) };
       case "RANKING":
         return { text, options: options.filter(Boolean) };
+      case "CHECKBOX":
+        return { text, options: options.filter(Boolean) };
+      case "RATING":
+        return { text, maxStars };
+      case "SLIDER":
+        return { text, min: sliderMin, max: sliderMax, step: sliderStep || undefined };
       default:
         return { text };
     }
@@ -115,6 +150,8 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
       setSaving(false);
     }
   }
+
+  const needsOptions = type === "MULTIPLE_CHOICE" || type === "RANKING" || type === "CHECKBOX";
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
@@ -153,8 +190,8 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
             />
           </div>
 
-          {/* Options for MULTIPLE_CHOICE and RANKING */}
-          {(type === "MULTIPLE_CHOICE" || type === "RANKING") && (
+          {/* Options for MULTIPLE_CHOICE, RANKING, CHECKBOX */}
+          {needsOptions && (
             <div className="space-y-2">
               <Label>Options</Label>
               {options.map((opt, i) => (
@@ -296,6 +333,52 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
                   <Plus className="mr-2 h-4 w-4" />
                   Add Column
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Rating config */}
+          {type === "RATING" && (
+            <div className="space-y-2">
+              <Label>Max Stars</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={maxStars}
+                onChange={(e) => setMaxStars(Number(e.target.value))}
+              />
+            </div>
+          )}
+
+          {/* Slider config */}
+          {type === "SLIDER" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label>Min</Label>
+                  <Input
+                    type="number"
+                    value={sliderMin}
+                    onChange={(e) => setSliderMin(Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max</Label>
+                  <Input
+                    type="number"
+                    value={sliderMax}
+                    onChange={(e) => setSliderMax(Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Step</Label>
+                  <Input
+                    type="number"
+                    value={sliderStep}
+                    onChange={(e) => setSliderStep(Number(e.target.value))}
+                  />
+                </div>
               </div>
             </div>
           )}

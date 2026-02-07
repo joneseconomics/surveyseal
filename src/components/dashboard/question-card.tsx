@@ -22,6 +22,20 @@ const typeLabels: Record<string, string> = {
   FREE_TEXT: "Free Text",
   MATRIX: "Matrix",
   RANKING: "Ranking",
+  SHORT_TEXT: "Short Text",
+  URL: "URL",
+  EMAIL: "Email",
+  YES_NO: "Yes / No",
+  CUSTOMER_SATISFACTION: "Satisfaction",
+  NPS: "NPS",
+  CHECKBOX: "Checkbox",
+  RATING: "Rating",
+  DATE: "Date",
+  DATE_TIME: "Date & Time",
+  NUMBER: "Number",
+  PERCENTAGE: "Percentage",
+  SLIDER: "Slider",
+  PHONE_NUMBER: "Phone",
 };
 
 export function QuestionCard({

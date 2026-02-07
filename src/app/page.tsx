@@ -138,11 +138,11 @@ export default function LandingPage() {
               The Problem
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight">
-              Bots are contaminating survey research at scale.
+              Bots are contaminating survey data at scale.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
               Fraudulent responses are undermining the foundation of
-              survey-based research — and the problem is accelerating.
+              survey-based decisions — and the problem is accelerating.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -214,7 +214,7 @@ export default function LandingPage() {
               agents that simulate realistic reading speeds, natural mouse
               movements, and deliberate typing errors — making them
               indistinguishable from human respondents. The paper calls the
-              threat to online survey research{" "}
+              threat to online surveys{" "}
               <span className="font-medium text-foreground">
                 &ldquo;existential.&rdquo;
               </span>
@@ -232,7 +232,7 @@ export default function LandingPage() {
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
               Every widely used countermeasure is software-only — and modern AI
-              bypasses all of them. Researchers need new tools.
+              bypasses all of them. You need new tools.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -265,7 +265,7 @@ export default function LandingPage() {
                 icon: MonitorSmartphone,
                 title: "Platform Bot Detection",
                 description:
-                  "Software-only signals from Qualtrics or Prolific are probabilistic, not provable. No cryptographic audit trail for peer review.",
+                  "Software-only signals from survey platforms are probabilistic, not provable. No cryptographic audit trail.",
               },
               {
                 icon: XCircle,
@@ -306,7 +306,7 @@ export default function LandingPage() {
                 icon: CreditCard,
                 title: "Distribute TapIn Survey cards",
                 description:
-                  "Hand out reusable TapIn Survey cards to your study participants. No app or setup required.",
+                  "Hand out reusable TapIn Survey cards to your audience. No app or setup required.",
               },
               {
                 step: 2,
@@ -320,7 +320,7 @@ export default function LandingPage() {
                 icon: ShieldCheck,
                 title: "Export verified data",
                 description:
-                  "Download research-ready CSV files with verified proof of physical presence at every checkpoint.",
+                  "Download CSV files with verified proof of physical presence at every checkpoint.",
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
@@ -365,15 +365,15 @@ export default function LandingPage() {
               },
               {
                 icon: BarChart3,
-                title: "Research-Ready CSV Export",
+                title: "CSV Export",
                 description:
-                  "Export responses with verification status, checkpoint results, and timestamps for transparent peer review.",
+                  "Export responses with verification status, checkpoint results, and timestamps for analysis or compliance.",
               },
               {
                 icon: Users,
-                title: "Real-Time Response Monitoring",
+                title: "Real-Time Monitoring",
                 description:
-                  "Track survey completion, verification status, and response rates in real time from your researcher dashboard.",
+                  "Track survey completion, verification status, and response rates in real time from your dashboard.",
               },
               {
                 icon: TestTube2,
@@ -383,9 +383,9 @@ export default function LandingPage() {
               },
               {
                 icon: LogIn,
-                title: "Social Sign-In",
+                title: "Flexible Authentication",
                 description:
-                  "Sign in with your Google or Microsoft account. No new passwords to remember — just use an account you already have.",
+                  "Require sign-in with Google or Microsoft for identified responses, or toggle it off for fully anonymous surveys.",
               },
             ].map((feature) => (
               <Card key={feature.title} className="border-0 shadow-none bg-background">
@@ -402,30 +402,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 7. For Researchers ── */}
-      <section id="researchers" className="border-t px-4 py-20">
+      {/* ── 7. Use Cases ── */}
+      <section id="use-cases" className="border-t px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">
-                Built for researchers,
+                Built for anyone who needs
                 <br />
-                not engineers.
+                trustworthy survey data.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                SurveySeal is designed for grad students and research teams who
-                need verified data without a technical learning curve. Create
-                surveys, distribute cards, and export results — all from a
-                simple dashboard.
+                SurveySeal works for any use case where you need to know your
+                respondents are real. Create surveys, distribute cards, and
+                export results — all from a simple dashboard.
               </p>
             </div>
             <Card>
               <CardContent className="space-y-4">
                 {[
-                  "IRB-ready verification logs for ethics review",
-                  "Complete audit trail for every response",
-                  "No technical expertise required to set up",
-                  "Sign in with Google or Microsoft — no new accounts needed",
+                  "Brand feedback and product research",
+                  "Political polling and public opinion",
+                  "Academic and scientific research",
+                  "Customer satisfaction and NPS surveys",
+                  "Employee engagement and internal surveys",
+                  "Event and conference feedback",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -455,7 +456,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 text-muted-foreground">
                 TapIn Survey cards are credit-card-sized smart cards designed
-                for academic research. Each card carries a unique identity that
+                for verified surveys. Each card carries a unique identity that
                 produces verifiable taps — impossible to clone, share, or
                 replay.
               </p>
@@ -475,7 +476,7 @@ export default function LandingPage() {
                 {
                   title: "Reusable across surveys",
                   description:
-                    "One card works for every study. No reprogramming needed between surveys.",
+                    "One card works for every survey. No reprogramming needed between projects.",
                 },
                 {
                   title: "No app required",
@@ -552,7 +553,7 @@ export default function LandingPage() {
                 SurveySeal
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Human-verified surveys for academic research.
+                Human-verified surveys you can trust.
               </p>
             </div>
             <div>
