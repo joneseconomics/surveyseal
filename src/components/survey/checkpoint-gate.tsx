@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Loader2, AlertCircle, Smartphone } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface CheckpointGateProps {
   sessionId: string;
@@ -23,7 +22,6 @@ export function CheckpointGate({
   position,
   totalQuestions,
 }: CheckpointGateProps) {
-  const router = useRouter();
   const [word1, setWord1] = useState("");
   const [word2, setWord2] = useState("");
   const [error, setError] = useState("");
@@ -69,8 +67,7 @@ export function CheckpointGate({
         return;
       }
       // Navigate to next question
-      router.push(`/s/${surveyId}/q?q=${position + 1}`);
-      router.refresh();
+      window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
     } catch {
       setError("Network error. Please try again.");
     } finally {

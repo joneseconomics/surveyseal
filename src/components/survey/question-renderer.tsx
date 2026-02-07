@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { Question } from "@/generated/prisma/client";
 
 interface QuestionRendererProps {
@@ -33,7 +32,6 @@ export function QuestionRenderer({
   totalQuestions,
   isAnswered,
 }: QuestionRendererProps) {
-  const router = useRouter();
   const content = question.content as unknown as QuestionContent;
   const [answer, setAnswer] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
@@ -48,8 +46,8 @@ export function QuestionRenderer({
         body: JSON.stringify({ sessionId, questionId: question.id, answer }),
       });
       if (res.ok) {
-        router.push(`/s/${surveyId}/q?q=${position + 1}`);
-        router.refresh();
+        window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
+        return;
       }
     } finally {
       setLoading(false);
@@ -95,6 +93,7 @@ export function QuestionRenderer({
             options={content.options}
             value={(answer as string[]) ?? [...content.options]}
             onChange={setAnswer}
+            onInit={() => { if (answer === null) setAnswer([...content.options!]); }}
           />
         )}
 
@@ -249,11 +248,14 @@ function Ranking({
   options,
   value,
   onChange,
+  onInit,
 }: {
   options: string[];
   value: string[];
   onChange: (v: string[]) => void;
+  onInit: () => void;
 }) {
+  useEffect(() => { onInit(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   function moveUp(index: number) {
     if (index === 0) return;
     const next = [...value];
