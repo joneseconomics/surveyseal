@@ -39,13 +39,13 @@ async function main() {
   // Create sample survey with questions
   const survey = await prisma.survey.upsert({
     where: { id: "seed-survey-001" },
-    update: {},
+    update: { status: "LIVE" },
     create: {
       id: "seed-survey-001",
       title: "Campus Dining Experience Survey",
       description:
         "Help us understand your experience with campus dining facilities. This survey takes approximately 5 minutes and includes three verification checkpoints.",
-      status: "DRAFT",
+      status: "LIVE",
       ownerId: researcher.id,
     },
   });
