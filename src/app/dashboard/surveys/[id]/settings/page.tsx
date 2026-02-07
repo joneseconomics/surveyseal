@@ -5,7 +5,7 @@ import { updateSurveySettings } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Smartphone, Users } from "lucide-react";
+import { ExternalLink, Smartphone, Users } from "lucide-react";
 import { TapInSettings } from "@/components/dashboard/tapin-settings";
 
 export default async function SurveySettingsPage({
@@ -87,7 +87,16 @@ export default async function SurveySettingsPage({
             <CardTitle className="text-base">TapIn Verification</CardTitle>
           </div>
           <CardDescription>
-            Configure verification point settings and TapIn integration for post-survey verification.
+            Configure verification point settings and TapIn integration for post-survey verification.{" "}
+            <a
+              href="https://store.tapin.us"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              Order TapIn Survey cards
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </CardDescription>
         </CardHeader>
         <CardContent>
