@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey } from "@/lib/actions/survey";
+import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey, reopenSurvey } from "@/lib/actions/survey";
 import { SortableQuestionList } from "@/components/dashboard/sortable-question-list";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
@@ -79,6 +79,14 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
             <form action={() => closeSurvey(survey.id)}>
               <Button variant="outline" size="sm">
                 Close Survey
+              </Button>
+            </form>
+          )}
+          {survey.status === "CLOSED" && (
+            <form action={() => reopenSurvey(survey.id)}>
+              <Button variant="outline" size="sm">
+                <Globe className="mr-2 h-4 w-4" />
+                Reopen Survey
               </Button>
             </form>
           )}

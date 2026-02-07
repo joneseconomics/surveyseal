@@ -276,3 +276,16 @@ export async function closeSurvey(surveyId: string) {
   revalidatePath(`/dashboard/surveys/${surveyId}`);
   revalidatePath("/dashboard");
 }
+
+export async function reopenSurvey(surveyId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id, status: "CLOSED" },
+    data: { status: "LIVE" },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+  revalidatePath("/dashboard");
+}
