@@ -17,10 +17,12 @@ export default async function SurveyLayout({
 
   const survey = await db.survey.findUnique({
     where: { id, ownerId: session.user.id },
-    select: { id: true, title: true, status: true },
+    select: { id: true, title: true, status: true, type: true },
   });
 
   if (!survey) notFound();
+
+  const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
 
   return (
     <div className="space-y-6">
@@ -32,6 +34,11 @@ export default async function SurveyLayout({
           <TabsTrigger value="responses" asChild>
             <Link href={`/dashboard/surveys/${id}/responses`}>Responses</Link>
           </TabsTrigger>
+          {isCJ && (
+            <TabsTrigger value="rankings" asChild>
+              <Link href={`/dashboard/surveys/${id}/rankings`}>Rankings</Link>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="settings" asChild>
             <Link href={`/dashboard/surveys/${id}/settings`}>Settings</Link>
           </TabsTrigger>

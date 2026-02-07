@@ -136,9 +136,13 @@ model Survey {
   tapinApiKey            String? @map("tapin_api_key")
   tapinCampaignId        String? @map("tapin_campaign_id")
 
+  comparisonsPerJudge Int?    @map("comparisons_per_judge")
+  cjPrompt            String? @map("cj_prompt") @db.Text
+
   owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   questions Question[]
   sessions  SurveySession[]
+  cjItems   CJItem[]
 
   @@map("surveys")
 }
@@ -170,11 +174,15 @@ model SurveySession {
   startedAt          DateTime           @default(now()) @map("started_at")
   completedAt        DateTime?          @map("completed_at")
 
+  botScore           Float?  @map("bot_score")
+  botSignals         Json?   @map("bot_signals")
+
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   participant User?        @relation(fields: [participantId], references: [id])
   verificationPoints VerificationPoint[]
   responses   Response[]
   tapinTaps   TapInTap[]
+  comparisons Comparison[]
 
   @@map("survey_sessions")
 }
@@ -200,6 +208,7 @@ model Response {
   sessionId String   @map("session_id")
   questionId String  @map("question_id")
   answer    Json
+  telemetry Json?
   createdAt DateTime @default(now()) @map("created_at")
 
   session  SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -221,4 +230,44 @@ model TapInTap {
 
   @@unique([sessionId, tapinId])
   @@map("tapin_taps")
+}
+
+model CJItem {
+  id              String   @id @default(cuid())
+  surveyId        String   @map("survey_id")
+  label           String
+  content         Json
+  position        Int
+  mu              Float    @default(1500)
+  sigmaSq         Float    @default(350000) @map("sigma_sq")
+  comparisonCount Int      @default(0) @map("comparison_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  survey   Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  asLeft   Comparison[] @relation("LeftItem")
+  asRight  Comparison[] @relation("RightItem")
+  asWinner Comparison[] @relation("WinnerItem")
+
+  @@unique([surveyId, position])
+  @@map("cj_items")
+}
+
+model Comparison {
+  id          String    @id @default(cuid())
+  sessionId   String    @map("session_id")
+  leftItemId  String    @map("left_item_id")
+  rightItemId String    @map("right_item_id")
+  winnerId    String?   @map("winner_id")
+  position    Int
+  createdAt   DateTime  @default(now()) @map("created_at")
+  judgedAt    DateTime? @map("judged_at")
+
+  session   SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  leftItem  CJItem        @relation("LeftItem", fields: [leftItemId], references: [id], onDelete: Cascade)
+  rightItem CJItem        @relation("RightItem", fields: [rightItemId], references: [id], onDelete: Cascade)
+  winner    CJItem?       @relation("WinnerItem", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, position])
+  @@map("comparisons")
 }

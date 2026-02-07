@@ -14,6 +14,111 @@ export async function GET(
 
   const survey = await db.survey.findUnique({
     where: { id: surveyId, ownerId: session.user.id },
+    select: { id: true, type: true },
+  });
+
+  if (!survey) {
+    return NextResponse.json({ error: "Survey not found" }, { status: 404 });
+  }
+
+  if (survey.type === "COMPARATIVE_JUDGMENT") {
+    const format = req.nextUrl.searchParams.get("format");
+    return format === "comparisons"
+      ? exportCJComparisons(surveyId)
+      : exportCJRankings(surveyId);
+  }
+
+  return exportQuestionnaire(surveyId);
+}
+
+async function exportCJRankings(surveyId: string) {
+  const items = await db.cJItem.findMany({
+    where: { surveyId },
+    orderBy: { mu: "desc" },
+  });
+
+  const headers = ["rank", "label", "rating", "uncertainty", "comparison_count"];
+  const rows = items.map((item, i) => {
+    const values = [
+      String(i + 1),
+      item.label,
+      String(Math.round(item.mu)),
+      String(Math.round(Math.sqrt(item.sigmaSq))),
+      String(item.comparisonCount),
+    ];
+    return values.map(escapeCsvField).join(",");
+  });
+
+  const csv = [headers.map(escapeCsvField).join(","), ...rows].join("\n");
+
+  return new NextResponse(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="surveyseal-${surveyId}-rankings.csv"`,
+    },
+  });
+}
+
+async function exportCJComparisons(surveyId: string) {
+  const comparisons = await db.comparison.findMany({
+    where: {
+      session: { surveyId },
+      winnerId: { not: null },
+    },
+    include: {
+      session: {
+        select: {
+          id: true,
+          participantEmail: true,
+          verificationStatus: true,
+          botScore: true,
+        },
+      },
+      leftItem: { select: { label: true } },
+      rightItem: { select: { label: true } },
+      winner: { select: { label: true } },
+    },
+    orderBy: { judgedAt: "asc" },
+  });
+
+  const headers = [
+    "session_id",
+    "participant_email",
+    "left_item",
+    "right_item",
+    "winner",
+    "judged_at",
+    "verification_status",
+    "bot_score",
+  ];
+
+  const rows = comparisons.map((c) => {
+    const values = [
+      c.session.id,
+      c.session.participantEmail ?? "",
+      c.leftItem.label,
+      c.rightItem.label,
+      c.winner?.label ?? "",
+      c.judgedAt?.toISOString() ?? "",
+      c.session.verificationStatus,
+      c.session.botScore !== null ? String(c.session.botScore) : "",
+    ];
+    return values.map(escapeCsvField).join(",");
+  });
+
+  const csv = [headers.map(escapeCsvField).join(","), ...rows].join("\n");
+
+  return new NextResponse(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="surveyseal-${surveyId}-comparisons.csv"`,
+    },
+  });
+}
+
+async function exportQuestionnaire(surveyId: string) {
+  const survey = await db.survey.findUnique({
+    where: { id: surveyId },
     include: {
       questions: { orderBy: { position: "asc" } },
       sessions: {
@@ -33,7 +138,6 @@ export async function GET(
 
   const nonVPQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
 
-  // Build CSV header
   const headers = [
     "session_id",
     "participant_email",
@@ -55,6 +159,8 @@ export async function GET(
     "verification_point_3_email",
     "tapin_tap_count",
     "tapin_tap_timestamps",
+    "bot_score",
+    "bot_risk",
   ];
 
   const rows = survey.sessions.map((s) => {
@@ -87,6 +193,10 @@ export async function GET(
       }).flat(),
       String(s.tapinTaps.length),
       s.tapinTaps.map((t) => t.tappedAt.toISOString()).join(";"),
+      s.botScore !== null ? String(s.botScore) : "",
+      s.botScore !== null
+        ? s.botScore < 0.3 ? "low" : s.botScore < 0.6 ? "medium" : "high"
+        : "",
     ];
 
     return values.map(escapeCsvField).join(",");

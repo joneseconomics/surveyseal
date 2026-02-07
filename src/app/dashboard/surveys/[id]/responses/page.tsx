@@ -30,10 +30,17 @@ export default async function ResponsesPage({
     include: {
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
       sessions: {
-        include: {
+        select: {
+          id: true,
+          status: true,
+          verificationStatus: true,
+          startedAt: true,
+          participantEmail: true,
+          botScore: true,
           verificationPoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
           tapinTaps: { select: { id: true } },
+          _count: { select: { comparisons: true } },
         },
         orderBy: { startedAt: "desc" },
       },
@@ -44,6 +51,7 @@ export default async function ResponsesPage({
 
   const totalVerificationPoints = survey.questions.length;
   const hasTapInKey = !!survey.tapinApiKey;
+  const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
 
   return (
     <div className="space-y-6">
@@ -82,9 +90,10 @@ export default async function ResponsesPage({
                 <TableRow>
                   <TableHead>Session</TableHead>
                   <TableHead>Verification</TableHead>
+                  <TableHead>Bot Risk</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Verification Points</TableHead>
-                  <TableHead>Responses</TableHead>
+                  <TableHead>{isCJ ? "Comparisons" : "Responses"}</TableHead>
                   {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>
                 </TableRow>
@@ -103,6 +112,9 @@ export default async function ResponsesPage({
                         <VerificationBadge status={s.verificationStatus} />
                       </TableCell>
                       <TableCell>
+                        <BotRiskBadge score={s.botScore} />
+                      </TableCell>
+                      <TableCell>
                         <StatusBadge status={s.status} />
                       </TableCell>
                       <TableCell>
@@ -115,7 +127,9 @@ export default async function ResponsesPage({
                           {validatedCount}/{totalVerificationPoints}
                         </span>
                       </TableCell>
-                      <TableCell>{s.responses.length}</TableCell>
+                      <TableCell>
+                        {isCJ ? s._count.comparisons : s.responses.length}
+                      </TableCell>
                       {hasTapInKey && (
                         <TableCell>
                           {s.tapinTaps.length > 0
@@ -162,4 +176,18 @@ function VerificationBadge({ status }: { status: string }) {
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
+}
+
+function BotRiskBadge({ score }: { score: number | null }) {
+  if (score === null) {
+    return <Badge variant="outline">N/A</Badge>;
+  }
+  const pct = Math.round(score * 100);
+  if (score < 0.3) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Low ({pct}%)</Badge>;
+  }
+  if (score < 0.6) {
+    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Medium ({pct}%)</Badge>;
+  }
+  return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">High ({pct}%)</Badge>;
 }

@@ -72,13 +72,11 @@ export async function publishSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  // Validate that survey has exactly 3 verification points and the closing one is last
   const survey = await db.survey.findUnique({
     where: { id: surveyId, ownerId: session.user.id },
     include: {
-      questions: {
-        orderBy: { position: "asc" },
-      },
+      questions: { orderBy: { position: "asc" } },
+      cjItems: true,
     },
   });
 
@@ -92,12 +90,23 @@ export async function publishSurvey(surveyId: string) {
     );
   }
 
-  const lastQuestion = survey.questions[survey.questions.length - 1];
-  const closingVP = verificationPoints[verificationPoints.length - 1];
-  if (lastQuestion.id !== closingVP.id) {
-    throw new Error(
-      "The closing verification point must be the last item in the survey. No questions can come after it."
-    );
+  if (survey.type === "COMPARATIVE_JUDGMENT") {
+    if (survey.cjItems.length < 3) {
+      throw new Error(
+        `Comparative Judgment surveys need at least 3 items to publish (found ${survey.cjItems.length})`
+      );
+    }
+    if (!survey.cjPrompt) {
+      throw new Error("Comparative Judgment surveys need a comparison prompt to publish");
+    }
+  } else {
+    const lastQuestion = survey.questions[survey.questions.length - 1];
+    const closingVP = verificationPoints[verificationPoints.length - 1];
+    if (lastQuestion.id !== closingVP.id) {
+      throw new Error(
+        "The closing verification point must be the last item in the survey. No questions can come after it."
+      );
+    }
   }
 
   await db.survey.update({

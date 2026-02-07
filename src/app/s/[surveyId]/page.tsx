@@ -17,10 +17,13 @@ export default async function SurveyLandingPage({
 
   const survey = await db.survey.findUnique({
     where: { id: surveyId, status: "LIVE" },
-    select: { id: true, title: true, description: true, verificationPointTimerSeconds: true, requireLogin: true },
+    select: { id: true, title: true, description: true, type: true, verificationPointTimerSeconds: true, requireLogin: true },
   });
 
   if (!survey) notFound();
+
+  const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
+  const surveyRoute = isCJ ? `/s/${surveyId}/compare` : `/s/${surveyId}/q`;
 
   // Check if user already has an active session
   const existingSessionId = await getSurveySessionId(surveyId);
@@ -29,7 +32,7 @@ export default async function SurveyLandingPage({
       where: { id: existingSessionId, status: "ACTIVE" },
     });
     if (existingSession) {
-      redirect(`/s/${surveyId}/q`);
+      redirect(surveyRoute);
     }
   }
 
@@ -53,7 +56,7 @@ export default async function SurveyLandingPage({
       });
 
       await setSurveySessionId(surveyId, session.id);
-      redirect(`/s/${surveyId}/q`);
+      redirect(surveyRoute);
     }
 
     return (
@@ -167,6 +170,7 @@ export default async function SurveyLandingPage({
   async function beginSurvey(formData: FormData) {
     "use server";
     const email = (formData.get("email") as string)?.toLowerCase().trim() || null;
+    const surveyType = formData.get("surveyType") as string;
 
     const session = await db.surveySession.create({
       data: {
@@ -176,7 +180,11 @@ export default async function SurveyLandingPage({
     });
 
     await setSurveySessionId(surveyId, session.id);
-    redirect(`/s/${surveyId}/q`);
+    redirect(
+      surveyType === "COMPARATIVE_JUDGMENT"
+        ? `/s/${surveyId}/compare`
+        : `/s/${surveyId}/q`
+    );
   }
 
   return (
@@ -198,6 +206,7 @@ export default async function SurveyLandingPage({
             If you don&apos;t have a card, you can skip verification points and still complete the survey.
           </p>
           <form action={beginSurvey} className="space-y-4">
+            <input type="hidden" name="surveyType" value={survey.type} />
             <div className="space-y-2 text-left">
               <Label htmlFor="email">Email address (optional)</Label>
               <Input

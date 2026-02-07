@@ -14,6 +14,7 @@ interface VerificationGateProps {
   timerSeconds: number;
   verificationPointNumber?: number;
   totalVerificationPoints?: number;
+  returnUrl?: string;
 }
 
 export function VerificationGate({
@@ -25,6 +26,7 @@ export function VerificationGate({
   timerSeconds,
   verificationPointNumber,
   totalVerificationPoints,
+  returnUrl,
 }: VerificationGateProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,11 +76,11 @@ export function VerificationGate({
   useEffect(() => {
     if (status === "verified" || status === "skipped") {
       const timer = setTimeout(() => {
-        window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
+        window.location.href = returnUrl ?? `/s/${surveyId}/q?q=${position + 1}`;
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [status, surveyId, position]);
+  }, [status, surveyId, position, returnUrl]);
 
   async function handleNext() {
     setLoading(true);

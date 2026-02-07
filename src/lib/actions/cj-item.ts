@@ -1,0 +1,146 @@
+"use server";
+
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import {
+  addCJItemSchema,
+  updateCJItemSchema,
+  updateCJSettingsSchema,
+} from "@/lib/validations/cj";
+import type { Prisma } from "@/generated/prisma/client";
+import { revalidatePath } from "next/cache";
+
+async function verifyOwnership(surveyId: string, userId: string) {
+  const survey = await db.survey.findUnique({
+    where: { id: surveyId, ownerId: userId },
+    select: { id: true, status: true },
+  });
+  if (!survey) throw new Error("Survey not found");
+  if (survey.status !== "DRAFT") throw new Error("Cannot modify a published survey");
+  return survey;
+}
+
+export async function addCJItem(data: {
+  surveyId: string;
+  label: string;
+  content: Record<string, unknown>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parsed = addCJItemSchema.parse(data);
+  await verifyOwnership(parsed.surveyId, session.user.id);
+
+  const lastItem = await db.cJItem.findFirst({
+    where: { surveyId: parsed.surveyId },
+    orderBy: { position: "desc" },
+    select: { position: true },
+  });
+
+  const position = (lastItem?.position ?? -1) + 1;
+
+  await db.cJItem.create({
+    data: {
+      surveyId: parsed.surveyId,
+      label: parsed.label,
+      content: parsed.content as unknown as Prisma.InputJsonValue,
+      position,
+    },
+  });
+
+  revalidatePath(`/dashboard/surveys/${parsed.surveyId}`);
+}
+
+export async function updateCJItem(data: {
+  id: string;
+  label: string;
+  content: Record<string, unknown>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parsed = updateCJItemSchema.parse(data);
+
+  const item = await db.cJItem.findUnique({
+    where: { id: parsed.id },
+    select: { surveyId: true },
+  });
+  if (!item) throw new Error("Item not found");
+
+  await verifyOwnership(item.surveyId, session.user.id);
+
+  await db.cJItem.update({
+    where: { id: parsed.id },
+    data: {
+      label: parsed.label,
+      content: parsed.content as unknown as Prisma.InputJsonValue,
+    },
+  });
+
+  revalidatePath(`/dashboard/surveys/${item.surveyId}`);
+}
+
+export async function deleteCJItem(itemId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const item = await db.cJItem.findUnique({
+    where: { id: itemId },
+    select: { surveyId: true, position: true },
+  });
+  if (!item) throw new Error("Item not found");
+
+  await verifyOwnership(item.surveyId, session.user.id);
+
+  await db.$transaction([
+    db.cJItem.delete({ where: { id: itemId } }),
+    db.cJItem.updateMany({
+      where: {
+        surveyId: item.surveyId,
+        position: { gt: item.position },
+      },
+      data: { position: { decrement: 1 } },
+    }),
+  ]);
+
+  revalidatePath(`/dashboard/surveys/${item.surveyId}`);
+}
+
+export async function reorderCJItems(surveyId: string, orderedIds: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await verifyOwnership(surveyId, session.user.id);
+
+  await db.$transaction([
+    ...orderedIds.map((id, i) =>
+      db.cJItem.update({ where: { id }, data: { position: -(i + 1) } })
+    ),
+    ...orderedIds.map((id, i) =>
+      db.cJItem.update({ where: { id }, data: { position: i } })
+    ),
+  ]);
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+}
+
+export async function updateCJSettings(data: {
+  surveyId: string;
+  cjPrompt: string;
+  comparisonsPerJudge: number | null;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parsed = updateCJSettingsSchema.parse(data);
+
+  await db.survey.update({
+    where: { id: parsed.surveyId, ownerId: session.user.id },
+    data: {
+      cjPrompt: parsed.cjPrompt,
+      comparisonsPerJudge: parsed.comparisonsPerJudge,
+    },
+  });
+
+  revalidatePath(`/dashboard/surveys/${parsed.surveyId}`);
+}

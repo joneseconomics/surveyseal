@@ -16,6 +16,7 @@ export default async function SurveyDetailPage({
     where: { id, ownerId: session.user.id },
     include: {
       questions: { orderBy: { position: "asc" } },
+      cjItems: { orderBy: { position: "asc" } },
       _count: { select: { sessions: true } },
     },
   });
@@ -27,6 +28,16 @@ export default async function SurveyDetailPage({
       survey={survey}
       questions={survey.questions}
       responseCount={survey._count.sessions}
+      cjItems={
+        survey.type === "COMPARATIVE_JUDGMENT"
+          ? survey.cjItems.map((item) => ({
+              id: item.id,
+              label: item.label,
+              content: item.content as { text?: string; imageUrl?: string; description?: string },
+              position: item.position,
+            }))
+          : undefined
+      }
     />
   );
 }
