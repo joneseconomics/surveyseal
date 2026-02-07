@@ -20,7 +20,8 @@ export default async function DashboardPage() {
   const surveys = await db.survey.findMany({
     where: { ownerId: session.user.id },
     include: {
-      _count: { select: { questions: true, sessions: true } },
+      _count: { select: { sessions: true } },
+      questions: { select: { isCheckpoint: true } },
     },
     orderBy: { updatedAt: "desc" },
   });
@@ -70,7 +71,8 @@ export default async function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{survey._count.questions} questions</span>
+                    <span>{survey.questions.filter((q) => !q.isCheckpoint).length} questions</span>
+                    <span>{survey.questions.filter((q) => q.isCheckpoint).length}/3 verification points</span>
                     <span>{survey._count.sessions} responses</span>
                   </div>
                 </CardContent>
