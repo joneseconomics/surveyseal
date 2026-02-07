@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "How does physical-tap verification work?",
     answer:
-      "Each survey includes checkpoints: an opening tap, a mid-survey attention check, and a closing tap. At each checkpoint, the respondent taps their TapIn Survey card on their phone. The card generates a unique code that produces a two-word verification phrase, valid for 90 seconds. This creates an unbroken chain of physical presence proof across the entire survey.",
+      "Each survey includes three checkpoints: opening, mid-survey, and closing. At each checkpoint, the respondent taps their TapIn Survey card on their phone and authenticates with their email. If the email matches the one used to start the survey, the checkpoint is verified. Respondents without a card can skip checkpoints — their responses are tagged as unverified.",
   },
   {
     question: "What are TapIn Survey cards?",
@@ -31,17 +31,17 @@ const faqs = [
   {
     question: "What data does SurveySeal collect?",
     answer:
-      "SurveySeal collects survey responses along with verification metadata: card identifiers, tap timestamps, and proof of each checkpoint. All data is exportable as a research-ready CSV with a full verification chain for transparent peer review. SurveySeal does not track location or collect personal device information.",
+      "SurveySeal collects survey responses along with verification metadata: verification status (verified, unverified, or partial), checkpoint results, and timestamps. All data is exportable as a research-ready CSV for transparent peer review. SurveySeal does not track location or collect personal device information.",
   },
   {
     question: "Do respondents need to install an app?",
     answer:
-      "No. Respondents don't need to install anything. When they tap a TapIn Survey card on their phone, it opens a web page in their default browser that displays the verification phrase. The entire process works through the browser.",
+      "No. Respondents don't need to install anything. When they tap a TapIn Survey card on their phone, it opens a web page in their default browser. Respondents without a TapIn card can skip verification checkpoints and still complete the survey — their responses will be marked as unverified.",
   },
   {
     question: "How do I get started?",
     answer:
-      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. The survey builder is designed for researchers — no technical expertise required. You can use Mock Mode during development to test the full flow without physical cards.",
+      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. The survey builder is designed for researchers — no technical expertise required.",
   },
 ];
 

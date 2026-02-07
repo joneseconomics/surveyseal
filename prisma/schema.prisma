@@ -82,6 +82,12 @@ enum SessionStatus {
   ABANDONED
 }
 
+enum VerificationStatus {
+  VERIFIED
+  UNVERIFIED
+  PARTIAL
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -97,25 +103,8 @@ model User {
   authSessions   AuthSession[]
   surveys        Survey[]
   surveySessions SurveySession[]
-  cards          Card[]
 
   @@map("users")
-}
-
-model Card {
-  id             String   @id @default(cuid())
-  uid            String   @unique @db.VarChar(14) // 7-byte UID as hex
-  aesKey         String   @map("aes_key") @db.VarChar(64) // 32-byte AES key as hex
-  rollingCounter Int      @default(0) @map("rolling_counter")
-  label          String?
-  ownerId        String   @map("owner_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  sessions   SurveySession[]
-  checkpoints Checkpoint[]
-
-  @@map("cards")
 }
 
 model Survey {
@@ -153,18 +142,17 @@ model Question {
 }
 
 model SurveySession {
-  id            String        @id @default(cuid())
-  surveyId      String        @map("survey_id")
-  participantId String?       @map("participant_id")
-  cardId        String?       @map("card_id")
-  sessionSecret String        @map("session_secret") @db.VarChar(64) // 32-byte secret as hex
-  status        SessionStatus @default(ACTIVE)
-  startedAt     DateTime      @default(now()) @map("started_at")
-  completedAt   DateTime?     @map("completed_at")
+  id                 String             @id @default(cuid())
+  surveyId           String             @map("survey_id")
+  participantId      String?            @map("participant_id")
+  participantEmail   String?            @map("participant_email")
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  status             SessionStatus      @default(ACTIVE)
+  startedAt          DateTime           @default(now()) @map("started_at")
+  completedAt        DateTime?          @map("completed_at")
 
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   participant User?        @relation(fields: [participantId], references: [id])
-  card        Card?        @relation(fields: [cardId], references: [id])
   checkpoints Checkpoint[]
   responses   Response[]
 
@@ -172,18 +160,16 @@ model SurveySession {
 }
 
 model Checkpoint {
-  id          String    @id @default(cuid())
-  sessionId   String    @map("session_id")
-  questionId  String    @map("question_id")
-  cardId      String?   @map("card_id")
-  tapCounter  Int?      @map("tap_counter")
-  phraseHash  String    @map("phrase_hash") @db.VarChar(64) // SHA-256 hash of phrase
-  expiresAt   DateTime  @map("expires_at")
-  validatedAt DateTime? @map("validated_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id            String    @id @default(cuid())
+  sessionId     String    @map("session_id")
+  questionId    String    @map("question_id")
+  verified      Boolean   @default(false)
+  skipped       Boolean   @default(false)
+  verifiedEmail String?   @map("verified_email")
+  validatedAt   DateTime? @map("validated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   session SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  card    Card?         @relation(fields: [cardId], references: [id])
 
   @@unique([sessionId, questionId])
   @@map("checkpoints")

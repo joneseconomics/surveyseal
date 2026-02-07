@@ -1,7 +1,6 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { randomBytes } from "crypto";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const adapter = new PrismaPg(pool);
@@ -21,20 +20,6 @@ async function main() {
   });
 
   console.log("Created researcher:", researcher.email);
-
-  // Create test NFC card
-  const card = await prisma.card.upsert({
-    where: { uid: "04A1B2C3D4E5F6" },
-    update: {},
-    create: {
-      uid: "04A1B2C3D4E5F6",
-      aesKey: randomBytes(16).toString("hex"),
-      label: "Test Card #1",
-      ownerId: researcher.id,
-    },
-  });
-
-  console.log("Created card:", card.uid);
 
   // Create sample survey with questions
   const survey = await prisma.survey.upsert({
@@ -59,7 +44,7 @@ async function main() {
       type: "MULTIPLE_CHOICE" as const,
       isCheckpoint: true,
       content: {
-        text: "Opening Checkpoint — Tap your NFC card to begin",
+        text: "Opening Checkpoint — Verify your identity to begin",
       },
     },
     {
@@ -90,7 +75,7 @@ async function main() {
       type: "MULTIPLE_CHOICE" as const,
       isCheckpoint: true,
       content: {
-        text: "Mid-Survey Checkpoint — Tap your NFC card to continue",
+        text: "Mid-Survey Checkpoint — Verify your identity to continue",
       },
     },
     {
@@ -136,7 +121,7 @@ async function main() {
       type: "MULTIPLE_CHOICE" as const,
       isCheckpoint: true,
       content: {
-        text: "Closing Checkpoint — Tap your NFC card to submit",
+        text: "Closing Checkpoint — Verify your identity to submit",
       },
     },
   ];

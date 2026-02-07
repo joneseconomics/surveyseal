@@ -3,8 +3,6 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(1),
-  NFC_MOCK_MODE: z.string().optional(),
-  NFC_MOCK_KEY: z.string().optional(),
   AUTH_GOOGLE_ID: z.string().optional(),
   AUTH_GOOGLE_SECRET: z.string().optional(),
   AUTH_MICROSOFT_ENTRA_ID_ID: z.string().optional(),

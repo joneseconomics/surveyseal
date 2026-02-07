@@ -313,7 +313,7 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Respondents tap at checkpoints",
                 description:
-                  "At each checkpoint, participants tap their card on their phone to receive a unique, time-limited verification phrase.",
+                  "At each checkpoint, participants tap their TapIn card on their phone. The card verifies their identity by matching the email used to start the survey.",
               },
               {
                 step: 3,
@@ -367,7 +367,7 @@ export default function LandingPage() {
                 icon: BarChart3,
                 title: "Research-Ready CSV Export",
                 description:
-                  "Export responses with full verification chain — card IDs, tap timestamps, and counters — for transparent peer review.",
+                  "Export responses with verification status, checkpoint results, and timestamps for transparent peer review.",
               },
               {
                 icon: Users,
@@ -377,9 +377,9 @@ export default function LandingPage() {
               },
               {
                 icon: TestTube2,
-                title: "Mock Mode for Testing",
+                title: "Optional Verification",
                 description:
-                  "Test the full verification flow without physical cards. Perfect for development and pilot testing.",
+                  "Respondents without a TapIn card can skip checkpoints. Their responses are tagged as unverified for easy filtering.",
               },
               {
                 icon: LogIn,
@@ -483,9 +483,9 @@ export default function LandingPage() {
                     "Respondents tap the card on their phone. It opens a web page — that's it.",
                 },
                 {
-                  title: "Every tap is cryptographically unique",
+                  title: "Email-matched verification",
                   description:
-                    "A hardware counter and rolling code ensure no two taps produce the same verification.",
+                    "Each tap is linked to the respondent's email, ensuring the person who tapped is the person taking the survey.",
                 },
               ].map((item) => (
                 <Card key={item.title} className="border-0 shadow-none bg-background">

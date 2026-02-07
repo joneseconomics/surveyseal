@@ -25,9 +25,6 @@ export default async function DashboardLayout({
               <Link href="/dashboard" className="hover:text-foreground transition-colors">
                 Surveys
               </Link>
-              <Link href="/dashboard/cards" className="hover:text-foreground transition-colors">
-                Cards
-              </Link>
             </nav>
           </div>
           <UserNav user={session.user} />

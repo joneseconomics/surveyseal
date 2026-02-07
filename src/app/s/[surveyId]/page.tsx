@@ -2,9 +2,10 @@ import { db } from "@/lib/db";
 import { getSurveySessionId, setSurveySessionId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
-import { randomBytes } from "crypto";
 
 export default async function SurveyLandingPage({
   params,
@@ -31,14 +32,14 @@ export default async function SurveyLandingPage({
     }
   }
 
-  async function beginSurvey() {
+  async function beginSurvey(formData: FormData) {
     "use server";
-    const sessionSecret = randomBytes(32).toString("hex");
+    const email = (formData.get("email") as string)?.toLowerCase().trim() || null;
 
     const session = await db.surveySession.create({
       data: {
         surveyId,
-        sessionSecret,
+        participantEmail: email,
       },
     });
 
@@ -60,10 +61,24 @@ export default async function SurveyLandingPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This survey uses NFC card verification. You will need to tap your NFC card at three
-            checkpoints during the survey.
+            This survey uses TapIn verification. If you have a TapIn Survey card, you can
+            verify your identity at three checkpoints during the survey.
           </p>
-          <form action={beginSurvey}>
+          <form action={beginSurvey} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="email">Email address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Used to match your TapIn card verification. If you don&apos;t have a card, you can
+                still complete the survey.
+              </p>
+            </div>
             <Button size="lg" className="w-full">
               Begin Survey
             </Button>

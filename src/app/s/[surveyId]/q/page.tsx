@@ -79,12 +79,12 @@ export default async function SurveyQuestionPage({
 
   const currentQuestion = allQuestions.find((q) => q.position === currentPosition);
 
-  // If no more questions, check if all checkpoints are validated for submission
+  // If no more questions, check if all checkpoints are resolved (verified or skipped)
   if (!currentQuestion) {
     const allCheckpoints = allQuestions.filter((q) => q.isCheckpoint);
-    const allValidated = allCheckpoints.every((cp) => validatedCheckpoints.has(cp.id));
+    const allResolved = allCheckpoints.every((cp) => validatedCheckpoints.has(cp.id));
 
-    if (allValidated) {
+    if (allResolved) {
       return (
         <SubmitSurvey
           sessionId={sessionId}

@@ -21,7 +21,6 @@ export async function GET(
         include: {
           responses: true,
           checkpoints: { orderBy: { createdAt: "asc" } },
-          card: { select: { uid: true } },
         },
       },
     },
@@ -36,20 +35,23 @@ export async function GET(
   // Build CSV header
   const headers = [
     "session_id",
-    "card_uid",
+    "participant_email",
+    "verification_status",
     "status",
     "started_at",
     "completed_at",
     ...nonCheckpointQuestions.map(
       (q) => `q${q.position + 1}_${(q.content as { text?: string })?.text?.slice(0, 40) ?? "question"}`
     ),
-    "checkpoint_1_validated",
-    "checkpoint_1_tap_counter",
-    "checkpoint_2_validated",
-    "checkpoint_2_tap_counter",
-    "checkpoint_3_validated",
-    "checkpoint_3_tap_counter",
-    "all_checkpoints_verified",
+    "checkpoint_1_verified",
+    "checkpoint_1_skipped",
+    "checkpoint_1_email",
+    "checkpoint_2_verified",
+    "checkpoint_2_skipped",
+    "checkpoint_2_email",
+    "checkpoint_3_verified",
+    "checkpoint_3_skipped",
+    "checkpoint_3_email",
   ];
 
   const rows = survey.sessions.map((s) => {
@@ -62,7 +64,8 @@ export async function GET(
 
     const values = [
       s.id,
-      s.card?.uid ?? "",
+      s.participantEmail ?? "",
+      s.verificationStatus,
       s.status,
       s.startedAt.toISOString(),
       s.completedAt?.toISOString() ?? "",
@@ -74,14 +77,11 @@ export async function GET(
       ...Array.from({ length: 3 }, (_, i) => {
         const cp = checkpointsByPosition[i];
         return [
-          cp?.validatedAt?.toISOString() ?? "",
-          cp?.tapCounter?.toString() ?? "",
+          cp?.verified ? "true" : "false",
+          cp?.skipped ? "true" : "false",
+          cp?.verifiedEmail ?? "",
         ];
       }).flat(),
-      checkpointsByPosition.length === 3 &&
-        checkpointsByPosition.every((cp) => cp.validatedAt)
-        ? "true"
-        : "false",
     ];
 
     return values.map(escapeCsvField).join(",");

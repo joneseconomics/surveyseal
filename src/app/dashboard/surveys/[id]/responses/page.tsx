@@ -30,8 +30,7 @@ export default async function ResponsesPage({
       questions: { where: { isCheckpoint: true }, select: { id: true } },
       sessions: {
         include: {
-          checkpoints: { select: { validatedAt: true } },
-          card: { select: { uid: true } },
+          checkpoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
         },
         orderBy: { startedAt: "desc" },
@@ -76,7 +75,7 @@ export default async function ResponsesPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Session</TableHead>
-                  <TableHead>Card</TableHead>
+                  <TableHead>Verification</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Checkpoints</TableHead>
                   <TableHead>Responses</TableHead>
@@ -93,8 +92,8 @@ export default async function ResponsesPage({
                       <TableCell className="font-mono text-xs">
                         {s.id.slice(0, 8)}...
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {s.card?.uid ?? "—"}
+                      <TableCell>
+                        <VerificationBadge status={s.verificationStatus} />
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={s.status} />
@@ -133,6 +132,19 @@ function StatusBadge({ status }: { status: string }) {
       return <Badge variant="secondary">Active</Badge>;
     case "ABANDONED":
       return <Badge variant="outline">Abandoned</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+}
+
+function VerificationBadge({ status }: { status: string }) {
+  switch (status) {
+    case "VERIFIED":
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>;
+    case "PARTIAL":
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Partial</Badge>;
+    case "UNVERIFIED":
+      return <Badge variant="outline">Unverified</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }

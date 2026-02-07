@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Shield, Loader2, AlertCircle, Smartphone } from "lucide-react";
+import { Shield, Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward } from "lucide-react";
 
 interface CheckpointGateProps {
   sessionId: string;
@@ -22,52 +20,64 @@ export function CheckpointGate({
   position,
   totalQuestions,
 }: CheckpointGateProps) {
-  const [word1, setWord1] = useState("");
-  const [word2, setWord2] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tapped, setTapped] = useState(false);
+  const [status, setStatus] = useState<"waiting" | "verified" | "skipped">("waiting");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function handleMockTap() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/nfc/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error);
-        return;
+  // Poll for TapIn verification every 3 seconds
+  useEffect(() => {
+    if (status !== "waiting") return;
+
+    async function checkVerification() {
+      try {
+        const res = await fetch("/api/survey/checkpoint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, questionId, action: "check" }),
+        });
+        const data = await res.json();
+        if (data.success && data.status === "verified") {
+          setStatus("verified");
+        }
+      } catch {
+        // Silently retry on network errors
       }
-      setWord1(data.word1);
-      setWord2(data.word2);
-      setTapped(true);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
     }
-  }
 
-  async function handleVerify() {
+    checkVerification();
+    pollRef.current = setInterval(checkVerification, 3000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [sessionId, questionId, status]);
+
+  // Navigate to next question after verified or skipped
+  useEffect(() => {
+    if (status === "verified" || status === "skipped") {
+      const timer = setTimeout(() => {
+        window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [status, surveyId, position]);
+
+  async function handleSkip() {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/survey/checkpoint", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, questionId, word1, word2 }),
+        body: JSON.stringify({ sessionId, questionId, action: "skip" }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error);
         return;
       }
-      // Navigate to next question
-      window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
+      setStatus("skipped");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -87,85 +97,63 @@ export function CheckpointGate({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!tapped ? (
+        {status === "waiting" && (
           <>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center justify-center gap-2">
-                <Smartphone className="h-4 w-4" />
-                <span>Tap your NFC card on your phone</span>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-pulse">
+                <Smartphone className="h-8 w-8 text-primary" />
               </div>
+              <p className="font-medium text-foreground">
+                Tap your TapIn Survey card to verify
+              </p>
               <p>
-                A two-word phrase will appear on your phone. Enter it below to continue the survey.
+                Tap your card on your phone. Verification will be detected automatically.
               </p>
             </div>
 
-            {/* In mock mode, show a simulate button */}
-            {process.env.NEXT_PUBLIC_NFC_MOCK_MODE === "true" && (
-              <Button onClick={handleMockTap} disabled={loading} variant="outline" className="w-full">
-                {loading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Shield className="mr-2 h-4 w-4" />
-                )}
-                Simulate NFC Tap (Dev Mode)
-              </Button>
-            )}
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="word1">Word 1</Label>
-                  <Input
-                    id="word1"
-                    value={word1}
-                    onChange={(e) => setWord1(e.target.value.toLowerCase())}
-                    placeholder="first word"
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="word2">Word 2</Label>
-                  <Input
-                    id="word2"
-                    value={word2}
-                    onChange={(e) => setWord2(e.target.value.toLowerCase())}
-                    placeholder="second word"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
+            <div className="pt-2 border-t">
               <Button
-                onClick={handleVerify}
-                disabled={loading || !word1 || !word2}
-                className="w-full"
+                onClick={handleSkip}
+                disabled={loading}
+                variant="ghost"
+                className="w-full text-muted-foreground"
               >
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Verify
+                ) : (
+                  <SkipForward className="mr-2 h-4 w-4" />
+                )}
+                I don&apos;t have a TapIn card — Skip verification
               </Button>
             </div>
           </>
-        ) : (
-          <div className="space-y-4">
-            <div className="rounded-lg bg-primary/5 p-4">
-              <p className="text-sm text-muted-foreground mb-1">
-                Your phrase (auto-filled from NFC tap):
-              </p>
-              <p className="text-2xl font-bold">
-                {word1} {word2}
-              </p>
+        )}
+
+        {status === "verified" && (
+          <div className="space-y-3">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
-            <Button
-              onClick={handleVerify}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Continue
-            </Button>
+            <p className="font-semibold text-green-700 dark:text-green-400">
+              Verified with TapIn
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Continuing to next question...
+            </p>
+          </div>
+        )}
+
+        {status === "skipped" && (
+          <div className="space-y-3">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <SkipForward className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-muted-foreground">
+              Checkpoint skipped
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Continuing to next question...
+            </p>
           </div>
         )}
 
