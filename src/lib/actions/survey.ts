@@ -13,12 +13,14 @@ export async function createSurvey(formData: FormData) {
   const parsed = createSurveySchema.parse({
     title: formData.get("title"),
     description: formData.get("description") || undefined,
+    type: formData.get("type") || "QUESTIONNAIRE",
   });
 
   const survey = await db.survey.create({
     data: {
       title: parsed.title,
       description: parsed.description,
+      type: parsed.type,
       ownerId: session.user.id,
     },
   });

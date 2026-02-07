@@ -36,6 +36,11 @@ export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilde
             <Badge variant={survey.status === "LIVE" ? "default" : "secondary"}>
               {survey.status}
             </Badge>
+            <Badge variant="outline">
+              {survey.type === "COMPARATIVE_JUDGMENT"
+                ? "Comparative Judgment"
+                : "Questionnaire"}
+            </Badge>
           </div>
           {survey.description && (
             <p className="mt-1 text-muted-foreground">{survey.description}</p>

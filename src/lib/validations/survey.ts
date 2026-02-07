@@ -1,8 +1,12 @@
 import { z } from "zod";
 
+export const surveyTypes = ["QUESTIONNAIRE", "COMPARATIVE_JUDGMENT"] as const;
+export type SurveyTypeValue = (typeof surveyTypes)[number];
+
 export const createSurveySchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
+  type: z.enum(surveyTypes).default("QUESTIONNAIRE"),
 });
 
 export const updateSurveySchema = z.object({

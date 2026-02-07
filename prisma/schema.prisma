@@ -63,6 +63,11 @@ enum SurveyStatus {
   CLOSED
 }
 
+enum SurveyType {
+  QUESTIONNAIRE
+  COMPARATIVE_JUDGMENT
+}
+
 enum QuestionType {
   MULTIPLE_CHOICE
   LIKERT
@@ -117,6 +122,7 @@ model Survey {
   id          String       @id @default(cuid())
   title       String
   description String?      @db.Text
+  type        SurveyType   @default(QUESTIONNAIRE)
   status      SurveyStatus @default(DRAFT)
   ownerId     String       @map("owner_id")
   createdAt   DateTime     @default(now()) @map("created_at")

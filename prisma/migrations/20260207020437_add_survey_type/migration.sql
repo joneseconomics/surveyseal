@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "SurveyType" AS ENUM ('QUESTIONNAIRE', 'COMPARATIVE_JUDGMENT');
+
+-- AlterTable
+ALTER TABLE "surveys" ADD COLUMN     "type" "SurveyType" NOT NULL DEFAULT 'QUESTIONNAIRE';
