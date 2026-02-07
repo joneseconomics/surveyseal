@@ -17,7 +17,7 @@ export const updateSurveySchema = z.object({
 
 export const updateSurveySettingsSchema = z.object({
   id: z.string(),
-  checkpointTimerSeconds: z.coerce.number().int().min(10).max(300),
+  verificationPointTimerSeconds: z.coerce.number().int().min(10).max(300),
   requireLogin: z.coerce.boolean().default(true),
   tapinApiKey: z.string().optional(),
   tapinCampaignId: z.string().optional(),
@@ -126,12 +126,12 @@ export const addQuestionSchema = z.object({
   surveyId: z.string(),
   type: z.enum(questionTypes),
   content: z.record(z.string(), z.unknown()),
-  isCheckpoint: z.boolean().optional(),
+  isVerificationPoint: z.boolean().optional(),
 });
 
 export const updateQuestionSchema = z.object({
   id: z.string(),
   type: z.enum(questionTypes),
   content: z.record(z.string(), z.unknown()),
-  isCheckpoint: z.boolean().optional(),
+  isVerificationPoint: z.boolean().optional(),
 });

@@ -25,7 +25,7 @@ export async function addQuestion(data: {
   surveyId: string;
   type: QuestionTypeValue;
   content: Record<string, unknown>;
-  isCheckpoint?: boolean;
+  isVerificationPoint?: boolean;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -51,7 +51,7 @@ export async function addQuestion(data: {
       position,
       type: parsed.type,
       content: parsed.content as unknown as Prisma.InputJsonValue,
-      isCheckpoint: parsed.isCheckpoint ?? false,
+      isVerificationPoint: parsed.isVerificationPoint ?? false,
     },
   });
 
@@ -62,7 +62,7 @@ export async function updateQuestion(data: {
   id: string;
   type: QuestionTypeValue;
   content: Record<string, unknown>;
-  isCheckpoint?: boolean;
+  isVerificationPoint?: boolean;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -84,7 +84,7 @@ export async function updateQuestion(data: {
     data: {
       type: parsed.type,
       content: parsed.content as unknown as Prisma.InputJsonValue,
-      isCheckpoint: parsed.isCheckpoint,
+      isVerificationPoint: parsed.isVerificationPoint,
     },
   });
 
@@ -196,20 +196,20 @@ export async function importQuestionsFromCSV(data: {
       position: startPosition + i,
       type: q.type,
       content: q.content as unknown as Prisma.InputJsonValue,
-      isCheckpoint: false,
+      isVerificationPoint: false,
     })),
   });
 
   revalidatePath(`/dashboard/surveys/${data.surveyId}`);
 }
 
-export async function toggleCheckpoint(questionId: string) {
+export async function toggleVerificationPoint(questionId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const question = await db.question.findUnique({
     where: { id: questionId },
-    select: { surveyId: true, isCheckpoint: true },
+    select: { surveyId: true, isVerificationPoint: true },
   });
   if (!question) throw new Error("Question not found");
 
@@ -217,7 +217,7 @@ export async function toggleCheckpoint(questionId: string) {
 
   await db.question.update({
     where: { id: questionId },
-    data: { isCheckpoint: !question.isCheckpoint },
+    data: { isVerificationPoint: !question.isVerificationPoint },
   });
 
   revalidatePath(`/dashboard/surveys/${question.surveyId}`);

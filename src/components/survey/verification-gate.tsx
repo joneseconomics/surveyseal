@@ -5,27 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward, Timer } from "lucide-react";
 
-interface CheckpointGateProps {
+interface VerificationGateProps {
   sessionId: string;
   surveyId: string;
   questionId: string;
   position: number;
   totalQuestions: number;
   timerSeconds: number;
-  checkpointNumber?: number;
-  totalCheckpoints?: number;
+  verificationPointNumber?: number;
+  totalVerificationPoints?: number;
 }
 
-export function CheckpointGate({
+export function VerificationGate({
   sessionId,
   surveyId,
   questionId,
   position,
   totalQuestions,
   timerSeconds,
-  checkpointNumber,
-  totalCheckpoints,
-}: CheckpointGateProps) {
+  verificationPointNumber,
+  totalVerificationPoints,
+}: VerificationGateProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"waiting" | "verified" | "skipped">("waiting");
@@ -53,7 +53,7 @@ export function CheckpointGate({
   // Auto-skip when timer expires
   const handleAutoSkip = useCallback(async () => {
     try {
-      await fetch("/api/survey/checkpoint", {
+      await fetch("/api/survey/verification-point", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, questionId, action: "skip" }),
@@ -84,7 +84,7 @@ export function CheckpointGate({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/survey/checkpoint", {
+      const res = await fetch("/api/survey/verification-point", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, questionId, action: "next" }),
@@ -106,7 +106,7 @@ export function CheckpointGate({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/survey/checkpoint", {
+      const res = await fetch("/api/survey/verification-point", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, questionId, action: "skip" }),
@@ -137,8 +137,8 @@ export function CheckpointGate({
         </div>
         <CardTitle>Verification Point</CardTitle>
         <CardDescription>
-          {checkpointNumber && totalCheckpoints
-            ? `Verification Point ${checkpointNumber} of ${totalCheckpoints}`
+          {verificationPointNumber && totalVerificationPoints
+            ? `Verification Point ${verificationPointNumber} of ${totalVerificationPoints}`
             : `Question ${position + 1} of ${totalQuestions}`}
         </CardDescription>
       </CardHeader>

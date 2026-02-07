@@ -29,7 +29,7 @@ async function main() {
       id: "seed-survey-001",
       title: "Campus Dining Experience Survey",
       description:
-        "Help us understand your experience with campus dining facilities. This survey takes approximately 5 minutes and includes three verification checkpoints.",
+        "Help us understand your experience with campus dining facilities. This survey takes approximately 5 minutes and includes three verification points.",
       status: "LIVE",
       ownerId: researcher.id,
     },
@@ -37,14 +37,14 @@ async function main() {
 
   console.log("Created survey:", survey.title);
 
-  // Create questions with checkpoints
+  // Create questions with verification points
   const questions = [
     {
       position: 0,
       type: "MULTIPLE_CHOICE" as const,
-      isCheckpoint: true,
+      isVerificationPoint: true,
       content: {
-        text: "Opening Checkpoint — Verify your identity to begin",
+        text: "Opening Verification Point — Verify your identity to begin",
       },
     },
     {
@@ -73,9 +73,9 @@ async function main() {
     {
       position: 4,
       type: "MULTIPLE_CHOICE" as const,
-      isCheckpoint: true,
+      isVerificationPoint: true,
       content: {
-        text: "Mid-Survey Checkpoint — Verify your identity to continue",
+        text: "Mid-Survey Verification Point — Verify your identity to continue",
       },
     },
     {
@@ -119,9 +119,9 @@ async function main() {
     {
       position: 9,
       type: "MULTIPLE_CHOICE" as const,
-      isCheckpoint: true,
+      isVerificationPoint: true,
       content: {
-        text: "Closing Checkpoint — Verify your identity to submit",
+        text: "Closing Verification Point — Verify your identity to submit",
       },
     },
   ];
@@ -137,12 +137,12 @@ async function main() {
         position: q.position,
         type: q.type,
         content: q.content,
-        isCheckpoint: q.isCheckpoint ?? false,
+        isVerificationPoint: q.isVerificationPoint ?? false,
       },
     });
   }
 
-  console.log(`Created ${questions.length} questions (3 checkpoints)`);
+  console.log(`Created ${questions.length} questions (3 verification points)`);
 }
 
 main()

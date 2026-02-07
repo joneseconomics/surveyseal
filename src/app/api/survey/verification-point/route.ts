@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const parsed = requestSchema.parse(body);
 
     if (parsed.action === "skip") {
-      await db.checkpoint.upsert({
+      await db.verificationPoint.upsert({
         where: {
           sessionId_questionId: {
             sessionId: parsed.sessionId,
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // action === "next" — respondent clicked "Next" after seeing TapIn green checkmark
-    await db.checkpoint.upsert({
+    await db.verificationPoint.upsert({
       where: {
         sessionId_questionId: {
           sessionId: parsed.sessionId,
@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, status: "verified" });
   } catch (error) {
-    console.error("[Checkpoint]", error);
-    const message = error instanceof Error ? error.message : "Checkpoint operation failed";
+    console.error("[VerificationPoint]", error);
+    const message = error instanceof Error ? error.message : "Verification point operation failed";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

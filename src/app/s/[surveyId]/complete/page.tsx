@@ -18,14 +18,14 @@ export default async function SurveyCompletePage({
   const session = await db.surveySession.findUnique({
     where: { id: sessionId },
     include: {
-      checkpoints: true,
+      verificationPoints: true,
     },
   });
 
   if (!session) redirect(`/s/${surveyId}`);
 
-  const verifiedCount = session.checkpoints.filter((cp) => cp.verified).length;
-  const totalCheckpoints = session.checkpoints.length;
+  const verifiedCount = session.verificationPoints.filter((cp) => cp.verified).length;
+  const totalVerificationPoints = session.verificationPoints.length;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -50,7 +50,7 @@ export default async function SurveyCompletePage({
           {session.verificationStatus === "PARTIAL" && (
             <Badge className="gap-1.5 bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
               <AlertCircle className="h-3.5 w-3.5" />
-              Partially Verified ({verifiedCount} of {totalCheckpoints} verification points)
+              Partially Verified ({verifiedCount} of {totalVerificationPoints} verification points)
             </Badge>
           )}
 

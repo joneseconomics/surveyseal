@@ -10,7 +10,7 @@ import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 interface TapInSettingsProps {
   surveyId: string;
-  checkpointTimerSeconds: number;
+  verificationPointTimerSeconds: number;
   requireLogin: boolean;
   tapinApiKey: string | null;
   tapinGroupId: string | null;
@@ -18,7 +18,7 @@ interface TapInSettingsProps {
 
 export function TapInSettings({
   surveyId,
-  checkpointTimerSeconds,
+  verificationPointTimerSeconds,
   requireLogin,
   tapinApiKey,
   tapinGroupId,
@@ -64,11 +64,11 @@ export function TapInSettings({
             <input type="hidden" name="tapinApiKey" value={tapinApiKey ?? ""} />
             <input type="hidden" name="tapinCampaignId" value={tapinGroupId ?? ""} />
             <Input
-              name="checkpointTimerSeconds"
+              name="verificationPointTimerSeconds"
               type="number"
               min={10}
               max={300}
-              defaultValue={checkpointTimerSeconds}
+              defaultValue={verificationPointTimerSeconds}
             />
             <p className="text-xs text-muted-foreground">
               Seconds respondents have to tap at each verification point. If the timer expires, the verification point is automatically skipped. Range: 10-300.
@@ -119,7 +119,7 @@ export function TapInSettings({
         <form action={updateSurveySettings} className="space-y-6">
           <input type="hidden" name="id" value={surveyId} />
           <input type="hidden" name="requireLogin" value={requireLogin ? "true" : "false"} />
-          <input type="hidden" name="checkpointTimerSeconds" value={checkpointTimerSeconds} />
+          <input type="hidden" name="verificationPointTimerSeconds" value={verificationPointTimerSeconds} />
 
           <div className="space-y-2">
             <Label htmlFor="tapinApiKey">TapIn API Key</Label>

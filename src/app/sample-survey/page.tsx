@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 
 type StepType =
-  | { kind: "checkpoint"; checkpoint: number; label: string }
+  | { kind: "verificationPoint"; verificationPointNumber: number; label: string }
   | { kind: "question"; question: SurveyQuestion };
 
 interface SurveyQuestion {
@@ -128,13 +128,13 @@ const surveyQuestions: SurveyQuestion[] = [
   },
 ];
 
-// Build the step sequence: checkpoint → questions → checkpoint → questions → checkpoint
+// Build the step sequence: verification point → questions → verification point → questions → verification point
 const steps: StepType[] = [
-  { kind: "checkpoint", checkpoint: 1, label: "Opening Verification Point — Tap to begin the survey" },
+  { kind: "verificationPoint", verificationPointNumber: 1, label: "Opening Verification Point — Tap to begin the survey" },
   ...surveyQuestions.slice(0, 4).map((q) => ({ kind: "question" as const, question: q })),
-  { kind: "checkpoint", checkpoint: 2, label: "Mid-Survey Verification Point — Tap to continue" },
+  { kind: "verificationPoint", verificationPointNumber: 2, label: "Mid-Survey Verification Point — Tap to continue" },
   ...surveyQuestions.slice(4).map((q) => ({ kind: "question" as const, question: q })),
-  { kind: "checkpoint", checkpoint: 3, label: "Closing Verification Point — Tap to submit" },
+  { kind: "verificationPoint", verificationPointNumber: 3, label: "Closing Verification Point — Tap to submit" },
 ];
 
 export default function SampleSurveyPage() {
@@ -144,54 +144,54 @@ export default function SampleSurveyPage() {
   const [showContext, setShowContext] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Checkpoint state
-  const CHECKPOINT_TIMER = 30;
-  const [checkpointPhase, setCheckpointPhase] = useState<
+  // Verification point state
+  const VP_TIMER = 30;
+  const [vpPhase, setVpPhase] = useState<
     "waiting" | "verified" | "skipped"
   >("waiting");
-  const [checkpointSeconds, setCheckpointSeconds] = useState(CHECKPOINT_TIMER);
-  const checkpointTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [vpSeconds, setVpSeconds] = useState(VP_TIMER);
+  const vpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentStep = steps[currentIndex];
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
-  // Countdown timer for checkpoints
+  // Countdown timer for verification points
   useEffect(() => {
-    if (currentStep.kind !== "checkpoint" || checkpointPhase !== "waiting") {
-      if (checkpointTimerRef.current) clearInterval(checkpointTimerRef.current);
+    if (currentStep.kind !== "verificationPoint" || vpPhase !== "waiting") {
+      if (vpTimerRef.current) clearInterval(vpTimerRef.current);
       return;
     }
 
-    checkpointTimerRef.current = setInterval(() => {
-      setCheckpointSeconds((prev) => {
+    vpTimerRef.current = setInterval(() => {
+      setVpSeconds((prev) => {
         if (prev <= 1) return 0;
         return prev - 1;
       });
     }, 1000);
 
     return () => {
-      if (checkpointTimerRef.current) clearInterval(checkpointTimerRef.current);
+      if (vpTimerRef.current) clearInterval(vpTimerRef.current);
     };
-  }, [currentStep.kind, checkpointPhase]);
+  }, [currentStep.kind, vpPhase]);
 
   // Auto-skip when timer expires
   useEffect(() => {
-    if (checkpointSeconds === 0 && checkpointPhase === "waiting") {
-      setCheckpointPhase("skipped");
+    if (vpSeconds === 0 && vpPhase === "waiting") {
+      setVpPhase("skipped");
     }
-  }, [checkpointSeconds, checkpointPhase]);
+  }, [vpSeconds, vpPhase]);
 
-  const resetCheckpoint = useCallback(() => {
-    setCheckpointPhase("waiting");
-    setCheckpointSeconds(CHECKPOINT_TIMER);
+  const resetVP = useCallback(() => {
+    setVpPhase("waiting");
+    setVpSeconds(VP_TIMER);
   }, []);
 
-  function handleVerifyCheckpoint() {
-    setCheckpointPhase("verified");
+  function handleVerifyVP() {
+    setVpPhase("verified");
   }
 
-  function handleSkipCheckpoint() {
-    setCheckpointPhase("skipped");
+  function handleSkipVP() {
+    setVpPhase("skipped");
   }
 
   function selectAnswer(value: string) {
@@ -202,7 +202,7 @@ export default function SampleSurveyPage() {
 
   function next() {
     setShowContext(false);
-    resetCheckpoint();
+    resetVP();
     if (currentIndex < steps.length - 1) {
       setCurrentIndex((i) => i + 1);
     } else {
@@ -212,7 +212,7 @@ export default function SampleSurveyPage() {
 
   function prev() {
     setShowContext(false);
-    resetCheckpoint();
+    resetVP();
     setCurrentIndex((i) => Math.max(0, i - 1));
   }
 
@@ -253,7 +253,7 @@ export default function SampleSurveyPage() {
               </div>
               <p>
                 In a live survey, you&apos;d tap a physical TapIn Survey card
-                on your phone at each checkpoint. A countdown timer gives you
+                on your phone at each verification point. A countdown timer gives you
                 30 seconds to tap. Here, you can click &ldquo;I see the green
                 checkmark&rdquo; or &ldquo;Skip&rdquo; to see how each path works.
               </p>
@@ -365,13 +365,13 @@ export default function SampleSurveyPage() {
 
       <main className="flex flex-1 flex-col items-center px-4 py-12">
         <div className="w-full max-w-2xl space-y-6">
-          {/* ── Checkpoint step ── */}
-          {currentStep.kind === "checkpoint" && (
+          {/* ── Verification Point step ── */}
+          {currentStep.kind === "verificationPoint" && (
             <>
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
                   <Shield className="h-3.5 w-3.5" />
-                  Verification Point {currentStep.checkpoint} of 3
+                  Verification Point {currentStep.verificationPointNumber} of 3
                 </Badge>
               </div>
 
@@ -382,20 +382,20 @@ export default function SampleSurveyPage() {
               <Card className="border-primary/20">
                 <CardContent className="space-y-5 pt-6">
                   {/* Waiting state with countdown */}
-                  {checkpointPhase === "waiting" && (
+                  {vpPhase === "waiting" && (
                     <div className="space-y-4 text-center">
                       {/* Countdown timer */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-center gap-2 text-2xl font-mono font-bold tabular-nums">
                           <Timer className="h-5 w-5 text-primary" />
-                          <span className={checkpointSeconds <= 10 ? "text-destructive" : ""}>
-                            {Math.floor(checkpointSeconds / 60)}:{(checkpointSeconds % 60).toString().padStart(2, "0")}
+                          <span className={vpSeconds <= 10 ? "text-destructive" : ""}>
+                            {Math.floor(vpSeconds / 60)}:{(vpSeconds % 60).toString().padStart(2, "0")}
                           </span>
                         </div>
                         <div className="mx-auto h-1.5 w-48 rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-1000 ${checkpointSeconds <= 10 ? "bg-destructive" : "bg-primary"}`}
-                            style={{ width: `${(checkpointSeconds / CHECKPOINT_TIMER) * 100}%` }}
+                            className={`h-full rounded-full transition-all duration-1000 ${vpSeconds <= 10 ? "bg-destructive" : "bg-primary"}`}
+                            style={{ width: `${(vpSeconds / VP_TIMER) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -409,13 +409,13 @@ export default function SampleSurveyPage() {
                       <p className="text-sm text-muted-foreground">
                         After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
                       </p>
-                      <Button onClick={handleVerifyCheckpoint} className="w-full">
+                      <Button onClick={handleVerifyVP} className="w-full">
                         <CheckCircle className="mr-2 h-4 w-4" />
                         I see the green checkmark — Continue
                       </Button>
                       <div className="pt-2 border-t">
                         <Button
-                          onClick={handleSkipCheckpoint}
+                          onClick={handleSkipVP}
                           variant="ghost"
                           className="w-full text-muted-foreground"
                         >
@@ -427,14 +427,14 @@ export default function SampleSurveyPage() {
                   )}
 
                   {/* Verified state */}
-                  {checkpointPhase === "verified" && (
+                  {vpPhase === "verified" && (
                     <div className="space-y-4 text-center">
                       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                         <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
                         <p className="font-semibold text-green-700 dark:text-green-400">
-                          Verification Point {currentStep.checkpoint} Verified with TapIn
+                          Verification Point {currentStep.verificationPointNumber} Verified with TapIn
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Identity confirmed via card tap.
@@ -444,16 +444,16 @@ export default function SampleSurveyPage() {
                   )}
 
                   {/* Skipped state */}
-                  {checkpointPhase === "skipped" && (
+                  {vpPhase === "skipped" && (
                     <div className="space-y-4 text-center">
                       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                         <SkipForward className="h-8 w-8 text-muted-foreground" />
                       </div>
                       <div>
                         <p className="font-medium text-muted-foreground">
-                          {checkpointSeconds === 0
-                            ? `Verification Point ${currentStep.checkpoint} — Time expired`
-                            : `Verification Point ${currentStep.checkpoint} Skipped`}
+                          {vpSeconds === 0
+                            ? `Verification Point ${currentStep.verificationPointNumber} — Time expired`
+                            : `Verification Point ${currentStep.verificationPointNumber} Skipped`}
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           This verification point will be marked as unverified in the export.
@@ -464,24 +464,24 @@ export default function SampleSurveyPage() {
                 </CardContent>
               </Card>
 
-              {/* Checkpoint context card */}
-              {(checkpointPhase === "verified" || checkpointPhase === "skipped") && (
+              {/* Verification point context card */}
+              {(vpPhase === "verified" || vpPhase === "skipped") && (
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
                     <CardTitle className="text-sm font-medium">
                       What just happened?
                     </CardTitle>
                     <CardDescription className="text-sm text-foreground/80">
-                      {currentStep.checkpoint === 1 &&
-                        (checkpointPhase === "verified"
+                      {currentStep.verificationPointNumber === 1 &&
+                        (vpPhase === "verified"
                           ? "The opening verification point confirmed that a real person with a TapIn card started this survey. The email on the card matched the email used to begin the survey."
                           : "The opening verification point was skipped. In a real survey, this response would be tagged as unverified — still recorded, but distinguishable from verified responses in the export.")}
-                      {currentStep.checkpoint === 2 &&
-                        (checkpointPhase === "verified"
+                      {currentStep.verificationPointNumber === 2 &&
+                        (vpPhase === "verified"
                           ? "The mid-survey verification point confirms the same person is still present halfway through — not a bot that started the survey and handed off to automation."
                           : "The mid-survey verification point was skipped. You can filter your data by verification status to analyze verified and unverified responses separately.")}
-                      {currentStep.checkpoint === 3 &&
-                        (checkpointPhase === "verified"
+                      {currentStep.verificationPointNumber === 3 &&
+                        (vpPhase === "verified"
                           ? "The closing verification point seals the survey. All three verified taps create a chain of identity confirmation, exported alongside your data."
                           : "The closing verification point was skipped. The final verification status depends on how many verification points were verified vs. skipped.")}
                     </CardDescription>
@@ -601,8 +601,8 @@ export default function SampleSurveyPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
-            {/* Show Next for resolved checkpoints or answered questions */}
-            {((currentStep.kind === "checkpoint" && (checkpointPhase === "verified" || checkpointPhase === "skipped")) ||
+            {/* Show Next for resolved verification points or answered questions */}
+            {((currentStep.kind === "verificationPoint" && (vpPhase === "verified" || vpPhase === "skipped")) ||
               (currentStep.kind === "question" && showContext)) && (
               <Button onClick={next}>
                 {currentIndex < steps.length - 1

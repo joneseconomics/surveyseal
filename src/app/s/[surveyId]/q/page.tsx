@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getSurveySessionId } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { CheckpointGate } from "@/components/survey/checkpoint-gate";
+import { VerificationGate } from "@/components/survey/verification-gate";
 import { QuestionRenderer } from "@/components/survey/question-renderer";
 import { SubmitSurvey } from "@/components/survey/submit-survey";
 
@@ -21,7 +21,7 @@ export default async function SurveyQuestionPage({
   const session = await db.surveySession.findUnique({
     where: { id: sessionId, status: "ACTIVE" },
     include: {
-      checkpoints: true,
+      verificationPoints: true,
       responses: { select: { questionId: true } },
     },
   });
@@ -37,13 +37,13 @@ export default async function SurveyQuestionPage({
     }),
     db.survey.findUnique({
       where: { id: surveyId },
-      select: { checkpointTimerSeconds: true },
+      select: { verificationPointTimerSeconds: true },
     }),
   ]);
 
-  // Build set of validated checkpoint question IDs
-  const validatedCheckpoints = new Set(
-    session.checkpoints
+  // Build set of validated verification point question IDs
+  const validatedVPs = new Set(
+    session.verificationPoints
       .filter((cp) => cp.validatedAt !== null)
       .map((cp) => cp.questionId)
   );
@@ -52,12 +52,12 @@ export default async function SurveyQuestionPage({
 
   // ─── Server-side question gating ───────────────────────────────────────
   // Determine the range of questions the participant can currently see:
-  // From: the position after the last validated checkpoint (or 0)
-  // To: the position of the next unvalidated checkpoint (inclusive)
+  // From: the position after the last validated verification point (or 0)
+  // To: the position of the next unvalidated verification point (inclusive)
 
-  // Find the next unvalidated checkpoint
-  const nextUnvalidatedCheckpoint = allQuestions.find(
-    (q) => q.isCheckpoint && !validatedCheckpoints.has(q.id)
+  // Find the next unvalidated verification point
+  const nextUnvalidatedVP = allQuestions.find(
+    (q) => q.isVerificationPoint && !validatedVPs.has(q.id)
   );
 
   // Determine the current question index
@@ -65,8 +65,8 @@ export default async function SurveyQuestionPage({
 
   function findNextUnansweredPosition(): number {
     for (const question of allQuestions) {
-      if (question.isCheckpoint && !validatedCheckpoints.has(question.id)) {
-        return question.position; // Show the checkpoint gate
+      if (question.isVerificationPoint && !validatedVPs.has(question.id)) {
+        return question.position; // Show the verification gate
       }
       if (!answeredQuestions.has(question.id)) {
         return question.position;
@@ -75,20 +75,20 @@ export default async function SurveyQuestionPage({
     return allQuestions.length; // All done
   }
 
-  // Enforce gating: don't allow access beyond the next unvalidated checkpoint
+  // Enforce gating: don't allow access beyond the next unvalidated verification point
   if (
-    nextUnvalidatedCheckpoint &&
-    currentPosition > nextUnvalidatedCheckpoint.position
+    nextUnvalidatedVP &&
+    currentPosition > nextUnvalidatedVP.position
   ) {
-    redirect(`/s/${surveyId}/q?q=${nextUnvalidatedCheckpoint.position}`);
+    redirect(`/s/${surveyId}/q?q=${nextUnvalidatedVP.position}`);
   }
 
   const currentQuestion = allQuestions.find((q) => q.position === currentPosition);
 
-  // If no more questions, check if all checkpoints are resolved (verified or skipped)
+  // If no more questions, check if all verification points are resolved (verified or skipped)
   if (!currentQuestion) {
-    const allCheckpoints = allQuestions.filter((q) => q.isCheckpoint);
-    const allResolved = allCheckpoints.every((cp) => validatedCheckpoints.has(cp.id));
+    const allVPs = allQuestions.filter((q) => q.isVerificationPoint);
+    const allResolved = allVPs.every((cp) => validatedVPs.has(cp.id));
 
     if (allResolved) {
       return (
@@ -98,43 +98,43 @@ export default async function SurveyQuestionPage({
         />
       );
     }
-    // Otherwise redirect to the next checkpoint
-    redirect(`/s/${surveyId}/q?q=${nextUnvalidatedCheckpoint!.position}`);
+    // Otherwise redirect to the next verification point
+    redirect(`/s/${surveyId}/q?q=${nextUnvalidatedVP!.position}`);
   }
 
-  // If this is a checkpoint question, show the checkpoint gate
-  if (currentQuestion.isCheckpoint && !validatedCheckpoints.has(currentQuestion.id)) {
-    const allCheckpointQuestions = allQuestions.filter((q) => q.isCheckpoint);
-    const checkpointNumber = allCheckpointQuestions.findIndex((q) => q.id === currentQuestion.id) + 1;
+  // If this is a verification point question, show the verification gate
+  if (currentQuestion.isVerificationPoint && !validatedVPs.has(currentQuestion.id)) {
+    const allVPQuestions = allQuestions.filter((q) => q.isVerificationPoint);
+    const verificationPointNumber = allVPQuestions.findIndex((q) => q.id === currentQuestion.id) + 1;
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-        <CheckpointGate
+        <VerificationGate
           sessionId={sessionId}
           surveyId={surveyId}
           questionId={currentQuestion.id}
           position={currentQuestion.position}
           totalQuestions={allQuestions.length}
-          timerSeconds={survey?.checkpointTimerSeconds ?? 30}
-          checkpointNumber={checkpointNumber}
-          totalCheckpoints={allCheckpointQuestions.length}
+          timerSeconds={survey?.verificationPointTimerSeconds ?? 30}
+          verificationPointNumber={verificationPointNumber}
+          totalVerificationPoints={allVPQuestions.length}
         />
       </div>
     );
   }
 
-  // If this is a checkpoint that's already validated, skip to next
-  if (currentQuestion.isCheckpoint && validatedCheckpoints.has(currentQuestion.id)) {
+  // If this is a verification point that's already validated, skip to next
+  if (currentQuestion.isVerificationPoint && validatedVPs.has(currentQuestion.id)) {
     redirect(`/s/${surveyId}/q?q=${currentPosition + 1}`);
   }
 
   // Render the question
   const isAnswered = answeredQuestions.has(currentQuestion.id);
-  const totalNonCheckpoints = allQuestions.filter((q) => !q.isCheckpoint).length;
+  const totalNonVPs = allQuestions.filter((q) => !q.isVerificationPoint).length;
 
-  // Compute this question's display number (1-based, among non-checkpoint questions)
-  const nonCheckpointQuestions = allQuestions.filter((q) => !q.isCheckpoint);
-  const questionDisplayIndex = nonCheckpointQuestions.findIndex((q) => q.id === currentQuestion.id);
+  // Compute this question's display number (1-based, among non-verification-point questions)
+  const nonVPQuestions = allQuestions.filter((q) => !q.isVerificationPoint);
+  const questionDisplayIndex = nonVPQuestions.findIndex((q) => q.id === currentQuestion.id);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -143,7 +143,7 @@ export default async function SurveyQuestionPage({
         surveyId={surveyId}
         question={currentQuestion}
         position={questionDisplayIndex >= 0 ? questionDisplayIndex : currentPosition}
-        totalQuestions={totalNonCheckpoints}
+        totalQuestions={totalNonVPs}
         isAnswered={isAnswered}
       />
     </div>

@@ -25,10 +25,10 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const [addAsCheckpoint, setAddAsCheckpoint] = useState(false);
+  const [addAsVP, setAddAsVP] = useState(false);
   const isDraft = survey.status === "DRAFT";
-  const regularQuestions = questions.filter((q) => !q.isCheckpoint);
-  const checkpointCount = questions.filter((q) => q.isCheckpoint).length;
+  const regularQuestions = questions.filter((q) => !q.isVerificationPoint);
+  const vpCount = questions.filter((q) => q.isVerificationPoint).length;
 
   return (
     <div className="space-y-6">
@@ -63,10 +63,10 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
             <form action={() => publishSurvey(survey.id)}>
               <Button
                 size="sm"
-                disabled={checkpointCount !== 3}
+                disabled={vpCount !== 3}
                 title={
-                  checkpointCount !== 3
-                    ? `Need exactly 3 verification points (have ${checkpointCount})`
+                  vpCount !== 3
+                    ? `Need exactly 3 verification points (have ${vpCount})`
                     : "Publish survey"
                 }
               >
@@ -133,8 +133,8 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
               Survey Items
             </h2>
             <p className="text-sm text-muted-foreground">
-              {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""} · {checkpointCount}/3 verification points
-              {checkpointCount === 3 && " — Ready to publish"}
+              {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""} · {vpCount}/3 verification points
+              {vpCount === 3 && " — Ready to publish"}
             </p>
           </div>
           {isDraft && (
@@ -148,18 +148,18 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
               </Button>
               <Button
                 onClick={() => {
-                  setAddAsCheckpoint(false);
+                  setAddAsVP(false);
                   setEditingQuestion(null);
                   setShowEditor(true);
                 }}
               >
                 Add Question
               </Button>
-              {checkpointCount < 3 && (
+              {vpCount < 3 && (
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setAddAsCheckpoint(true);
+                    setAddAsVP(true);
                     setEditingQuestion(null);
                     setShowEditor(true);
                   }}
@@ -196,7 +196,7 @@ export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
         <QuestionEditor
           surveyId={survey.id}
           question={editingQuestion}
-          forceCheckpoint={editingQuestion ? editingQuestion.isCheckpoint : addAsCheckpoint}
+          forceVP={editingQuestion ? editingQuestion.isVerificationPoint : addAsVP}
           onClose={() => {
             setShowEditor(false);
             setEditingQuestion(null);

@@ -21,7 +21,7 @@ export default async function SurveySettingsPage({
     where: { id, ownerId: session.user.id },
     select: {
       id: true,
-      checkpointTimerSeconds: true,
+      verificationPointTimerSeconds: true,
       requireLogin: true,
       tapinApiKey: true,
       tapinCampaignId: true,
@@ -52,7 +52,7 @@ export default async function SurveySettingsPage({
         <CardContent>
           <form action={updateSurveySettings} className="space-y-6">
             <input type="hidden" name="id" value={survey.id} />
-            <input type="hidden" name="checkpointTimerSeconds" value={survey.checkpointTimerSeconds} />
+            <input type="hidden" name="verificationPointTimerSeconds" value={survey.verificationPointTimerSeconds} />
             <input type="hidden" name="tapinApiKey" value={survey.tapinApiKey ?? ""} />
             <input type="hidden" name="tapinCampaignId" value={survey.tapinCampaignId ?? ""} />
 
@@ -93,7 +93,7 @@ export default async function SurveySettingsPage({
         <CardContent>
           <TapInSettings
             surveyId={survey.id}
-            checkpointTimerSeconds={survey.checkpointTimerSeconds}
+            verificationPointTimerSeconds={survey.verificationPointTimerSeconds}
             requireLogin={survey.requireLogin}
             tapinApiKey={survey.tapinApiKey}
             tapinGroupId={survey.tapinCampaignId}

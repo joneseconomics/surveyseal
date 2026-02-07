@@ -26,9 +26,9 @@ export async function createSurvey(formData: FormData) {
       questions: {
         createMany: {
           data: [
-            { position: 0, type: "FREE_TEXT", content: { text: "Opening Verification Point" }, isCheckpoint: true },
-            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Verification Point" }, isCheckpoint: true },
-            { position: 2, type: "FREE_TEXT", content: { text: "Closing Verification Point" }, isCheckpoint: true },
+            { position: 0, type: "FREE_TEXT", content: { text: "Opening Verification Point" }, isVerificationPoint: true },
+            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Verification Point" }, isVerificationPoint: true },
+            { position: 2, type: "FREE_TEXT", content: { text: "Closing Verification Point" }, isVerificationPoint: true },
           ],
         },
       },
@@ -72,7 +72,7 @@ export async function publishSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  // Validate that survey has exactly 3 checkpoints and the closing one is last
+  // Validate that survey has exactly 3 verification points and the closing one is last
   const survey = await db.survey.findUnique({
     where: { id: surveyId, ownerId: session.user.id },
     include: {
@@ -85,16 +85,16 @@ export async function publishSurvey(surveyId: string) {
   if (!survey) throw new Error("Survey not found");
   if (survey.status !== "DRAFT") throw new Error("Survey is not in draft state");
 
-  const checkpoints = survey.questions.filter((q) => q.isCheckpoint);
-  if (checkpoints.length !== 3) {
+  const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
+  if (verificationPoints.length !== 3) {
     throw new Error(
-      `Survey must have exactly 3 verification points to publish (found ${checkpoints.length})`
+      `Survey must have exactly 3 verification points to publish (found ${verificationPoints.length})`
     );
   }
 
   const lastQuestion = survey.questions[survey.questions.length - 1];
-  const closingCheckpoint = checkpoints[checkpoints.length - 1];
-  if (lastQuestion.id !== closingCheckpoint.id) {
+  const closingVP = verificationPoints[verificationPoints.length - 1];
+  if (lastQuestion.id !== closingVP.id) {
     throw new Error(
       "The closing verification point must be the last item in the survey. No questions can come after it."
     );
@@ -115,7 +115,7 @@ export async function updateSurveySettings(formData: FormData) {
 
   const parsed = updateSurveySettingsSchema.parse({
     id: formData.get("id"),
-    checkpointTimerSeconds: formData.get("checkpointTimerSeconds"),
+    verificationPointTimerSeconds: formData.get("verificationPointTimerSeconds"),
     requireLogin: formData.get("requireLogin") === "on" || formData.get("requireLogin") === "true",
     tapinApiKey: formData.get("tapinApiKey") || undefined,
     tapinCampaignId: formData.get("tapinCampaignId") || undefined,
@@ -124,7 +124,7 @@ export async function updateSurveySettings(formData: FormData) {
   await db.survey.update({
     where: { id: parsed.id, ownerId: session.user.id },
     data: {
-      checkpointTimerSeconds: parsed.checkpointTimerSeconds,
+      verificationPointTimerSeconds: parsed.verificationPointTimerSeconds,
       requireLogin: parsed.requireLogin,
       tapinApiKey: parsed.tapinApiKey ?? null,
       tapinCampaignId: parsed.tapinCampaignId ?? null,
@@ -143,7 +143,7 @@ export async function reconcileTapIn(surveyId: string) {
     select: {
       tapinApiKey: true,
       tapinCampaignId: true,
-      checkpointTimerSeconds: true,
+      verificationPointTimerSeconds: true,
     },
   });
 
@@ -166,7 +166,7 @@ export async function reconcileTapIn(surveyId: string) {
     if (!s.participantEmail || !s.completedAt) continue;
 
     const from = s.startedAt;
-    const to = new Date(s.completedAt.getTime() + survey.checkpointTimerSeconds * 1000);
+    const to = new Date(s.completedAt.getTime() + survey.verificationPointTimerSeconds * 1000);
 
     const taps = await fetchTapInTaps(
       survey.tapinApiKey,

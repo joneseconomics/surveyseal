@@ -131,7 +131,7 @@ model Survey {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  checkpointTimerSeconds Int     @default(30) @map("checkpoint_timer_seconds")
+  verificationPointTimerSeconds Int     @default(30) @map("checkpoint_timer_seconds")
   requireLogin           Boolean @default(true) @map("require_login")
   tapinApiKey            String? @map("tapin_api_key")
   tapinCampaignId        String? @map("tapin_campaign_id")
@@ -149,7 +149,7 @@ model Question {
   position     Int
   type         QuestionType
   content      Json         // discriminated by type: { text, options?, scale?, rows?, columns? }
-  isCheckpoint Boolean      @default(false) @map("is_checkpoint")
+  isVerificationPoint Boolean      @default(false) @map("is_checkpoint")
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
@@ -172,14 +172,14 @@ model SurveySession {
 
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   participant User?        @relation(fields: [participantId], references: [id])
-  checkpoints Checkpoint[]
+  verificationPoints VerificationPoint[]
   responses   Response[]
   tapinTaps   TapInTap[]
 
   @@map("survey_sessions")
 }
 
-model Checkpoint {
+model VerificationPoint {
   id            String    @id @default(cuid())
   sessionId     String    @map("session_id")
   questionId    String    @map("question_id")

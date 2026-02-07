@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
     const session = await db.surveySession.findUnique({
       where: { id: parsed.sessionId, status: "ACTIVE" },
       include: {
-        checkpoints: true,
+        verificationPoints: true,
         survey: {
           include: {
             questions: {
-              where: { isCheckpoint: true },
+              where: { isVerificationPoint: true },
             },
           },
         },
@@ -30,30 +30,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session not found or inactive" }, { status: 404 });
     }
 
-    // All checkpoints must be either verified or skipped
-    const checkpointQuestionIds = new Set(
+    // All verification points must be either verified or skipped
+    const vpQuestionIds = new Set(
       session.survey.questions.map((q) => q.id)
     );
 
-    const resolvedCheckpoints = session.checkpoints.filter(
-      (cp) => cp.validatedAt !== null && checkpointQuestionIds.has(cp.questionId)
+    const resolvedVPs = session.verificationPoints.filter(
+      (cp) => cp.validatedAt !== null && vpQuestionIds.has(cp.questionId)
     );
 
-    if (resolvedCheckpoints.length !== session.survey.questions.length) {
+    if (resolvedVPs.length !== session.survey.questions.length) {
       return NextResponse.json(
         {
-          error: `Not all verification points resolved (${resolvedCheckpoints.length}/${session.survey.questions.length})`,
+          error: `Not all verification points resolved (${resolvedVPs.length}/${session.survey.questions.length})`,
         },
         { status: 400 }
       );
     }
 
     // Compute verification status
-    const verifiedCount = resolvedCheckpoints.filter((cp) => cp.verified).length;
-    const totalCheckpoints = session.survey.questions.length;
+    const verifiedCount = resolvedVPs.filter((cp) => cp.verified).length;
+    const totalVerificationPoints = session.survey.questions.length;
 
     let verificationStatus: VerificationStatus;
-    if (verifiedCount === totalCheckpoints) {
+    if (verifiedCount === totalVerificationPoints) {
       verificationStatus = "VERIFIED";
     } else if (verifiedCount === 0) {
       verificationStatus = "UNVERIFIED";

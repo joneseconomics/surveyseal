@@ -66,7 +66,7 @@ export function QuestionCard({
     <Card
       ref={setNodeRef}
       style={style}
-      className={`${question.isCheckpoint ? "border-primary/50 bg-primary/5" : ""} ${
+      className={`${question.isVerificationPoint ? "border-primary/50 bg-primary/5" : ""} ${
         isDragging ? "opacity-50" : ""
       } ${isOverlay ? "shadow-lg ring-2 ring-primary/20" : ""}`}
     >
@@ -87,7 +87,7 @@ export function QuestionCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {question.isCheckpoint && (
+            {question.isVerificationPoint && (
               <Shield className="h-4 w-4 text-primary shrink-0" />
             )}
             <span className="truncate text-sm font-medium">
@@ -98,7 +98,7 @@ export function QuestionCard({
             <Badge variant="outline" className="text-xs">
               {typeLabels[question.type] || question.type}
             </Badge>
-            {question.isCheckpoint && (
+            {question.isVerificationPoint && (
               <Badge variant="default" className="text-xs">
                 Verification Point
               </Badge>

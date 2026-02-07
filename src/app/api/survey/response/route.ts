@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Verify session is active
     const session = await db.surveySession.findUnique({
       where: { id: parsed.sessionId, status: "ACTIVE" },
-      include: { checkpoints: true },
+      include: { verificationPoints: true },
     });
 
     if (!session) {
@@ -32,23 +32,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Question not found" }, { status: 404 });
     }
 
-    // Server-side gating: ensure all preceding checkpoints are validated
-    const precedingCheckpoints = await db.question.findMany({
+    // Server-side gating: ensure all preceding verification points are validated
+    const precedingVPs = await db.question.findMany({
       where: {
         surveyId: session.surveyId,
-        isCheckpoint: true,
+        isVerificationPoint: true,
         position: { lt: question.position },
       },
     });
 
-    const validatedCheckpointIds = new Set(
-      session.checkpoints
+    const validatedVPIds = new Set(
+      session.verificationPoints
         .filter((cp) => cp.validatedAt !== null)
         .map((cp) => cp.questionId)
     );
 
-    for (const cp of precedingCheckpoints) {
-      if (!validatedCheckpointIds.has(cp.id)) {
+    for (const cp of precedingVPs) {
+      if (!validatedVPIds.has(cp.id)) {
         return NextResponse.json(
           { error: "Preceding verification point not validated" },
           { status: 403 }

@@ -28,10 +28,10 @@ export default async function ResponsesPage({
   const survey = await db.survey.findUnique({
     where: { id, ownerId: session.user.id },
     include: {
-      questions: { where: { isCheckpoint: true }, select: { id: true } },
+      questions: { where: { isVerificationPoint: true }, select: { id: true } },
       sessions: {
         include: {
-          checkpoints: { select: { validatedAt: true, verified: true } },
+          verificationPoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
           tapinTaps: { select: { id: true } },
         },
@@ -42,7 +42,7 @@ export default async function ResponsesPage({
 
   if (!survey) notFound();
 
-  const totalCheckpoints = survey.questions.length;
+  const totalVerificationPoints = survey.questions.length;
   const hasTapInKey = !!survey.tapinApiKey;
 
   return (
@@ -91,7 +91,7 @@ export default async function ResponsesPage({
               </TableHeader>
               <TableBody>
                 {survey.sessions.map((s) => {
-                  const validatedCount = s.checkpoints.filter(
+                  const validatedCount = s.verificationPoints.filter(
                     (cp) => cp.validatedAt !== null
                   ).length;
                   return (
@@ -107,12 +107,12 @@ export default async function ResponsesPage({
                       </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-1">
-                          {validatedCount === totalCheckpoints ? (
+                          {validatedCount === totalVerificationPoints ? (
                             <CheckCircle className="h-4 w-4 text-green-600" />
                           ) : (
                             <Clock className="h-4 w-4 text-muted-foreground" />
                           )}
-                          {validatedCount}/{totalCheckpoints}
+                          {validatedCount}/{totalVerificationPoints}
                         </span>
                       </TableCell>
                       <TableCell>{s.responses.length}</TableCell>

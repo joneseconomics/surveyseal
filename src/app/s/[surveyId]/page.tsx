@@ -17,7 +17,7 @@ export default async function SurveyLandingPage({
 
   const survey = await db.survey.findUnique({
     where: { id: surveyId, status: "LIVE" },
-    select: { id: true, title: true, description: true, checkpointTimerSeconds: true, requireLogin: true },
+    select: { id: true, title: true, description: true, verificationPointTimerSeconds: true, requireLogin: true },
   });
 
   if (!survey) notFound();
@@ -71,7 +71,7 @@ export default async function SurveyLandingPage({
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-              {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+              {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
               If you don&apos;t have a card, you can skip verification points and still complete the survey.
             </p>
             <p className="text-sm text-muted-foreground">
@@ -105,7 +105,7 @@ export default async function SurveyLandingPage({
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-              {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+              {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
               If you don&apos;t have a card, you can skip verification points and still complete the survey.
             </p>
             <p className="text-sm font-medium">
@@ -193,9 +193,9 @@ export default async function SurveyLandingPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This survey uses TapIn verification. At each checkpoint, you&apos;ll have{" "}
-            {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-            If you don&apos;t have a card, you can skip checkpoints and still complete the survey.
+            This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
+            {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+            If you don&apos;t have a card, you can skip verification points and still complete the survey.
           </p>
           <form action={beginSurvey} className="space-y-4">
             <div className="space-y-2 text-left">

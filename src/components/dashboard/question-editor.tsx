@@ -29,7 +29,7 @@ interface QuestionEditorProps {
   surveyId: string;
   question: Question | null;
   onClose: () => void;
-  forceCheckpoint?: boolean;
+  forceVP?: boolean;
 }
 
 const typeLabels: Record<QuestionTypeValue, string> = {
@@ -54,7 +54,7 @@ const typeLabels: Record<QuestionTypeValue, string> = {
   PHONE_NUMBER: "Phone Number",
 };
 
-export function QuestionEditor({ surveyId, question, onClose, forceCheckpoint }: QuestionEditorProps) {
+export function QuestionEditor({ surveyId, question, onClose, forceVP }: QuestionEditorProps) {
   const isEditing = !!question;
   const existingContent = (question?.content ?? {}) as Record<string, unknown>;
 
@@ -85,7 +85,7 @@ export function QuestionEditor({ surveyId, question, onClose, forceCheckpoint }:
   const [sliderMin, setSliderMin] = useState((existingContent.min as number) ?? 0);
   const [sliderMax, setSliderMax] = useState((existingContent.max as number) ?? 100);
   const [sliderStep, setSliderStep] = useState((existingContent.step as number) ?? 1);
-  const isCheckpoint = forceCheckpoint ?? (question?.isCheckpoint ?? false);
+  const isVerificationPoint = forceVP ?? (question?.isVerificationPoint ?? false);
   const [saving, setSaving] = useState(false);
 
   function buildContent(): Record<string, unknown> {
@@ -139,10 +139,10 @@ export function QuestionEditor({ surveyId, question, onClose, forceCheckpoint }:
           id: question!.id,
           type,
           content,
-          isCheckpoint,
+          isVerificationPoint,
         });
       } else {
-        await addQuestion({ surveyId, type, content, isCheckpoint });
+        await addQuestion({ surveyId, type, content, isVerificationPoint });
       }
       onClose();
     } catch (err) {
@@ -159,12 +159,12 @@ export function QuestionEditor({ surveyId, question, onClose, forceCheckpoint }:
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {isCheckpoint
+            {isVerificationPoint
               ? isEditing ? "Edit Verification Point" : "Add Verification Point"
               : isEditing ? "Edit Question" : "Add Question"}
           </DialogTitle>
           <DialogDescription>
-            Configure the {isCheckpoint ? "verification point" : "question"} type and content.
+            Configure the {isVerificationPoint ? "verification point" : "question"} type and content.
           </DialogDescription>
         </DialogHeader>
 

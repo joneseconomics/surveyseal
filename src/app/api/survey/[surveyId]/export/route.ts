@@ -20,7 +20,7 @@ export async function GET(
         where: { status: "COMPLETED" },
         include: {
           responses: true,
-          checkpoints: { orderBy: { createdAt: "asc" } },
+          verificationPoints: { orderBy: { createdAt: "asc" } },
           tapinTaps: { orderBy: { tappedAt: "asc" } },
         },
       },
@@ -31,7 +31,7 @@ export async function GET(
     return NextResponse.json({ error: "Survey not found" }, { status: 404 });
   }
 
-  const nonCheckpointQuestions = survey.questions.filter((q) => !q.isCheckpoint);
+  const nonVPQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
 
   // Build CSV header
   const headers = [
@@ -41,7 +41,7 @@ export async function GET(
     "status",
     "started_at",
     "completed_at",
-    ...nonCheckpointQuestions.map(
+    ...nonVPQuestions.map(
       (q) => `q${q.position + 1}_${(q.content as { text?: string })?.text?.slice(0, 40) ?? "question"}`
     ),
     "verification_point_1_verified",
@@ -59,7 +59,7 @@ export async function GET(
 
   const rows = survey.sessions.map((s) => {
     const responseMap = new Map(s.responses.map((r) => [r.questionId, r.answer]));
-    const checkpointsByPosition = s.checkpoints.sort((a, b) => {
+    const vpsByPosition = s.verificationPoints.sort((a, b) => {
       const posA = survey.questions.find((q) => q.id === a.questionId)?.position ?? 0;
       const posB = survey.questions.find((q) => q.id === b.questionId)?.position ?? 0;
       return posA - posB;
@@ -72,13 +72,13 @@ export async function GET(
       s.status,
       s.startedAt.toISOString(),
       s.completedAt?.toISOString() ?? "",
-      ...nonCheckpointQuestions.map((q) => {
+      ...nonVPQuestions.map((q) => {
         const answer = responseMap.get(q.id);
         if (answer === undefined || answer === null) return "";
         return typeof answer === "object" ? JSON.stringify(answer) : String(answer);
       }),
       ...Array.from({ length: 3 }, (_, i) => {
-        const cp = checkpointsByPosition[i];
+        const cp = vpsByPosition[i];
         return [
           cp?.verified ? "true" : "false",
           cp?.skipped ? "true" : "false",
