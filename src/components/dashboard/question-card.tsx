@@ -1,19 +1,20 @@
 "use client";
 
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { reorderQuestion, deleteQuestion, toggleCheckpoint } from "@/lib/actions/question";
-import { ArrowUp, ArrowDown, Trash2, Pencil, Shield } from "lucide-react";
+import { deleteQuestion, toggleCheckpoint } from "@/lib/actions/question";
+import { GripVertical, Trash2, Pencil, Shield } from "lucide-react";
 import type { Question } from "@/generated/prisma/client";
 
 interface QuestionCardProps {
   question: Question;
   index: number;
-  isFirst: boolean;
-  isLast: boolean;
   isDraft: boolean;
   onEdit: () => void;
+  isOverlay?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -41,16 +42,45 @@ const typeLabels: Record<string, string> = {
 export function QuestionCard({
   question,
   index,
-  isFirst,
-  isLast,
   isDraft,
   onEdit,
+  isOverlay,
 }: QuestionCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id, disabled: !isDraft });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const content = question.content as { text?: string };
 
   return (
-    <Card className={question.isCheckpoint ? "border-primary/50 bg-primary/5" : ""}>
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`${question.isCheckpoint ? "border-primary/50 bg-primary/5" : ""} ${
+        isDragging ? "opacity-50" : ""
+      } ${isOverlay ? "shadow-lg ring-2 ring-primary/20" : ""}`}
+    >
       <CardContent className="flex items-center gap-3 py-3">
+        {isDraft && (
+          <button
+            className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-5 w-5" />
+          </button>
+        )}
+
         <span className="w-8 text-center text-sm font-medium text-muted-foreground">
           {index + 1}
         </span>
@@ -78,26 +108,6 @@ export function QuestionCard({
 
         {isDraft && (
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={isFirst}
-              onClick={() => reorderQuestion(question.id, "up")}
-              title="Move up"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={isLast}
-              onClick={() => reorderQuestion(question.id, "down")}
-              title="Move down"
-            >
-              <ArrowDown className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"

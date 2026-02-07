@@ -118,50 +118,24 @@ export async function deleteQuestion(questionId: string) {
   revalidatePath(`/dashboard/surveys/${question.surveyId}`);
 }
 
-export async function reorderQuestion(questionId: string, direction: "up" | "down") {
+export async function reorderQuestions(surveyId: string, orderedIds: string[]) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const question = await db.question.findUnique({
-    where: { id: questionId },
-    select: { surveyId: true, position: true },
-  });
-  if (!question) throw new Error("Question not found");
+  await verifyOwnership(surveyId, session.user.id);
 
-  await verifyOwnership(question.surveyId, session.user.id);
-
-  const swapPosition = direction === "up" ? question.position - 1 : question.position + 1;
-  if (swapPosition < 0) return;
-
-  const swapQuestion = await db.question.findUnique({
-    where: {
-      surveyId_position: {
-        surveyId: question.surveyId,
-        position: swapPosition,
-      },
-    },
-    select: { id: true },
-  });
-  if (!swapQuestion) return;
-
-  // Use a temporary position to avoid unique constraint violation
-  const tempPosition = -1;
+  // Move all questions to negative temporary positions first to avoid unique constraint violations,
+  // then assign final positions.
   await db.$transaction([
-    db.question.update({
-      where: { id: questionId },
-      data: { position: tempPosition },
-    }),
-    db.question.update({
-      where: { id: swapQuestion.id },
-      data: { position: question.position },
-    }),
-    db.question.update({
-      where: { id: questionId },
-      data: { position: swapPosition },
-    }),
+    ...orderedIds.map((id, i) =>
+      db.question.update({ where: { id }, data: { position: -(i + 1) } })
+    ),
+    ...orderedIds.map((id, i) =>
+      db.question.update({ where: { id }, data: { position: i } })
+    ),
   ]);
 
-  revalidatePath(`/dashboard/surveys/${question.surveyId}`);
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
 }
 
 export async function importQuestionsFromCSV(data: {

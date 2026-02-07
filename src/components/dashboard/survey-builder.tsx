@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey } from "@/lib/actions/survey";
-import { QuestionCard } from "@/components/dashboard/question-card";
+import { SortableQuestionList } from "@/components/dashboard/sortable-question-list";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { Globe, Trash2, ExternalLink, Upload } from "lucide-react";
@@ -163,22 +163,15 @@ export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilde
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
-            {questions.map((question, index) => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                index={index}
-                isFirst={index === 0}
-                isLast={index === questions.length - 1}
-                isDraft={isDraft}
-                onEdit={() => {
-                  setEditingQuestion(question);
-                  setShowEditor(true);
-                }}
-              />
-            ))}
-          </div>
+          <SortableQuestionList
+            surveyId={survey.id}
+            questions={questions}
+            isDraft={isDraft}
+            onEdit={(question) => {
+              setEditingQuestion(question);
+              setShowEditor(true);
+            }}
+          />
         )}
       </div>
 
