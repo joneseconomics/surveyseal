@@ -16,7 +16,7 @@ export default async function SurveyLandingPage({
 
   const survey = await db.survey.findUnique({
     where: { id: surveyId, status: "LIVE" },
-    select: { id: true, title: true, description: true },
+    select: { id: true, title: true, description: true, checkpointTimerSeconds: true },
   });
 
   if (!survey) notFound();
@@ -61,8 +61,9 @@ export default async function SurveyLandingPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This survey uses TapIn verification. If you have a TapIn Survey card, you can
-            verify your identity at three checkpoints during the survey.
+            This survey uses TapIn verification. At each checkpoint, you&apos;ll have{" "}
+            {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+            If you don&apos;t have a card, you can skip checkpoints and still complete the survey.
           </p>
           <form action={beginSurvey} className="space-y-4">
             <div className="space-y-2 text-left">
@@ -75,8 +76,8 @@ export default async function SurveyLandingPage({
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Used to match your TapIn card verification. If you don&apos;t have a card, you can
-                still complete the survey.
+                Your email is used after the survey to match your TapIn card taps with your responses.
+                If you don&apos;t have a card, you can still complete the survey.
               </p>
             </div>
             <Button size="lg" className="w-full">

@@ -15,6 +15,13 @@ export const updateSurveySchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
+export const updateSurveySettingsSchema = z.object({
+  id: z.string(),
+  checkpointTimerSeconds: z.coerce.number().int().min(10).max(300),
+  tapinApiKey: z.string().optional(),
+  tapinCampaignId: z.string().optional(),
+});
+
 // ─── Question content schemas (discriminated by type) ──────────────────────
 
 const multipleChoiceContent = z.object({

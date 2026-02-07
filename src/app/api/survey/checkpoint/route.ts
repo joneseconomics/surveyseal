@@ -5,7 +5,7 @@ import { z } from "zod";
 const requestSchema = z.object({
   sessionId: z.string(),
   questionId: z.string(),
-  action: z.enum(["skip", "check"]),
+  action: z.enum(["skip", "next"]),
 });
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
     const parsed = requestSchema.parse(body);
 
     if (parsed.action === "skip") {
-      // Mark checkpoint as skipped
       await db.checkpoint.upsert({
         where: {
           sessionId_questionId: {
@@ -37,21 +36,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, status: "skipped" });
     }
 
-    // action === "check" — poll whether checkpoint has been verified by TapIn tap
-    const checkpoint = await db.checkpoint.findUnique({
+    // action === "next" — respondent clicked "Next" after seeing TapIn green checkmark
+    await db.checkpoint.upsert({
       where: {
         sessionId_questionId: {
           sessionId: parsed.sessionId,
           questionId: parsed.questionId,
         },
       },
+      create: {
+        sessionId: parsed.sessionId,
+        questionId: parsed.questionId,
+        verified: true,
+        validatedAt: new Date(),
+      },
+      update: {
+        verified: true,
+        validatedAt: new Date(),
+      },
     });
 
-    if (checkpoint?.verified) {
-      return NextResponse.json({ success: true, status: "verified" });
-    }
-
-    return NextResponse.json({ success: false, status: "pending" });
+    return NextResponse.json({ success: true, status: "verified" });
   } catch (error) {
     console.error("[Checkpoint]", error);
     const message = error instanceof Error ? error.message : "Checkpoint operation failed";

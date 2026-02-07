@@ -30,10 +30,16 @@ export default async function SurveyQuestionPage({
   if (session.status === "COMPLETED") redirect(`/s/${surveyId}/complete`);
 
   // Get all questions ordered by position
-  const allQuestions = await db.question.findMany({
-    where: { surveyId },
-    orderBy: { position: "asc" },
-  });
+  const [allQuestions, survey] = await Promise.all([
+    db.question.findMany({
+      where: { surveyId },
+      orderBy: { position: "asc" },
+    }),
+    db.survey.findUnique({
+      where: { id: surveyId },
+      select: { checkpointTimerSeconds: true },
+    }),
+  ]);
 
   // Build set of validated checkpoint question IDs
   const validatedCheckpoints = new Set(
@@ -106,6 +112,7 @@ export default async function SurveyQuestionPage({
           questionId={currentQuestion.id}
           position={currentQuestion.position}
           totalQuestions={allQuestions.length}
+          timerSeconds={survey?.checkpointTimerSeconds ?? 30}
         />
       </div>
     );

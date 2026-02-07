@@ -313,7 +313,7 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Respondents tap at checkpoints",
                 description:
-                  "At each checkpoint, participants tap their TapIn card on their phone. The card verifies their identity by matching the email used to start the survey.",
+                  "At each checkpoint, a countdown timer gives respondents time to tap their TapIn card on their phone. After seeing the green checkmark, they click Continue. No card? They can skip.",
               },
               {
                 step: 3,

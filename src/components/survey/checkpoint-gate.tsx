@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward } from "lucide-react";
+import { Shield, Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward, Timer } from "lucide-react";
 
 interface CheckpointGateProps {
   sessionId: string;
@@ -11,6 +11,7 @@ interface CheckpointGateProps {
   questionId: string;
   position: number;
   totalQuestions: number;
+  timerSeconds: number;
 }
 
 export function CheckpointGate({
@@ -19,39 +20,51 @@ export function CheckpointGate({
   questionId,
   position,
   totalQuestions,
+  timerSeconds,
 }: CheckpointGateProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"waiting" | "verified" | "skipped">("waiting");
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(timerSeconds);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Poll for TapIn verification every 3 seconds
+  // Countdown timer
   useEffect(() => {
     if (status !== "waiting") return;
 
-    async function checkVerification() {
-      try {
-        const res = await fetch("/api/survey/checkpoint", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, questionId, action: "check" }),
-        });
-        const data = await res.json();
-        if (data.success && data.status === "verified") {
-          setStatus("verified");
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          return 0;
         }
-      } catch {
-        // Silently retry on network errors
-      }
-    }
-
-    checkVerification();
-    pollRef.current = setInterval(checkVerification, 3000);
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [sessionId, questionId, status]);
+  }, [status]);
+
+  // Auto-skip when timer expires
+  const handleAutoSkip = useCallback(async () => {
+    try {
+      await fetch("/api/survey/checkpoint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, questionId, action: "skip" }),
+      });
+      setStatus("skipped");
+    } catch {
+      setStatus("skipped");
+    }
+  }, [sessionId, questionId]);
+
+  useEffect(() => {
+    if (secondsLeft === 0 && status === "waiting") {
+      handleAutoSkip();
+    }
+  }, [secondsLeft, status, handleAutoSkip]);
 
   // Navigate to next question after verified or skipped
   useEffect(() => {
@@ -62,6 +75,28 @@ export function CheckpointGate({
       return () => clearTimeout(timer);
     }
   }, [status, surveyId, position]);
+
+  async function handleNext() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/survey/checkpoint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, questionId, action: "next" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error);
+        return;
+      }
+      setStatus("verified");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSkip() {
     setLoading(true);
@@ -85,6 +120,11 @@ export function CheckpointGate({
     }
   }
 
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const timerDisplay = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const timerProgress = (secondsLeft / timerSeconds) * 100;
+
   return (
     <Card className="w-full max-w-md text-center">
       <CardHeader>
@@ -99,17 +139,44 @@ export function CheckpointGate({
       <CardContent className="space-y-4">
         {status === "waiting" && (
           <>
+            {/* Countdown timer */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 text-2xl font-mono font-bold tabular-nums">
+                <Timer className="h-5 w-5 text-primary" />
+                <span className={secondsLeft <= 10 ? "text-destructive" : ""}>{timerDisplay}</span>
+              </div>
+              <div className="mx-auto h-1.5 w-48 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ${secondsLeft <= 10 ? "bg-destructive" : "bg-primary"}`}
+                  style={{ width: `${timerProgress}%` }}
+                />
+              </div>
+            </div>
+
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-pulse">
                 <Smartphone className="h-8 w-8 text-primary" />
               </div>
               <p className="font-medium text-foreground">
-                Tap your TapIn Survey card to verify
+                Tap your TapIn Survey card on your phone now
               </p>
               <p>
-                Tap your card on your phone. Verification will be detected automatically.
+                After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
               </p>
             </div>
+
+            <Button
+              onClick={handleNext}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              )}
+              I see the green checkmark — Continue
+            </Button>
 
             <div className="pt-2 border-t">
               <Button
@@ -149,7 +216,7 @@ export function CheckpointGate({
               <SkipForward className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="font-medium text-muted-foreground">
-              Checkpoint skipped
+              {secondsLeft === 0 ? "Time expired — checkpoint skipped" : "Checkpoint skipped"}
             </p>
             <p className="text-sm text-muted-foreground">
               Continuing to next question...

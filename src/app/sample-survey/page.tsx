@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Smartphone,
   SkipForward,
+  Timer,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -145,25 +146,49 @@ export default function SampleSurveyPage() {
   const [completed, setCompleted] = useState(false);
 
   // Checkpoint state
+  const CHECKPOINT_TIMER = 30;
   const [checkpointPhase, setCheckpointPhase] = useState<
-    "waiting" | "verifying" | "verified" | "skipped"
+    "waiting" | "verified" | "skipped"
   >("waiting");
+  const [checkpointSeconds, setCheckpointSeconds] = useState(CHECKPOINT_TIMER);
+  const checkpointTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentStep = steps[currentIndex];
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
+  // Countdown timer for checkpoints
+  useEffect(() => {
+    if (currentStep.kind !== "checkpoint" || checkpointPhase !== "waiting") {
+      if (checkpointTimerRef.current) clearInterval(checkpointTimerRef.current);
+      return;
+    }
+
+    checkpointTimerRef.current = setInterval(() => {
+      setCheckpointSeconds((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (checkpointTimerRef.current) clearInterval(checkpointTimerRef.current);
+    };
+  }, [currentStep.kind, checkpointPhase]);
+
+  // Auto-skip when timer expires
+  useEffect(() => {
+    if (checkpointSeconds === 0 && checkpointPhase === "waiting") {
+      setCheckpointPhase("skipped");
+    }
+  }, [checkpointSeconds, checkpointPhase]);
+
   const resetCheckpoint = useCallback(() => {
     setCheckpointPhase("waiting");
+    setCheckpointSeconds(CHECKPOINT_TIMER);
   }, []);
 
-  function handleSimulateVerify() {
-    if (currentStep.kind !== "checkpoint") return;
-    setCheckpointPhase("verifying");
-
-    // Simulate a brief delay like a real TapIn verification
-    setTimeout(() => {
-      setCheckpointPhase("verified");
-    }, 1200);
+  function handleVerifyCheckpoint() {
+    setCheckpointPhase("verified");
   }
 
   function handleSkipCheckpoint() {
@@ -229,9 +254,9 @@ export default function SampleSurveyPage() {
               </div>
               <p>
                 In a live survey, you&apos;d tap a physical TapIn Survey card
-                on your phone to verify your identity. Here, you can click
-                &ldquo;Simulate Verification&rdquo; or &ldquo;Skip&rdquo; to
-                see how each path works.
+                on your phone at each checkpoint. A countdown timer gives you
+                30 seconds to tap. Here, you can click &ldquo;I see the green
+                checkmark&rdquo; or &ldquo;Skip&rdquo; to see how each path works.
               </p>
             </div>
             <Button size="lg" onClick={() => setStarted(true)}>
@@ -357,22 +382,38 @@ export default function SampleSurveyPage() {
 
               <Card className="border-primary/20">
                 <CardContent className="space-y-5 pt-6">
-                  {/* Waiting state */}
+                  {/* Waiting state with countdown */}
                   {checkpointPhase === "waiting" && (
                     <div className="space-y-4 text-center">
+                      {/* Countdown timer */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-2xl font-mono font-bold tabular-nums">
+                          <Timer className="h-5 w-5 text-primary" />
+                          <span className={checkpointSeconds <= 10 ? "text-destructive" : ""}>
+                            {Math.floor(checkpointSeconds / 60)}:{(checkpointSeconds % 60).toString().padStart(2, "0")}
+                          </span>
+                        </div>
+                        <div className="mx-auto h-1.5 w-48 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${checkpointSeconds <= 10 ? "bg-destructive" : "bg-primary"}`}
+                            style={{ width: `${(checkpointSeconds / CHECKPOINT_TIMER) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
                       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-pulse">
                         <Smartphone className="h-8 w-8 text-primary" />
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        In a live survey, you would tap your TapIn Survey card
-                        on your phone to verify your identity.
+                      <p className="font-medium text-foreground">
+                        Tap your TapIn Survey card on your phone now
                       </p>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-                        <Button onClick={handleSimulateVerify} className="w-full sm:w-auto">
-                          <Smartphone className="mr-2 h-4 w-4" />
-                          Simulate TapIn Verification (Demo)
-                        </Button>
-                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
+                      </p>
+                      <Button onClick={handleVerifyCheckpoint} className="w-full">
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        I see the green checkmark — Continue
+                      </Button>
                       <div className="pt-2 border-t">
                         <Button
                           onClick={handleSkipCheckpoint}
@@ -380,21 +421,9 @@ export default function SampleSurveyPage() {
                           className="w-full text-muted-foreground"
                         >
                           <SkipForward className="mr-2 h-4 w-4" />
-                          Skip verification (no TapIn card)
+                          I don&apos;t have a TapIn card — Skip verification
                         </Button>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Verifying animation */}
-                  {checkpointPhase === "verifying" && (
-                    <div className="space-y-4 text-center py-4">
-                      <div className="mx-auto flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-primary/20">
-                        <Smartphone className="h-8 w-8 text-primary" />
-                      </div>
-                      <p className="text-sm font-medium text-primary">
-                        Verifying identity...
-                      </p>
                     </div>
                   )}
 
@@ -409,7 +438,7 @@ export default function SampleSurveyPage() {
                           Checkpoint {currentStep.checkpoint} Verified with TapIn
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Email matched. Identity confirmed.
+                          Identity confirmed via card tap.
                         </p>
                       </div>
                     </div>
@@ -423,7 +452,9 @@ export default function SampleSurveyPage() {
                       </div>
                       <div>
                         <p className="font-medium text-muted-foreground">
-                          Checkpoint {currentStep.checkpoint} Skipped
+                          {checkpointSeconds === 0
+                            ? `Checkpoint ${currentStep.checkpoint} — Time expired`
+                            : `Checkpoint ${currentStep.checkpoint} Skipped`}
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           This checkpoint will be marked as unverified in the export.

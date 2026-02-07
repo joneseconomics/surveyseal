@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "How does physical-tap verification work?",
     answer:
-      "Each survey includes three checkpoints: opening, mid-survey, and closing. At each checkpoint, the respondent taps their TapIn Survey card on their phone and authenticates with their email. If the email matches the one used to start the survey, the checkpoint is verified. Respondents without a card can skip checkpoints — their responses are tagged as unverified.",
+      "Each survey includes three checkpoints: opening, mid-survey, and closing. At each checkpoint, a countdown timer gives the respondent time to tap their TapIn Survey card on their phone. After tapping, the TapIn platform shows a green checkmark, and the respondent clicks Continue. After the survey, the researcher reconciles TapIn tap logs with SurveySeal sessions by email and timestamp. Respondents without a card can skip checkpoints — their responses are tagged as unverified.",
   },
   {
     question: "What are TapIn Survey cards?",

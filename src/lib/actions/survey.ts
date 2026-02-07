@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { createSurveySchema, updateSurveySchema } from "@/lib/validations/survey";
+import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema } from "@/lib/validations/survey";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -90,6 +90,29 @@ export async function publishSurvey(surveyId: string) {
 
   revalidatePath(`/dashboard/surveys/${surveyId}`);
   revalidatePath("/dashboard");
+}
+
+export async function updateSurveySettings(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parsed = updateSurveySettingsSchema.parse({
+    id: formData.get("id"),
+    checkpointTimerSeconds: formData.get("checkpointTimerSeconds"),
+    tapinApiKey: formData.get("tapinApiKey") || undefined,
+    tapinCampaignId: formData.get("tapinCampaignId") || undefined,
+  });
+
+  await db.survey.update({
+    where: { id: parsed.id, ownerId: session.user.id },
+    data: {
+      checkpointTimerSeconds: parsed.checkpointTimerSeconds,
+      tapinApiKey: parsed.tapinApiKey ?? null,
+      tapinCampaignId: parsed.tapinCampaignId ?? null,
+    },
+  });
+
+  revalidatePath(`/dashboard/surveys/${parsed.id}/settings`);
 }
 
 export async function closeSurvey(surveyId: string) {

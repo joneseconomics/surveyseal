@@ -117,6 +117,10 @@ model Survey {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
+  checkpointTimerSeconds Int     @default(30) @map("checkpoint_timer_seconds")
+  tapinApiKey            String? @map("tapin_api_key")
+  tapinCampaignId        String? @map("tapin_campaign_id")
+
   owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   questions Question[]
   sessions  SurveySession[]

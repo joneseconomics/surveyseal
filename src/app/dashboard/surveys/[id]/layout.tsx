@@ -32,6 +32,9 @@ export default async function SurveyLayout({
           <TabsTrigger value="responses" asChild>
             <Link href={`/dashboard/surveys/${id}/responses`}>Responses</Link>
           </TabsTrigger>
+          <TabsTrigger value="settings" asChild>
+            <Link href={`/dashboard/surveys/${id}/settings`}>Settings</Link>
+          </TabsTrigger>
         </TabsList>
       </Tabs>
       {children}
