@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, CreditCard } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import { randomBytes } from "crypto";
 
 export default async function CardsPage() {
   const session = await auth();
@@ -32,16 +33,14 @@ export default async function CardsPage() {
     if (!authSession?.user?.id) throw new Error("Unauthorized");
 
     const uid = (formData.get("uid") as string).toUpperCase().replace(/\s/g, "");
-    const aesKey = (formData.get("aesKey") as string).replace(/\s/g, "");
     const label = formData.get("label") as string;
 
-    if (!uid || uid.length !== 14) throw new Error("UID must be 7 bytes (14 hex chars)");
-    if (!aesKey || aesKey.length !== 32) throw new Error("AES key must be 16 bytes (32 hex chars)");
+    if (!uid || uid.length !== 14) throw new Error("XUID must be 7 bytes (14 hex chars)");
 
     await db.card.create({
       data: {
         uid,
-        aesKey,
+        aesKey: randomBytes(16).toString("hex"),
         label: label || null,
         ownerId: authSession.user.id,
       },
@@ -53,8 +52,8 @@ export default async function CardsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">NFC Cards</h1>
-        <p className="text-muted-foreground">Register and manage your NTAG 424 DNA cards.</p>
+        <h1 className="text-2xl font-bold">TapIn Survey Cards</h1>
+        <p className="text-muted-foreground">Register and manage your TapIn Survey cards.</p>
       </div>
 
       {/* Register card form */}
@@ -62,31 +61,19 @@ export default async function CardsPage() {
         <CardHeader>
           <CardTitle className="text-base">Register New Card</CardTitle>
           <CardDescription>
-            Enter the card UID and AES key from your NTAG 424 DNA card.
+            Enter the XUID from the back of your TapIn Survey card.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={registerCard} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="uid">Card UID (7 bytes hex)</Label>
+                <Label htmlFor="uid">XUID</Label>
                 <Input
                   id="uid"
                   name="uid"
                   placeholder="04A1B2C3D4E5F6"
                   maxLength={14}
-                  required
-                  className="font-mono"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="aesKey">AES Key (16 bytes hex)</Label>
-                <Input
-                  id="aesKey"
-                  name="aesKey"
-                  type="password"
-                  placeholder="00000000000000000000000000000000"
-                  maxLength={32}
                   required
                   className="font-mono"
                 />
@@ -119,7 +106,7 @@ export default async function CardsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Label</TableHead>
-                  <TableHead>UID</TableHead>
+                  <TableHead>XUID</TableHead>
                   <TableHead>Counter</TableHead>
                   <TableHead>Registered</TableHead>
                 </TableRow>

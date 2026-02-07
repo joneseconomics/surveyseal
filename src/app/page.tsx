@@ -19,6 +19,13 @@ import {
   CreditCard,
   CheckCircle,
   ExternalLink,
+  AlertTriangle,
+  Bot,
+  ScanEye,
+  MapPin,
+  ChartNoAxesCombined,
+  MonitorSmartphone,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
@@ -111,7 +118,169 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 3. How It Works ── */}
+      {/* ── 3. The Problem ── */}
+      <section id="the-problem" className="border-t bg-muted/40 px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <Badge
+              variant="secondary"
+              className="mb-4 gap-1.5 px-3 py-1 text-sm font-normal"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              The Problem
+            </Badge>
+            <h2 className="text-3xl font-bold tracking-tight">
+              Bots are contaminating survey research at scale.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+              Fraudulent responses are undermining the foundation of
+              survey-based research — and the problem is accelerating.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Card className="border-0 shadow-none bg-background">
+              <CardHeader>
+                <CardTitle className="text-3xl font-bold text-destructive">
+                  99.8%
+                </CardTitle>
+                <CardDescription>
+                  of attention checks passed by an AI survey agent in 43,000
+                  tests — evading every detection method currently in use.{" "}
+                  <a
+                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Westwood, 2025
+                  </a>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="border-0 shadow-none bg-background">
+              <CardHeader>
+                <CardTitle className="text-3xl font-bold text-destructive">
+                  $0.05
+                </CardTitle>
+                <CardDescription>
+                  per fake response vs. $1.50 for a real human — making
+                  large-scale survey manipulation trivially cheap.{" "}
+                  <a
+                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Westwood, 2025
+                  </a>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="border-0 shadow-none bg-background">
+              <CardHeader>
+                <CardTitle className="text-3xl font-bold text-destructive">
+                  10–52
+                </CardTitle>
+                <CardDescription>
+                  fake responses would have been enough to flip the outcome of
+                  seven major 2024 election polls.{" "}
+                  <a
+                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Westwood, 2025
+                  </a>
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+          <div className="mt-8 rounded-lg border bg-background p-6">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                &ldquo;We can no longer trust that survey responses are coming
+                from real people.&rdquo;
+              </span>{" "}
+              — Sean Westwood, Dartmouth College. His PNAS paper describes AI
+              agents that simulate realistic reading speeds, natural mouse
+              movements, and deliberate typing errors — making them
+              indistinguishable from human respondents. The paper calls the
+              threat to online survey research{" "}
+              <span className="font-medium text-foreground">
+                &ldquo;existential.&rdquo;
+              </span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. Why Existing Solutions Fail ── */}
+      <section className="border-t px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Why existing solutions fail.
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
+              Every widely used countermeasure is software-only — and modern AI
+              bypasses all of them. Researchers need new tools.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: Bot,
+                title: "CAPTCHAs",
+                description:
+                  "Solved by AI and click farms. They add friction for real respondents but no longer stop automated agents.",
+              },
+              {
+                icon: ScanEye,
+                title: "Attention Checks",
+                description:
+                  "\"Select strongly agree\" traps are trivial for LLMs to pass. Westwood's agent cleared 99.8% of them.",
+              },
+              {
+                icon: MapPin,
+                title: "IP & Geolocation Filtering",
+                description:
+                  "Defeated by VPNs, residential proxies, and cloud hosting. Geographic checks provide no proof of identity.",
+              },
+              {
+                icon: ChartNoAxesCombined,
+                title: "Statistical Post-Hoc Detection",
+                description:
+                  "Response-time and straightlining analysis catches some bad data after collection — but you've already paid for it.",
+              },
+              {
+                icon: MonitorSmartphone,
+                title: "Platform Bot Detection",
+                description:
+                  "Software-only signals from Qualtrics or Prolific are probabilistic, not provable. No cryptographic audit trail for peer review.",
+              },
+              {
+                icon: XCircle,
+                title: "The Core Problem",
+                description:
+                  "All these methods guess whether a respondent is human. None can prove it. SurveySeal takes a fundamentally different approach — physical proof, not statistical inference.",
+              },
+            ].map((item) => (
+              <Card key={item.title} className="border-0 shadow-none">
+                <CardHeader>
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
+                    <item.icon className="h-5 w-5 text-destructive" />
+                  </div>
+                  <CardTitle className="text-base">{item.title}</CardTitle>
+                  <CardDescription>{item.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5. How It Works ── */}
       <section id="how-it-works" className="border-t px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
@@ -163,7 +332,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 4. Features ── */}
+      {/* ── 6. Features ── */}
       <section id="features" className="border-t bg-muted/40 px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
@@ -225,7 +394,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 5. For Researchers ── */}
+      {/* ── 7. For Researchers ── */}
       <section id="researchers" className="border-t px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -261,7 +430,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. TapIn Cards ── */}
+      {/* ── 8. TapIn Cards ── */}
       <section className="border-t bg-muted/40 px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -323,7 +492,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 7. FAQ ── */}
+      {/* ── 9. FAQ ── */}
       <section id="faq" className="border-t px-4 py-20">
         <div className="mx-auto max-w-3xl">
           <div className="mb-12 text-center">
@@ -339,7 +508,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 8. CTA Banner ── */}
+      {/* ── 10. CTA Banner ── */}
       <section className="border-t px-4 py-20">
         <div className="mx-auto max-w-3xl rounded-2xl bg-primary/5 px-6 py-16 text-center">
           <h2 className="text-3xl font-bold tracking-tight">
@@ -365,7 +534,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 9. Footer ── */}
+      {/* ── 11. Footer ── */}
       <footer className="border-t bg-muted/40 px-4 py-12">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-8 sm:grid-cols-3">
