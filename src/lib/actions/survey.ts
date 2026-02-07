@@ -23,6 +23,15 @@ export async function createSurvey(formData: FormData) {
       description: parsed.description,
       type: parsed.type,
       ownerId: session.user.id,
+      questions: {
+        createMany: {
+          data: [
+            { position: 0, type: "FREE_TEXT", content: { text: "Opening Checkpoint" }, isCheckpoint: true },
+            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Checkpoint" }, isCheckpoint: true },
+            { position: 2, type: "FREE_TEXT", content: { text: "Closing Checkpoint" }, isCheckpoint: true },
+          ],
+        },
+      },
     },
   });
 
