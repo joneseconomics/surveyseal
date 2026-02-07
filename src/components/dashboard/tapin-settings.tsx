@@ -49,36 +49,38 @@ export function TapInSettings({
   }
 
   return (
-    <Tabs defaultValue="manual">
-      <TabsList>
-        <TabsTrigger value="manual">Manual TapIn Verification</TabsTrigger>
-        <TabsTrigger value="api">API TapIn Verification</TabsTrigger>
-      </TabsList>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label>Verification Point Timer (seconds)</Label>
+        <form action={updateSurveySettings} className="space-y-4">
+          <input type="hidden" name="id" value={surveyId} />
+          <input type="hidden" name="requireLogin" value={requireLogin ? "true" : "false"} />
+          <input type="hidden" name="tapinApiKey" value={tapinApiKey ?? ""} />
+          <input type="hidden" name="tapinCampaignId" value={tapinGroupId ?? ""} />
+          <Input
+            name="verificationPointTimerSeconds"
+            type="number"
+            min={10}
+            max={300}
+            defaultValue={verificationPointTimerSeconds}
+          />
+          <p className="text-xs text-muted-foreground">
+            Seconds respondents have to tap at each verification point. If the timer expires, the verification point is automatically skipped. Range: 10-300.
+          </p>
+          <Button type="submit" size="sm">Save Timer</Button>
+        </form>
+      </div>
 
-      <TabsContent value="manual" className="mt-4 space-y-4">
-        <div className="space-y-2">
-          <Label>Verification Point Timer (seconds)</Label>
-          <form action={updateSurveySettings} className="space-y-4">
-            <input type="hidden" name="id" value={surveyId} />
-            <input type="hidden" name="requireLogin" value={requireLogin ? "true" : "false"} />
-            <input type="hidden" name="tapinApiKey" value={tapinApiKey ?? ""} />
-            <input type="hidden" name="tapinCampaignId" value={tapinGroupId ?? ""} />
-            <Input
-              name="verificationPointTimerSeconds"
-              type="number"
-              min={10}
-              max={300}
-              defaultValue={verificationPointTimerSeconds}
-            />
-            <p className="text-xs text-muted-foreground">
-              Seconds respondents have to tap at each verification point. If the timer expires, the verification point is automatically skipped. Range: 10-300.
-            </p>
-            <Button type="submit" size="sm">Save Timer</Button>
-          </form>
-        </div>
+      <div className="border-t pt-6">
+        <Tabs defaultValue="manual">
+          <TabsList>
+            <TabsTrigger value="manual">Manual TapIn Verification</TabsTrigger>
+            <TabsTrigger value="api">API TapIn Verification</TabsTrigger>
+          </TabsList>
 
-        <div className="space-y-2 border-t pt-4">
-          <Label>Upload TapIn CSV</Label>
+          <TabsContent value="manual" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Upload TapIn CSV</Label>
           <p className="text-xs text-muted-foreground">
             Upload a CSV file exported from TapIn with tap records. The CSV must have &ldquo;email&rdquo; and &ldquo;tapped_at&rdquo; (or &ldquo;timestamp&rdquo;) columns. Taps are matched to survey sessions by email and time window.
           </p>
@@ -112,10 +114,10 @@ export function TapInSettings({
               <span>{csvMessage.text}</span>
             </div>
           )}
-        </div>
-      </TabsContent>
+          </div>
+        </TabsContent>
 
-      <TabsContent value="api" className="mt-4">
+        <TabsContent value="api" className="mt-4">
         <form action={updateSurveySettings} className="space-y-6">
           <input type="hidden" name="id" value={surveyId} />
           <input type="hidden" name="requireLogin" value={requireLogin ? "true" : "false"} />
@@ -152,6 +154,8 @@ export function TapInSettings({
           <Button type="submit">Save API Settings</Button>
         </form>
       </TabsContent>
-    </Tabs>
+      </Tabs>
+      </div>
+    </div>
   );
 }

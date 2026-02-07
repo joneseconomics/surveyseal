@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Shield,
   ArrowRight,
   Smartphone,
   ShieldCheck,
@@ -30,6 +29,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
+import { SurveySealLogo } from "@/components/logo";
 
 export default function LandingPage() {
   return (
@@ -38,7 +38,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-2 font-semibold">
-            <Shield className="h-5 w-5 text-primary" />
+            <SurveySealLogo className="h-6 w-6" />
             SurveySeal
           </div>
           <nav className="hidden items-center gap-6 text-sm md:flex">
@@ -87,7 +87,7 @@ export default function LandingPage() {
             variant="secondary"
             className="gap-1.5 px-3 py-1 text-sm font-normal"
           >
-            <Shield className="h-3.5 w-3.5" />
+            <SurveySealLogo className="h-3.5 w-3.5" />
             Human-Verified Survey Platform
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -549,7 +549,7 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="flex items-center gap-2 font-semibold">
-                <Shield className="h-5 w-5 text-primary" />
+                <SurveySealLogo className="h-6 w-6" />
                 SurveySeal
               </div>
               <p className="mt-2 text-sm text-muted-foreground">

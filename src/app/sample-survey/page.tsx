@@ -21,6 +21,7 @@ import {
   Timer,
 } from "lucide-react";
 import Link from "next/link";
+import { SurveySealLogo } from "@/components/logo";
 
 type StepType =
   | { kind: "verificationPoint"; verificationPointNumber: number; label: string }
@@ -223,7 +224,7 @@ export default function SampleSurveyPage() {
         <header className="border-b">
           <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Shield className="h-5 w-5 text-primary" />
+              <SurveySealLogo className="h-6 w-6" />
               SurveySeal
             </Link>
           </div>
@@ -275,7 +276,7 @@ export default function SampleSurveyPage() {
         <header className="border-b">
           <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Shield className="h-5 w-5 text-primary" />
+              <SurveySealLogo className="h-6 w-6" />
               SurveySeal
             </Link>
           </div>
@@ -346,7 +347,7 @@ export default function SampleSurveyPage() {
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Shield className="h-5 w-5 text-primary" />
+            <SurveySealLogo className="h-6 w-6" />
             SurveySeal
           </Link>
           <span className="text-sm text-muted-foreground">
