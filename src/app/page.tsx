@@ -12,10 +12,11 @@ import {
   ArrowRight,
   Smartphone,
   ShieldCheck,
-  Lock,
   BarChart3,
   TestTube2,
-  GraduationCap,
+  LogIn,
+  Users,
+  ClipboardList,
   CreditCard,
   CheckCircle,
   ExternalLink,
@@ -59,6 +60,12 @@ export default function LandingPage() {
             >
               FAQ
             </a>
+            <Link
+              href="/sample-survey"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Try It
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/auth/signin">
@@ -81,14 +88,14 @@ export default function LandingPage() {
             className="gap-1.5 px-3 py-1 text-sm font-normal"
           >
             <Shield className="h-3.5 w-3.5" />
-            NFC-Verified Survey Platform
+            Human-Verified Survey Platform
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Prove your survey respondents are real.
           </h1>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            SurveySeal pairs TapIn NFC smart cards with cryptographic
-            verification to guarantee every response comes from a physically
+            SurveySeal pairs TapIn Survey cards with physical-tap
+            verification to guarantee every response comes from a real,
             present human — not a bot, not a proxy.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -98,11 +105,12 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <a href="#how-it-works">
+            <Link href="/sample-survey">
               <Button variant="outline" size="lg">
-                Learn More
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Try a Sample Survey
               </Button>
-            </a>
+            </Link>
           </div>
           <p className="text-xs text-muted-foreground">
             Powered by{" "}
@@ -298,21 +306,21 @@ export default function LandingPage() {
                 icon: CreditCard,
                 title: "Distribute TapIn Survey cards",
                 description:
-                  "Hand out reusable NFC smart cards to your study participants. No app or setup required.",
+                  "Hand out reusable TapIn Survey cards to your study participants. No app or setup required.",
               },
               {
                 step: 2,
                 icon: Smartphone,
-                title: "Respondents tap at three checkpoints",
+                title: "Respondents tap at checkpoints",
                 description:
-                  "At each checkpoint, participants tap their card on their phone to receive a unique verification phrase.",
+                  "At each checkpoint, participants tap their card on their phone to receive a unique, time-limited verification phrase.",
               },
               {
                 step: 3,
                 icon: ShieldCheck,
                 title: "Export verified data",
                 description:
-                  "Download research-ready CSV files with cryptographic proof of physical presence at every checkpoint.",
+                  "Download research-ready CSV files with verified proof of physical presence at every checkpoint.",
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
@@ -345,15 +353,9 @@ export default function LandingPage() {
             {[
               {
                 icon: Smartphone,
-                title: "Three-Tap Verification",
+                title: "Physical-Tap Verification",
                 description:
-                  "Opening, mid-survey, and closing NFC taps create an unbroken chain of physical presence proof.",
-              },
-              {
-                icon: Lock,
-                title: "Cryptographic Proof",
-                description:
-                  "HMAC-SHA256 verification phrases with 90-second TTL ensure responses cannot be shared, replayed, or forged.",
+                  "Opening, mid-survey, and closing card taps create an unbroken chain of physical presence proof.",
               },
               {
                 icon: ShieldCheck,
@@ -368,16 +370,22 @@ export default function LandingPage() {
                   "Export responses with full verification chain — card IDs, tap timestamps, and counters — for transparent peer review.",
               },
               {
-                icon: TestTube2,
-                title: "NFC Mock Mode",
+                icon: Users,
+                title: "Real-Time Response Monitoring",
                 description:
-                  "Test the full verification flow without physical NFC hardware. Perfect for development and pilot testing.",
+                  "Track survey completion, verification status, and response rates in real time from your researcher dashboard.",
               },
               {
-                icon: GraduationCap,
-                title: "University SSO Support",
+                icon: TestTube2,
+                title: "Mock Mode for Testing",
                 description:
-                  "Sign in with Google or Microsoft Entra ID. Works seamlessly with university single sign-on systems.",
+                  "Test the full verification flow without physical cards. Perfect for development and pilot testing.",
+              },
+              {
+                icon: LogIn,
+                title: "Social Sign-In",
+                description:
+                  "Sign in with your Google or Microsoft account. No new passwords to remember — just use an account you already have.",
               },
             ].map((feature) => (
               <Card key={feature.title} className="border-0 shadow-none bg-background">
@@ -417,7 +425,7 @@ export default function LandingPage() {
                   "IRB-ready verification logs for ethics review",
                   "Complete audit trail for every response",
                   "No technical expertise required to set up",
-                  "Compatible with university IT and SSO systems",
+                  "Sign in with Google or Microsoft — no new accounts needed",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -443,13 +451,13 @@ export default function LandingPage() {
                 TapIn Survey Cards
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight">
-                Durable NFC smart cards with hardware security.
+                Durable smart cards with hardware security.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                TapIn Survey cards are credit-card-sized NFC smart cards
-                designed for academic research. Each card carries a unique
-                cryptographic identity that produces verifiable taps —
-                impossible to clone, share, or replay.
+                TapIn Survey cards are credit-card-sized smart cards designed
+                for academic research. Each card carries a unique identity that
+                produces verifiable taps — impossible to clone, share, or
+                replay.
               </p>
               <a
                 href="https://tapin.me"
@@ -472,7 +480,7 @@ export default function LandingPage() {
                 {
                   title: "No app required",
                   description:
-                    "Respondents tap the card on any NFC-enabled phone. It opens a web page — that's it.",
+                    "Respondents tap the card on their phone. It opens a web page — that's it.",
                 },
                 {
                   title: "Every tap is cryptographically unique",
@@ -515,7 +523,7 @@ export default function LandingPage() {
             Ready to collect verified survey data?
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Create your first NFC-verified survey in minutes. No technical
+            Create your first human-verified survey in minutes. No technical
             setup required.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -544,7 +552,7 @@ export default function LandingPage() {
                 SurveySeal
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                NFC-verified surveys for academic research.
+                Human-verified surveys for academic research.
               </p>
             </div>
             <div>

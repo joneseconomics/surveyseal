@@ -11,27 +11,27 @@ const faqs = [
   {
     question: "What is SurveySeal?",
     answer:
-      "SurveySeal is a survey platform for academic research that uses NFC-based physical verification to prove respondents are real, physically present humans — not bots, proxies, or duplicate entries.",
+      "SurveySeal is a survey platform for academic research that uses physical-tap verification to prove respondents are real, physically present humans — not bots, proxies, or duplicate entries.",
   },
   {
-    question: "How does three-tap verification work?",
+    question: "How does physical-tap verification work?",
     answer:
-      "Each survey includes three checkpoints: an opening tap, a mid-survey attention check, and a closing tap. At each checkpoint, the respondent taps their TapIn Survey card on their phone. The card generates a cryptographically unique code that produces a two-word verification phrase, valid for 90 seconds. This creates an unbroken chain of physical presence proof across the entire survey.",
+      "Each survey includes checkpoints: an opening tap, a mid-survey attention check, and a closing tap. At each checkpoint, the respondent taps their TapIn Survey card on their phone. The card generates a unique code that produces a two-word verification phrase, valid for 90 seconds. This creates an unbroken chain of physical presence proof across the entire survey.",
   },
   {
     question: "What are TapIn Survey cards?",
     answer:
-      "TapIn Survey cards are durable, credit-card-sized NFC smart cards with built-in hardware security. Each card has a unique identity and produces cryptographically verifiable taps. They're reusable across multiple surveys and don't require any app to use — just tap the card on any NFC-enabled phone.",
+      "TapIn Survey cards are durable, credit-card-sized smart cards with built-in hardware security. Each card has a unique identity and produces verifiable taps. They're reusable across multiple surveys and don't require any app to use — just tap the card on any compatible phone.",
   },
   {
     question: "What devices are compatible?",
     answer:
-      "TapIn Survey cards work with any NFC-enabled smartphone. This includes most modern Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in NFC reader handles everything.",
+      "TapIn Survey cards work with most modern smartphones. This includes most Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in reader handles everything.",
   },
   {
     question: "What data does SurveySeal collect?",
     answer:
-      "SurveySeal collects survey responses along with verification metadata: card identifiers, tap timestamps, and cryptographic proof of each checkpoint. All data is exportable as a research-ready CSV with a full verification chain for transparent peer review. SurveySeal does not track location or collect personal device information.",
+      "SurveySeal collects survey responses along with verification metadata: card identifiers, tap timestamps, and proof of each checkpoint. All data is exportable as a research-ready CSV with a full verification chain for transparent peer review. SurveySeal does not track location or collect personal device information.",
   },
   {
     question: "Do respondents need to install an app?",
@@ -41,7 +41,7 @@ const faqs = [
   {
     question: "How do I get started?",
     answer:
-      "Sign in with your university account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. The survey builder is designed for researchers — no technical expertise required. You can use NFC Mock Mode during development to test the full flow without physical cards.",
+      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. The survey builder is designed for researchers — no technical expertise required. You can use Mock Mode during development to test the full flow without physical cards.",
   },
 ];
 
