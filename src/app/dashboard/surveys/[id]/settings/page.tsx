@@ -4,9 +4,9 @@ import { notFound, redirect } from "next/navigation";
 import { updateSurveySettings } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Smartphone, Users } from "lucide-react";
+import { TapInSettings } from "@/components/dashboard/tapin-settings";
 
 export default async function SurveySettingsPage({
   params,
@@ -87,59 +87,17 @@ export default async function SurveySettingsPage({
             <CardTitle className="text-base">TapIn Verification</CardTitle>
           </div>
           <CardDescription>
-            Control how verification points behave for respondents and configure TapIn integration for post-survey verification.
+            Configure verification point settings and TapIn integration for post-survey verification.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={updateSurveySettings} className="space-y-6">
-            <input type="hidden" name="id" value={survey.id} />
-            <input type="hidden" name="requireLogin" value={survey.requireLogin ? "true" : "false"} />
-
-            <div className="space-y-2">
-              <Label htmlFor="checkpointTimerSeconds">Verification Point Timer (seconds)</Label>
-              <Input
-                id="checkpointTimerSeconds"
-                name="checkpointTimerSeconds"
-                type="number"
-                min={10}
-                max={300}
-                defaultValue={survey.checkpointTimerSeconds}
-              />
-              <p className="text-xs text-muted-foreground">
-                Seconds respondents have to tap at each verification point. If the timer expires, the verification point is automatically skipped. Range: 10-300.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tapinApiKey">TapIn API Key</Label>
-              <Input
-                id="tapinApiKey"
-                name="tapinApiKey"
-                type="text"
-                placeholder="tap_key_..."
-                defaultValue={survey.tapinApiKey ?? ""}
-              />
-              <p className="text-xs text-muted-foreground">
-                Used for post-survey verification reconciliation. Get this from your TapIn dashboard.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tapinCampaignId">TapIn Campaign ID</Label>
-              <Input
-                id="tapinCampaignId"
-                name="tapinCampaignId"
-                type="text"
-                placeholder="camp_..."
-                defaultValue={survey.tapinCampaignId ?? ""}
-              />
-              <p className="text-xs text-muted-foreground">
-                The TapIn campaign to match taps against. Found in your TapIn campaign settings.
-              </p>
-            </div>
-
-            <Button type="submit">Save Settings</Button>
-          </form>
+          <TapInSettings
+            surveyId={survey.id}
+            checkpointTimerSeconds={survey.checkpointTimerSeconds}
+            requireLogin={survey.requireLogin}
+            tapinApiKey={survey.tapinApiKey}
+            tapinGroupId={survey.tapinCampaignId}
+          />
         </CardContent>
       </Card>
     </div>

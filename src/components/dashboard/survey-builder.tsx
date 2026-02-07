@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +21,7 @@ interface SurveyBuilderProps {
   responseCount: number;
 }
 
-export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilderProps) {
+export function SurveyBuilder({ survey, questions }: SurveyBuilderProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -190,18 +190,6 @@ export function SurveyBuilder({ survey, questions, responseCount }: SurveyBuilde
           />
         )}
       </div>
-
-      {/* Stats */}
-      {!isDraft && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Stats</CardTitle>
-            <CardDescription>
-              {responseCount} response{responseCount !== 1 ? "s" : ""} collected
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
 
       {/* Question editor dialog */}
       {showEditor && (

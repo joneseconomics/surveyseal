@@ -149,7 +149,7 @@ export async function reconcileTapIn(surveyId: string) {
 
   if (!survey) throw new Error("Survey not found");
   if (!survey.tapinApiKey || !survey.tapinCampaignId) {
-    throw new Error("TapIn API key and campaign ID must be configured in Settings");
+    throw new Error("TapIn API key and Group ID must be configured in Settings");
   }
 
   const sessions = await db.surveySession.findMany({
@@ -193,6 +193,75 @@ export async function reconcileTapIn(surveyId: string) {
   }
 
   revalidatePath(`/dashboard/surveys/${surveyId}/responses`);
+}
+
+export async function importTapInCsv(surveyId: string, csvText: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const survey = await db.survey.findUnique({
+    where: { id: surveyId, ownerId: session.user.id },
+    select: { id: true },
+  });
+  if (!survey) throw new Error("Survey not found");
+
+  const lines = csvText.trim().split("\n");
+  if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
+
+  const header = lines[0].toLowerCase().split(",").map((h) => h.trim());
+  const emailIdx = header.findIndex((h) => h === "email");
+  const tappedAtIdx = header.findIndex((h) => h === "tapped_at" || h === "tappedat" || h === "timestamp");
+  const tapIdIdx = header.findIndex((h) => h === "id" || h === "tap_id" || h === "tapid");
+
+  if (emailIdx === -1) throw new Error("CSV must have an 'email' column");
+  if (tappedAtIdx === -1) throw new Error("CSV must have a 'tapped_at' or 'timestamp' column");
+
+  // Find matching sessions by email
+  const sessions = await db.surveySession.findMany({
+    where: { surveyId, status: "COMPLETED", participantEmail: { not: null } },
+    select: { id: true, participantEmail: true, startedAt: true, completedAt: true },
+  });
+
+  const sessionsByEmail = new Map<string, typeof sessions>();
+  for (const s of sessions) {
+    if (!s.participantEmail) continue;
+    const key = s.participantEmail.toLowerCase();
+    if (!sessionsByEmail.has(key)) sessionsByEmail.set(key, []);
+    sessionsByEmail.get(key)!.push(s);
+  }
+
+  let imported = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    const email = cols[emailIdx]?.toLowerCase();
+    const tappedAtStr = cols[tappedAtIdx];
+    const tapId = tapIdIdx >= 0 ? cols[tapIdIdx] : `csv-${i}`;
+
+    if (!email || !tappedAtStr) continue;
+
+    const tappedAt = new Date(tappedAtStr);
+    if (isNaN(tappedAt.getTime())) continue;
+
+    const matchingSessions = sessionsByEmail.get(email);
+    if (!matchingSessions) continue;
+
+    // Match tap to the session whose time window contains the tap
+    for (const s of matchingSessions) {
+      if (!s.completedAt) continue;
+      if (tappedAt >= s.startedAt && tappedAt <= s.completedAt) {
+        await db.tapInTap.upsert({
+          where: { sessionId_tapinId: { sessionId: s.id, tapinId: tapId } },
+          create: { sessionId: s.id, tapinId: tapId, email, tappedAt },
+          update: {},
+        });
+        imported++;
+        break;
+      }
+    }
+  }
+
+  revalidatePath(`/dashboard/surveys/${surveyId}/responses`);
+  return { imported };
 }
 
 export async function closeSurvey(surveyId: string) {

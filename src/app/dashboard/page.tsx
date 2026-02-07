@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DeleteSurveyButton } from "@/components/dashboard/delete-survey-button";
 
 const statusColors = {
   DRAFT: "secondary",
@@ -61,7 +62,10 @@ export default async function DashboardPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{survey.title}</CardTitle>
-                    <Badge variant={statusColors[survey.status]}>{survey.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={statusColors[survey.status]}>{survey.status}</Badge>
+                      <DeleteSurveyButton surveyId={survey.id} />
+                    </div>
                   </div>
                   {survey.description && (
                     <CardDescription className="line-clamp-2">
@@ -72,7 +76,7 @@ export default async function DashboardPage() {
                 <CardContent>
                   <div className="flex gap-4 text-sm text-muted-foreground">
                     <span>{survey.questions.filter((q) => !q.isCheckpoint).length} questions</span>
-                    <span>{survey.questions.filter((q) => q.isCheckpoint).length}/3 verification points</span>
+                    <span>{survey.questions.filter((q) => q.isCheckpoint).length} verification points</span>
                     <span>{survey._count.sessions} responses</span>
                   </div>
                 </CardContent>
