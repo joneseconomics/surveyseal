@@ -159,6 +159,7 @@ model SurveySession {
   participant User?        @relation(fields: [participantId], references: [id])
   checkpoints Checkpoint[]
   responses   Response[]
+  tapinTaps   TapInTap[]
 
   @@map("survey_sessions")
 }
@@ -191,4 +192,18 @@ model Response {
 
   @@unique([sessionId, questionId])
   @@map("responses")
+}
+
+model TapInTap {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  tapinId   String   @map("tapin_id")
+  email     String
+  tappedAt  DateTime @map("tapped_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, tapinId])
+  @@map("tapin_taps")
 }

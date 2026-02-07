@@ -21,6 +21,7 @@ export async function GET(
         include: {
           responses: true,
           checkpoints: { orderBy: { createdAt: "asc" } },
+          tapinTaps: { orderBy: { tappedAt: "asc" } },
         },
       },
     },
@@ -52,6 +53,8 @@ export async function GET(
     "checkpoint_3_verified",
     "checkpoint_3_skipped",
     "checkpoint_3_email",
+    "tapin_tap_count",
+    "tapin_tap_timestamps",
   ];
 
   const rows = survey.sessions.map((s) => {
@@ -82,6 +85,8 @@ export async function GET(
           cp?.verifiedEmail ?? "",
         ];
       }).flat(),
+      String(s.tapinTaps.length),
+      s.tapinTaps.map((t) => t.tappedAt.toISOString()).join(";"),
     ];
 
     return values.map(escapeCsvField).join(",");

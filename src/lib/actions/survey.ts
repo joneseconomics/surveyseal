@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema } from "@/lib/validations/survey";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { fetchTapInTaps } from "@/lib/tapin";
 
 export async function createSurvey(formData: FormData) {
   const session = await auth();
@@ -120,6 +121,67 @@ export async function updateSurveySettings(formData: FormData) {
   });
 
   revalidatePath(`/dashboard/surveys/${parsed.id}/settings`);
+}
+
+export async function reconcileTapIn(surveyId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const survey = await db.survey.findUnique({
+    where: { id: surveyId, ownerId: session.user.id },
+    select: {
+      tapinApiKey: true,
+      tapinCampaignId: true,
+      checkpointTimerSeconds: true,
+    },
+  });
+
+  if (!survey) throw new Error("Survey not found");
+  if (!survey.tapinApiKey || !survey.tapinCampaignId) {
+    throw new Error("TapIn API key and campaign ID must be configured in Settings");
+  }
+
+  const sessions = await db.surveySession.findMany({
+    where: { surveyId, status: "COMPLETED", participantEmail: { not: null } },
+    select: {
+      id: true,
+      participantEmail: true,
+      startedAt: true,
+      completedAt: true,
+    },
+  });
+
+  for (const s of sessions) {
+    if (!s.participantEmail || !s.completedAt) continue;
+
+    const from = s.startedAt;
+    const to = new Date(s.completedAt.getTime() + survey.checkpointTimerSeconds * 1000);
+
+    const taps = await fetchTapInTaps(
+      survey.tapinApiKey,
+      survey.tapinCampaignId,
+      s.participantEmail,
+      from,
+      to,
+    );
+
+    for (const tap of taps) {
+      await db.tapInTap.upsert({
+        where: {
+          sessionId_tapinId: { sessionId: s.id, tapinId: tap.id },
+        },
+        create: {
+          sessionId: s.id,
+          tapinId: tap.id,
+          email: tap.email,
+          tappedAt: new Date(tap.tapped_at),
+        },
+        update: {},
+      });
+    }
+  }
+
+  revalidatePath(`/dashboard/surveys/${surveyId}/responses`);
 }
 
 export async function closeSurvey(surveyId: string) {

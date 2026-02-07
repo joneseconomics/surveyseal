@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Download, CheckCircle, Clock } from "lucide-react";
 import { ResponseSummary } from "@/components/dashboard/response-summary";
+import { ReconcileButton } from "@/components/dashboard/reconcile-button";
 
 export default async function ResponsesPage({
   params,
@@ -32,6 +33,7 @@ export default async function ResponsesPage({
         include: {
           checkpoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
+          tapinTaps: { select: { id: true } },
         },
         orderBy: { startedAt: "desc" },
       },
@@ -41,6 +43,7 @@ export default async function ResponsesPage({
   if (!survey) notFound();
 
   const totalCheckpoints = survey.questions.length;
+  const hasTapInKey = !!survey.tapinApiKey;
 
   return (
     <div className="space-y-6">
@@ -52,14 +55,17 @@ export default async function ResponsesPage({
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Responses</h2>
-        {survey.sessions.length > 0 && (
-          <a href={`/api/survey/${id}/export`} download>
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
-          </a>
-        )}
+        <div className="flex items-center gap-2">
+          {hasTapInKey && <ReconcileButton surveyId={id} />}
+          {survey.sessions.length > 0 && (
+            <a href={`/api/survey/${id}/export`} download>
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            </a>
+          )}
+        </div>
       </div>
 
       {survey.sessions.length === 0 ? (
@@ -79,6 +85,7 @@ export default async function ResponsesPage({
                   <TableHead>Status</TableHead>
                   <TableHead>Checkpoints</TableHead>
                   <TableHead>Responses</TableHead>
+                  {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>
                 </TableRow>
               </TableHeader>
@@ -109,6 +116,13 @@ export default async function ResponsesPage({
                         </span>
                       </TableCell>
                       <TableCell>{s.responses.length}</TableCell>
+                      {hasTapInKey && (
+                        <TableCell>
+                          {s.tapinTaps.length > 0
+                            ? `${s.tapinTaps.length} tap${s.tapinTaps.length !== 1 ? "s" : ""}`
+                            : "\u2014"}
+                        </TableCell>
+                      )}
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(s.startedAt).toLocaleString()}
                       </TableCell>
