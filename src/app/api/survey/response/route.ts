@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     for (const cp of precedingCheckpoints) {
       if (!validatedCheckpointIds.has(cp.id)) {
         return NextResponse.json(
-          { error: "Preceding checkpoint not validated" },
+          { error: "Preceding verification point not validated" },
           { status: 403 }
         );
       }

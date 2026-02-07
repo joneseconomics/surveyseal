@@ -124,13 +124,39 @@ export async function reorderQuestions(surveyId: string, orderedIds: string[]) {
 
   await verifyOwnership(surveyId, session.user.id);
 
-  // Move all questions to negative temporary positions first to avoid unique constraint violations,
+  // Fetch all questions ordered by current position
+  const allQuestions = await db.question.findMany({
+    where: { surveyId },
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
+
+  let finalOrder: string[];
+
+  if (orderedIds.length === allQuestions.length) {
+    // Full reorder — simple sequential assignment
+    finalOrder = orderedIds;
+  } else {
+    // Subset reorder (e.g. only questions or only verification points).
+    // Walk the current order, replacing items in the reorder set with the
+    // new order while keeping other items in their original positions.
+    const reorderSet = new Set(orderedIds);
+    let reorderIndex = 0;
+    finalOrder = allQuestions.map((q) => {
+      if (reorderSet.has(q.id)) {
+        return orderedIds[reorderIndex++];
+      }
+      return q.id;
+    });
+  }
+
+  // Move all to negative temporary positions first to avoid unique constraint violations,
   // then assign final positions.
   await db.$transaction([
-    ...orderedIds.map((id, i) =>
+    ...finalOrder.map((id, i) =>
       db.question.update({ where: { id }, data: { position: -(i + 1) } })
     ),
-    ...orderedIds.map((id, i) =>
+    ...finalOrder.map((id, i) =>
       db.question.update({ where: { id }, data: { position: i } })
     ),
   ]);

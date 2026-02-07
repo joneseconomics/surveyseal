@@ -26,9 +26,9 @@ export async function createSurvey(formData: FormData) {
       questions: {
         createMany: {
           data: [
-            { position: 0, type: "FREE_TEXT", content: { text: "Opening Checkpoint" }, isCheckpoint: true },
-            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Checkpoint" }, isCheckpoint: true },
-            { position: 2, type: "FREE_TEXT", content: { text: "Closing Checkpoint" }, isCheckpoint: true },
+            { position: 0, type: "FREE_TEXT", content: { text: "Opening Verification Point" }, isCheckpoint: true },
+            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Verification Point" }, isCheckpoint: true },
+            { position: 2, type: "FREE_TEXT", content: { text: "Closing Verification Point" }, isCheckpoint: true },
           ],
         },
       },
@@ -88,7 +88,7 @@ export async function publishSurvey(surveyId: string) {
   const checkpoints = survey.questions.filter((q) => q.isCheckpoint);
   if (checkpoints.length !== 3) {
     throw new Error(
-      `Survey must have exactly 3 checkpoints to publish (found ${checkpoints.length})`
+      `Survey must have exactly 3 verification points to publish (found ${checkpoints.length})`
     );
   }
 
@@ -96,7 +96,7 @@ export async function publishSurvey(surveyId: string) {
   const closingCheckpoint = checkpoints[checkpoints.length - 1];
   if (lastQuestion.id !== closingCheckpoint.id) {
     throw new Error(
-      "The closing checkpoint must be the last question in the survey. No questions can come after it."
+      "The closing verification point must be the last item in the survey. No questions can come after it."
     );
   }
 

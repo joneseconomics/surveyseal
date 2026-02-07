@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { deleteQuestion, toggleCheckpoint } from "@/lib/actions/question";
+import { deleteQuestion } from "@/lib/actions/question";
 import { GripVertical, Trash2, Pencil, Shield } from "lucide-react";
 import type { Question } from "@/generated/prisma/client";
 
@@ -100,7 +100,7 @@ export function QuestionCard({
             </Badge>
             {question.isCheckpoint && (
               <Badge variant="default" className="text-xs">
-                Checkpoint
+                Verification Point
               </Badge>
             )}
           </div>
@@ -108,15 +108,6 @@ export function QuestionCard({
 
         {isDraft && (
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => toggleCheckpoint(question.id)}
-              title={question.isCheckpoint ? "Remove checkpoint" : "Set as checkpoint"}
-            >
-              <Shield className={`h-4 w-4 ${question.isCheckpoint ? "text-primary" : ""}`} />
-            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} title="Edit">
               <Pencil className="h-4 w-4" />
             </Button>

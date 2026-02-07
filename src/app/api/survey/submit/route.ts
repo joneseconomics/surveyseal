@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (resolvedCheckpoints.length !== session.survey.questions.length) {
       return NextResponse.json(
         {
-          error: `Not all checkpoints resolved (${resolvedCheckpoints.length}/${session.survey.questions.length})`,
+          error: `Not all verification points resolved (${resolvedCheckpoints.length}/${session.survey.questions.length})`,
         },
         { status: 400 }
       );

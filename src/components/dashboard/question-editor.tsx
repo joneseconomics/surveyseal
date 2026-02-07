@@ -29,6 +29,7 @@ interface QuestionEditorProps {
   surveyId: string;
   question: Question | null;
   onClose: () => void;
+  forceCheckpoint?: boolean;
 }
 
 const typeLabels: Record<QuestionTypeValue, string> = {
@@ -53,7 +54,7 @@ const typeLabels: Record<QuestionTypeValue, string> = {
   PHONE_NUMBER: "Phone Number",
 };
 
-export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorProps) {
+export function QuestionEditor({ surveyId, question, onClose, forceCheckpoint }: QuestionEditorProps) {
   const isEditing = !!question;
   const existingContent = (question?.content ?? {}) as Record<string, unknown>;
 
@@ -84,7 +85,7 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
   const [sliderMin, setSliderMin] = useState((existingContent.min as number) ?? 0);
   const [sliderMax, setSliderMax] = useState((existingContent.max as number) ?? 100);
   const [sliderStep, setSliderStep] = useState((existingContent.step as number) ?? 1);
-  const [isCheckpoint, setIsCheckpoint] = useState(question?.isCheckpoint ?? false);
+  const isCheckpoint = forceCheckpoint ?? (question?.isCheckpoint ?? false);
   const [saving, setSaving] = useState(false);
 
   function buildContent(): Record<string, unknown> {
@@ -157,9 +158,13 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Question" : "Add Question"}</DialogTitle>
+          <DialogTitle>
+            {isCheckpoint
+              ? isEditing ? "Edit Verification Point" : "Add Verification Point"
+              : isEditing ? "Edit Question" : "Add Question"}
+          </DialogTitle>
           <DialogDescription>
-            Configure the question type and content.
+            Configure the {isCheckpoint ? "verification point" : "question"} type and content.
           </DialogDescription>
         </DialogHeader>
 
@@ -383,17 +388,6 @@ export function QuestionEditor({ surveyId, question, onClose }: QuestionEditorPr
             </div>
           )}
 
-          {/* Checkpoint toggle */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="checkpoint"
-              checked={isCheckpoint}
-              onChange={(e) => setIsCheckpoint(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="checkpoint">This is a verification checkpoint</Label>
-          </div>
         </div>
 
         <DialogFooter>

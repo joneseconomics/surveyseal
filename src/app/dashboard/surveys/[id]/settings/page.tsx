@@ -87,7 +87,7 @@ export default async function SurveySettingsPage({
             <CardTitle className="text-base">TapIn Verification</CardTitle>
           </div>
           <CardDescription>
-            Control how checkpoints behave for respondents and configure TapIn integration for post-survey verification.
+            Control how verification points behave for respondents and configure TapIn integration for post-survey verification.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,7 +96,7 @@ export default async function SurveySettingsPage({
             <input type="hidden" name="requireLogin" value={survey.requireLogin ? "true" : "false"} />
 
             <div className="space-y-2">
-              <Label htmlFor="checkpointTimerSeconds">Checkpoint Timer (seconds)</Label>
+              <Label htmlFor="checkpointTimerSeconds">Verification Point Timer (seconds)</Label>
               <Input
                 id="checkpointTimerSeconds"
                 name="checkpointTimerSeconds"
@@ -106,7 +106,7 @@ export default async function SurveySettingsPage({
                 defaultValue={survey.checkpointTimerSeconds}
               />
               <p className="text-xs text-muted-foreground">
-                Seconds respondents have to tap at each checkpoint. If the timer expires, the checkpoint is automatically skipped. Range: 10-300.
+                Seconds respondents have to tap at each verification point. If the timer expires, the verification point is automatically skipped. Range: 10-300.
               </p>
             </div>
 

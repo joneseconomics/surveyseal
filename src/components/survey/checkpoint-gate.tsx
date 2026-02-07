@@ -12,6 +12,8 @@ interface CheckpointGateProps {
   position: number;
   totalQuestions: number;
   timerSeconds: number;
+  checkpointNumber?: number;
+  totalCheckpoints?: number;
 }
 
 export function CheckpointGate({
@@ -21,6 +23,8 @@ export function CheckpointGate({
   position,
   totalQuestions,
   timerSeconds,
+  checkpointNumber,
+  totalCheckpoints,
 }: CheckpointGateProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -131,9 +135,11 @@ export function CheckpointGate({
         <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <Shield className="h-6 w-6 text-primary" />
         </div>
-        <CardTitle>Verification Checkpoint</CardTitle>
+        <CardTitle>Verification Point</CardTitle>
         <CardDescription>
-          Question {position + 1} of {totalQuestions}
+          {checkpointNumber && totalCheckpoints
+            ? `Verification Point ${checkpointNumber} of ${totalCheckpoints}`
+            : `Question ${position + 1} of ${totalQuestions}`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -216,7 +222,7 @@ export function CheckpointGate({
               <SkipForward className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="font-medium text-muted-foreground">
-              {secondsLeft === 0 ? "Time expired — checkpoint skipped" : "Checkpoint skipped"}
+              {secondsLeft === 0 ? "Time expired — verification point skipped" : "Verification point skipped"}
             </p>
             <p className="text-sm text-muted-foreground">
               Continuing to next question...

@@ -83,7 +83,7 @@ export default async function ResponsesPage({
                   <TableHead>Session</TableHead>
                   <TableHead>Verification</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Checkpoints</TableHead>
+                  <TableHead>Verification Points</TableHead>
                   <TableHead>Responses</TableHead>
                   {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>

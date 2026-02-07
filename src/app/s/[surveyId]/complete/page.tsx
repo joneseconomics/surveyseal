@@ -50,7 +50,7 @@ export default async function SurveyCompletePage({
           {session.verificationStatus === "PARTIAL" && (
             <Badge className="gap-1.5 bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
               <AlertCircle className="h-3.5 w-3.5" />
-              Partially Verified ({verifiedCount} of {totalCheckpoints} checkpoints)
+              Partially Verified ({verifiedCount} of {totalCheckpoints} verification points)
             </Badge>
           )}
 
@@ -62,9 +62,9 @@ export default async function SurveyCompletePage({
 
           <p className="text-sm text-muted-foreground">
             {session.verificationStatus === "VERIFIED"
-              ? "All three verification checkpoints were verified with your TapIn card."
+              ? "All three verification points were verified with your TapIn card."
               : session.verificationStatus === "PARTIAL"
-                ? "Some checkpoints were verified with your TapIn card."
+                ? "Some verification points were verified with your TapIn card."
                 : "Your response was recorded."}
           </p>
 

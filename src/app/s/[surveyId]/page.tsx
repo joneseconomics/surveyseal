@@ -70,9 +70,9 @@ export default async function SurveyLandingPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              This survey uses TapIn verification. At each checkpoint, you&apos;ll have{" "}
+              This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
               {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-              If you don&apos;t have a card, you can skip checkpoints and still complete the survey.
+              If you don&apos;t have a card, you can skip verification points and still complete the survey.
             </p>
             <p className="text-sm text-muted-foreground">
               Signed in as <span className="font-medium text-foreground">{authSession.user.email}</span>
@@ -104,9 +104,9 @@ export default async function SurveyLandingPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              This survey uses TapIn verification. At each checkpoint, you&apos;ll have{" "}
+              This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
               {survey.checkpointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-              If you don&apos;t have a card, you can skip checkpoints and still complete the survey.
+              If you don&apos;t have a card, you can skip verification points and still complete the survey.
             </p>
             <p className="text-sm font-medium">
               Sign in to get started

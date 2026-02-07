@@ -130,11 +130,11 @@ const surveyQuestions: SurveyQuestion[] = [
 
 // Build the step sequence: checkpoint → questions → checkpoint → questions → checkpoint
 const steps: StepType[] = [
-  { kind: "checkpoint", checkpoint: 1, label: "Opening Checkpoint — Tap to begin the survey" },
+  { kind: "checkpoint", checkpoint: 1, label: "Opening Verification Point — Tap to begin the survey" },
   ...surveyQuestions.slice(0, 4).map((q) => ({ kind: "question" as const, question: q })),
-  { kind: "checkpoint", checkpoint: 2, label: "Mid-Survey Checkpoint — Tap to continue" },
+  { kind: "checkpoint", checkpoint: 2, label: "Mid-Survey Verification Point — Tap to continue" },
   ...surveyQuestions.slice(4).map((q) => ({ kind: "question" as const, question: q })),
-  { kind: "checkpoint", checkpoint: 3, label: "Closing Checkpoint — Tap to submit" },
+  { kind: "checkpoint", checkpoint: 3, label: "Closing Verification Point — Tap to submit" },
 ];
 
 export default function SampleSurveyPage() {
@@ -243,13 +243,13 @@ export default function SampleSurveyPage() {
             <p className="text-muted-foreground">
               This interactive survey explores how AI bots are compromising
               online surveys. You&apos;ll experience SurveySeal&apos;s
-              TapIn verification at three checkpoints — just like a
+              TapIn verification at three verification points — just like a
               real verified survey.
             </p>
             <div className="rounded-lg border bg-muted/40 p-4 text-left text-sm text-muted-foreground">
               <div className="mb-2 flex items-center gap-2 font-medium text-foreground">
                 <Smartphone className="h-4 w-4 text-primary" />
-                How checkpoints work in this demo
+                How verification points work in this demo
               </div>
               <p>
                 In a live survey, you&apos;d tap a physical TapIn Survey card
@@ -289,7 +289,7 @@ export default function SampleSurveyPage() {
               Survey Complete
             </h1>
             <p className="text-muted-foreground">
-              You completed all three verification checkpoints. In a real
+              You completed all three verification points. In a real
               SurveySeal survey, each verified tap would tag your response
               as &ldquo;Human Verified with TapIn&rdquo; — exported alongside
               your data for analysis.
@@ -299,8 +299,8 @@ export default function SampleSurveyPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <span>
-                    <span className="font-medium">3 checkpoints completed</span>
-                    {" "}— opening, mid-survey, and closing checkpoints all passed.
+                    <span className="font-medium">3 verification points completed</span>
+                    {" "}— opening, mid-survey, and closing verification points all passed.
                   </span>
                 </div>
                 <div className="flex items-start gap-3">
@@ -315,7 +315,7 @@ export default function SampleSurveyPage() {
                   <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <span>
                     <span className="font-medium">With SurveySeal:</span>{" "}
-                    Each checkpoint tap verifies the respondent&apos;s identity
+                    Each verification point tap verifies the respondent&apos;s identity
                     via email matching — proof that a real person is present.
                   </span>
                 </div>
@@ -371,7 +371,7 @@ export default function SampleSurveyPage() {
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
                   <Shield className="h-3.5 w-3.5" />
-                  Checkpoint {currentStep.checkpoint} of 3
+                  Verification Point {currentStep.checkpoint} of 3
                 </Badge>
               </div>
 
@@ -434,7 +434,7 @@ export default function SampleSurveyPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-green-700 dark:text-green-400">
-                          Checkpoint {currentStep.checkpoint} Verified with TapIn
+                          Verification Point {currentStep.checkpoint} Verified with TapIn
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Identity confirmed via card tap.
@@ -452,11 +452,11 @@ export default function SampleSurveyPage() {
                       <div>
                         <p className="font-medium text-muted-foreground">
                           {checkpointSeconds === 0
-                            ? `Checkpoint ${currentStep.checkpoint} — Time expired`
-                            : `Checkpoint ${currentStep.checkpoint} Skipped`}
+                            ? `Verification Point ${currentStep.checkpoint} — Time expired`
+                            : `Verification Point ${currentStep.checkpoint} Skipped`}
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          This checkpoint will be marked as unverified in the export.
+                          This verification point will be marked as unverified in the export.
                         </p>
                       </div>
                     </div>
@@ -474,16 +474,16 @@ export default function SampleSurveyPage() {
                     <CardDescription className="text-sm text-foreground/80">
                       {currentStep.checkpoint === 1 &&
                         (checkpointPhase === "verified"
-                          ? "The opening checkpoint verified that a real person with a TapIn card started this survey. The email on the card matched the email used to begin the survey."
-                          : "The opening checkpoint was skipped. In a real survey, this response would be tagged as unverified — still recorded, but distinguishable from verified responses in the export.")}
+                          ? "The opening verification point confirmed that a real person with a TapIn card started this survey. The email on the card matched the email used to begin the survey."
+                          : "The opening verification point was skipped. In a real survey, this response would be tagged as unverified — still recorded, but distinguishable from verified responses in the export.")}
                       {currentStep.checkpoint === 2 &&
                         (checkpointPhase === "verified"
-                          ? "The mid-survey checkpoint confirms the same person is still present halfway through — not a bot that started the survey and handed off to automation."
-                          : "The mid-survey checkpoint was skipped. You can filter your data by verification status to analyze verified and unverified responses separately.")}
+                          ? "The mid-survey verification point confirms the same person is still present halfway through — not a bot that started the survey and handed off to automation."
+                          : "The mid-survey verification point was skipped. You can filter your data by verification status to analyze verified and unverified responses separately.")}
                       {currentStep.checkpoint === 3 &&
                         (checkpointPhase === "verified"
-                          ? "The closing checkpoint seals the survey. All three verified taps create a chain of identity confirmation, exported alongside your data."
-                          : "The closing checkpoint was skipped. The final verification status depends on how many checkpoints were verified vs. skipped.")}
+                          ? "The closing verification point seals the survey. All three verified taps create a chain of identity confirmation, exported alongside your data."
+                          : "The closing verification point was skipped. The final verification status depends on how many verification points were verified vs. skipped.")}
                     </CardDescription>
                   </CardHeader>
                 </Card>

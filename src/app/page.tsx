@@ -311,16 +311,16 @@ export default function LandingPage() {
               {
                 step: 2,
                 icon: Smartphone,
-                title: "Respondents tap at checkpoints",
+                title: "Respondents tap at verification points",
                 description:
-                  "At each checkpoint, a countdown timer gives respondents time to tap their TapIn card on their phone. After seeing the green checkmark, they click Continue. No card? They can skip.",
+                  "At each verification point, a countdown timer gives respondents time to tap their TapIn card on their phone. After seeing the green checkmark, they click Continue. No card? They can skip.",
               },
               {
                 step: 3,
                 icon: ShieldCheck,
                 title: "Export verified data",
                 description:
-                  "Download CSV files with verified proof of physical presence at every checkpoint.",
+                  "Download CSV files with verified proof of physical presence at every verification point.",
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
@@ -355,19 +355,19 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Physical-Tap Verification",
                 description:
-                  "Opening, mid-survey, and closing card taps create an unbroken chain of physical presence proof.",
+                  "Opening, mid-survey, and closing verification points create an unbroken chain of physical presence proof.",
               },
               {
                 icon: ShieldCheck,
                 title: "Server-Side Gating",
                 description:
-                  "Questions beyond the current checkpoint are never sent to the browser, preventing data leakage or skip-ahead.",
+                  "Questions beyond the current verification point are never sent to the browser, preventing data leakage or skip-ahead.",
               },
               {
                 icon: BarChart3,
                 title: "CSV Export",
                 description:
-                  "Export responses with verification status, checkpoint results, and timestamps for analysis or compliance.",
+                  "Export responses with verification status, verification point results, and timestamps for analysis or compliance.",
               },
               {
                 icon: Users,
@@ -379,7 +379,7 @@ export default function LandingPage() {
                 icon: TestTube2,
                 title: "Optional Verification",
                 description:
-                  "Respondents without a TapIn card can skip checkpoints. Their responses are tagged as unverified for easy filtering.",
+                  "Respondents without a TapIn card can skip verification points. Their responses are tagged as unverified for easy filtering.",
               },
               {
                 icon: LogIn,

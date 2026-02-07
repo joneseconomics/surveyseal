@@ -13,7 +13,7 @@ export default function NewSurveyPage() {
         <CardHeader>
           <CardTitle>Create Survey</CardTitle>
           <CardDescription>
-            Create a new human-verified survey with physical-tap checkpoints.
+            Create a new human-verified survey with physical-tap verification points.
           </CardDescription>
         </CardHeader>
         <CardContent>

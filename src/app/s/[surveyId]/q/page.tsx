@@ -104,6 +104,9 @@ export default async function SurveyQuestionPage({
 
   // If this is a checkpoint question, show the checkpoint gate
   if (currentQuestion.isCheckpoint && !validatedCheckpoints.has(currentQuestion.id)) {
+    const allCheckpointQuestions = allQuestions.filter((q) => q.isCheckpoint);
+    const checkpointNumber = allCheckpointQuestions.findIndex((q) => q.id === currentQuestion.id) + 1;
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <CheckpointGate
@@ -113,6 +116,8 @@ export default async function SurveyQuestionPage({
           position={currentQuestion.position}
           totalQuestions={allQuestions.length}
           timerSeconds={survey?.checkpointTimerSeconds ?? 30}
+          checkpointNumber={checkpointNumber}
+          totalCheckpoints={allCheckpointQuestions.length}
         />
       </div>
     );
@@ -125,6 +130,11 @@ export default async function SurveyQuestionPage({
 
   // Render the question
   const isAnswered = answeredQuestions.has(currentQuestion.id);
+  const totalNonCheckpoints = allQuestions.filter((q) => !q.isCheckpoint).length;
+
+  // Compute this question's display number (1-based, among non-checkpoint questions)
+  const nonCheckpointQuestions = allQuestions.filter((q) => !q.isCheckpoint);
+  const questionDisplayIndex = nonCheckpointQuestions.findIndex((q) => q.id === currentQuestion.id);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -132,8 +142,8 @@ export default async function SurveyQuestionPage({
         sessionId={sessionId}
         surveyId={surveyId}
         question={currentQuestion}
-        position={currentPosition}
-        totalQuestions={allQuestions.length}
+        position={questionDisplayIndex >= 0 ? questionDisplayIndex : currentPosition}
+        totalQuestions={totalNonCheckpoints}
         isAnswered={isAnswered}
       />
     </div>
