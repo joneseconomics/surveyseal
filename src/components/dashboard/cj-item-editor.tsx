@@ -84,9 +84,10 @@ export function CJItemEditor({ surveyId, item, onClose }: CJItemEditorProps) {
       setFileType(file.type);
       setFileName(file.name);
       setFilePath(path);
-    } catch (err) {
-      console.error(err);
-      setUploadError("Upload failed. Please try again.");
+    } catch (err: unknown) {
+      console.error("Upload error:", err);
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      setUploadError(`Upload failed: ${msg}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
