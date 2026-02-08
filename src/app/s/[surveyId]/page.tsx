@@ -17,13 +17,18 @@ export default async function SurveyLandingPage({
 
   const survey = await db.survey.findUnique({
     where: { id: surveyId, status: "LIVE" },
-    select: { id: true, title: true, description: true, type: true, verificationPointTimerSeconds: true, requireLogin: true },
+    select: {
+      id: true, title: true, description: true, type: true,
+      verificationPointTimerSeconds: true, requireLogin: true,
+      questions: { where: { isVerificationPoint: true }, select: { id: true } },
+    },
   });
 
   if (!survey) notFound();
 
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const surveyRoute = isCJ ? `/s/${surveyId}/compare` : `/s/${surveyId}/q`;
+  const hasVPs = survey.questions.length > 0;
 
   // Check if user already has an active session
   const existingSessionId = await getSurveySessionId(surveyId);
@@ -72,11 +77,13 @@ export default async function SurveyLandingPage({
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-              {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-              If you don&apos;t have a card, you can skip verification points and still complete the survey.
-            </p>
+            {hasVPs && (
+              <p className="text-sm text-muted-foreground">
+                This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
+                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+                If you don&apos;t have a card, you can skip verification points and still complete the survey.
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               Signed in as <span className="font-medium text-foreground">{authSession.user.email}</span>
             </p>
@@ -106,11 +113,13 @@ export default async function SurveyLandingPage({
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-              {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-              If you don&apos;t have a card, you can skip verification points and still complete the survey.
-            </p>
+            {hasVPs && (
+              <p className="text-sm text-muted-foreground">
+                This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
+                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Survey card on your phone.
+                If you don&apos;t have a card, you can skip verification points and still complete the survey.
+              </p>
+            )}
             <p className="text-sm font-medium">
               Sign in to get started
             </p>
@@ -216,8 +225,9 @@ export default async function SurveyLandingPage({
                 placeholder="you@example.com"
               />
               <p className="text-xs text-muted-foreground">
-                Providing your email helps match TapIn card taps with your responses.
-                You can leave it blank for a fully anonymous response.
+                {hasVPs
+                  ? "Providing your email helps match TapIn card taps with your responses. You can leave it blank for a fully anonymous response."
+                  : "Optional. You can leave it blank for a fully anonymous response."}
               </p>
             </div>
             <Button size="lg" className="w-full">

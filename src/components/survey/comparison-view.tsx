@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { File, Download, ExternalLink } from "lucide-react";
 import { DocxViewer } from "@/components/survey/docx-viewer";
@@ -44,6 +44,13 @@ export function ComparisonView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Reset state when a new comparison is loaded via server refresh
+  useEffect(() => {
+    setLoading(false);
+    setSelected(null);
+    setError("");
+  }, [comparisonId]);
 
   async function handleChoice(winnerId: string) {
     setSelected(winnerId);
@@ -174,7 +181,7 @@ function ItemPanel({
           <h2 className="text-lg font-semibold">{item.label}</h2>
           <span
             className={`
-              rounded-full px-3 py-1 text-xs font-medium transition-all
+              rounded-full px-5 py-2 text-sm font-semibold transition-all
               ${isSelected
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
@@ -195,7 +202,7 @@ function ItemPanel({
         )}
         {fileUrl && fileType === "application/pdf" && (
           <iframe
-            src={fileUrl}
+            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
             title={fileName || item.label}
             className="mb-4 w-full rounded-lg border-0"
             style={{ minHeight: "70vh" }}
