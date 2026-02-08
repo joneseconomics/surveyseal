@@ -99,7 +99,14 @@ export async function publishSurvey(surveyId: string) {
   if (survey.status !== "DRAFT") throw new Error("Survey is not in draft state");
 
   const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
-  if (verificationPoints.length !== 3) {
+
+  if (survey.type === "COMPARATIVE_JUDGMENT") {
+    if (verificationPoints.length < 2) {
+      throw new Error(
+        `Comparative Judgment surveys need at least 2 verification points to publish (found ${verificationPoints.length})`
+      );
+    }
+  } else if (verificationPoints.length !== 3) {
     throw new Error(
       `Survey must have exactly 3 verification points to publish (found ${verificationPoints.length})`
     );

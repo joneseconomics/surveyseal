@@ -156,3 +156,51 @@ export async function updateCJSettings(data: {
 
   revalidatePath(`/dashboard/surveys/${parsed.surveyId}`);
 }
+
+export async function updateVerificationPointCount(surveyId: string, count: number) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  if (count < 2 || count > 10) throw new Error("VP count must be between 2 and 10");
+
+  await verifyOwnership(surveyId, session.user.id);
+
+  const existingVPs = await db.question.findMany({
+    where: { surveyId, isVerificationPoint: true },
+    orderBy: { position: "asc" },
+  });
+
+  const currentCount = existingVPs.length;
+
+  if (count > currentCount) {
+    // Add VPs
+    const lastVP = existingVPs[existingVPs.length - 1];
+    const startPosition = (lastVP?.position ?? -1) + 1;
+
+    const vpLabels = [
+      "Opening Verification Point",
+      "Mid-Survey Verification Point",
+      "Closing Verification Point",
+    ];
+
+    await db.question.createMany({
+      data: Array.from({ length: count - currentCount }, (_, i) => ({
+        surveyId,
+        position: startPosition + i,
+        type: "FREE_TEXT" as const,
+        content: {
+          text: vpLabels[currentCount + i] ?? `Verification Point ${currentCount + i + 1}`,
+        },
+        isVerificationPoint: true,
+      })),
+    });
+  } else if (count < currentCount) {
+    // Remove VPs from the end
+    const vpsToRemove = existingVPs.slice(count);
+    await db.question.deleteMany({
+      where: { id: { in: vpsToRemove.map((vp) => vp.id) } },
+    });
+  }
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+}

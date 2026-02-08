@@ -21,9 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon } from "lucide-react";
-import { deleteCJItem, reorderCJItems, updateCJSettings } from "@/lib/actions/cj-item";
+import { deleteCJItem, reorderCJItems, updateCJSettings, updateVerificationPointCount } from "@/lib/actions/cj-item";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -39,6 +40,7 @@ interface CJBuilderProps {
   cjItems: CJItemData[];
   cjPrompt: string | null;
   comparisonsPerJudge: number | null;
+  vpCount: number;
   isDraft: boolean;
 }
 
@@ -47,6 +49,7 @@ export function CJBuilder({
   cjItems: serverItems,
   cjPrompt,
   comparisonsPerJudge,
+  vpCount: serverVpCount,
   isDraft,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
@@ -54,7 +57,9 @@ export function CJBuilder({
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
   const [prompt, setPrompt] = useState(cjPrompt ?? "");
   const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
+  const [vpCountStr, setVpCountStr] = useState(serverVpCount.toString());
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savingVPs, setSavingVPs] = useState(false);
 
   // Sync with server data
   if (
@@ -150,6 +155,53 @@ export function CJBuilder({
               {savingSettings ? "Saving..." : "Save Settings"}
             </Button>
           )}
+          <Separator />
+          <div className="space-y-2">
+            <Label htmlFor="cj-vp-count">Verification Points</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="cj-vp-count"
+                type="number"
+                min={2}
+                max={10}
+                value={vpCountStr}
+                onChange={(e) => setVpCountStr(e.target.value)}
+                className="w-24"
+                disabled={!isDraft || savingVPs}
+              />
+              {isDraft && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    savingVPs ||
+                    !vpCountStr ||
+                    parseInt(vpCountStr, 10) === serverVpCount ||
+                    parseInt(vpCountStr, 10) < 2 ||
+                    parseInt(vpCountStr, 10) > 10
+                  }
+                  onClick={async () => {
+                    setSavingVPs(true);
+                    try {
+                      await updateVerificationPointCount(
+                        surveyId,
+                        parseInt(vpCountStr, 10)
+                      );
+                    } catch (e) {
+                      console.error(e);
+                    } finally {
+                      setSavingVPs(false);
+                    }
+                  }}
+                >
+                  {savingVPs ? "Updating..." : "Update"}
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Minimum 2 (beginning and end). Verification points are evenly distributed across comparisons.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

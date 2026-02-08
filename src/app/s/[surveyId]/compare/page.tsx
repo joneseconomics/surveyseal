@@ -51,7 +51,7 @@ export default async function ComparePage({
   ).length;
 
   // ─── Verification Point Gating ───────────────────────────────
-  // 3 VPs divide comparisons into 3 segments.
+  // VPs divide comparisons into N segments.
   // VP[i] triggers after segment i completes.
   const vpQuestions = survey.questions;
   const validatedVPs = new Set(
@@ -60,7 +60,8 @@ export default async function ComparePage({
       .map((cp) => cp.questionId)
   );
 
-  const segmentSize = Math.ceil(totalComparisons / 3);
+  const vpCount = vpQuestions.length;
+  const segmentSize = vpCount > 0 ? Math.ceil(totalComparisons / vpCount) : totalComparisons;
 
   for (let i = 0; i < vpQuestions.length; i++) {
     const vpThreshold = segmentSize * (i + 1);
