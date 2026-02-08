@@ -23,16 +23,8 @@ export async function createSurvey(formData: FormData) {
       title: parsed.title,
       type: parsed.type,
       ownerId: session.user.id,
+      requireLogin: true,
       authProviders: ["google"],
-      questions: {
-        createMany: {
-          data: [
-            { position: 0, type: "FREE_TEXT", content: { text: "Opening Verification Point" }, isVerificationPoint: true },
-            { position: 1, type: "FREE_TEXT", content: { text: "Mid-Survey Verification Point" }, isVerificationPoint: true },
-            { position: 2, type: "FREE_TEXT", content: { text: "Closing Verification Point" }, isVerificationPoint: true },
-          ],
-        },
-      },
     },
   });
 
