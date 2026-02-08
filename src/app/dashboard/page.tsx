@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   const surveys = await db.survey.findMany({
     where: { ownerId: session.user.id },
     include: {
-      _count: { select: { sessions: true } },
+      _count: { select: { sessions: true, cjItems: true } },
       questions: { select: { isVerificationPoint: true } },
     },
     orderBy: { updatedAt: "desc" },
@@ -70,16 +70,17 @@ export default async function DashboardPage() {
                   <p className="text-xs text-muted-foreground">
                     {survey.type === "COMPARATIVE_JUDGMENT" ? "Comparative Judgment" : "Questionnaire"}
                   </p>
-                  {survey.description && (
-                    <CardDescription className="line-clamp-2">
-                      {survey.description}
-                    </CardDescription>
-                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{survey.questions.filter((q) => !q.isVerificationPoint).length} questions</span>
-                    <span>{survey.questions.filter((q) => q.isVerificationPoint).length} verification points</span>
+                    {survey.type === "COMPARATIVE_JUDGMENT"
+                      ? <span>{survey._count.cjItems} items</span>
+                      : <span>{survey.questions.filter((q) => !q.isVerificationPoint).length} questions</span>
+                    }
+                    {survey.questions.filter((q) => q.isVerificationPoint).length > 0
+                      ? <span>{survey.questions.filter((q) => q.isVerificationPoint).length} verification points</span>
+                      : <span>TapIn disabled</span>
+                    }
                     <span>{survey._count.sessions} responses</span>
                   </div>
                 </CardContent>
