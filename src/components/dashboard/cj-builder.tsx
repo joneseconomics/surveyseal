@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Trash2, Pencil, Plus } from "lucide-react";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon } from "lucide-react";
 import { deleteCJItem, reorderCJItems, updateCJSettings } from "@/lib/actions/cj-item";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import type { CJItemContent } from "@/lib/validations/cj";
@@ -306,6 +306,18 @@ function CJItemCard({
             <p className="mt-0.5 text-xs text-muted-foreground truncate">
               {content.text}
             </p>
+          )}
+          {content?.fileName && (
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+              {content.fileType?.startsWith("image/") ? (
+                <ImageIcon className="h-3 w-3" />
+              ) : content.fileType === "application/pdf" ? (
+                <FileText className="h-3 w-3" />
+              ) : (
+                <FileIcon className="h-3 w-3" />
+              )}
+              <span className="truncate">{content.fileName}</span>
+            </div>
           )}
         </div>
 

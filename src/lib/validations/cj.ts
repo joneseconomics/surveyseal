@@ -4,6 +4,10 @@ export const cjItemContentSchema = z.object({
   text: z.string().optional(),
   imageUrl: z.string().url().optional(),
   description: z.string().optional(),
+  fileUrl: z.string().url().optional(),
+  fileType: z.string().optional(),
+  fileName: z.string().optional(),
+  filePath: z.string().optional(),
 });
 
 export type CJItemContent = z.infer<typeof cjItemContentSchema>;

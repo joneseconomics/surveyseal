@@ -9,6 +9,7 @@ import {
 } from "@/lib/validations/cj";
 import type { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
+import { getServerSupabase, BUCKET } from "@/lib/supabase";
 
 async function verifyOwnership(surveyId: string, userId: string) {
   const survey = await db.survey.findUnique({
@@ -86,11 +87,22 @@ export async function deleteCJItem(itemId: string) {
 
   const item = await db.cJItem.findUnique({
     where: { id: itemId },
-    select: { surveyId: true, position: true },
+    select: { surveyId: true, position: true, content: true },
   });
   if (!item) throw new Error("Item not found");
 
   await verifyOwnership(item.surveyId, session.user.id);
+
+  // Delete file from Supabase Storage if present
+  const content = item.content as Record<string, unknown> | null;
+  if (content?.filePath && typeof content.filePath === "string") {
+    try {
+      const supabase = getServerSupabase();
+      await supabase.storage.from(BUCKET).remove([content.filePath]);
+    } catch (err) {
+      console.error("Failed to delete file from storage:", err);
+    }
+  }
 
   await db.$transaction([
     db.cJItem.delete({ where: { id: itemId } }),

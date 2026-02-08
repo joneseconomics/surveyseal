@@ -33,7 +33,7 @@ export default async function SurveyDetailPage({
           ? survey.cjItems.map((item) => ({
               id: item.id,
               label: item.label,
-              content: item.content as { text?: string; imageUrl?: string; description?: string },
+              content: item.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string; filePath?: string },
               position: item.position,
             }))
           : undefined

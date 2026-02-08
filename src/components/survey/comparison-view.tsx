@@ -3,11 +3,19 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { File, Download } from "lucide-react";
 
 interface CJItemDisplay {
   id: string;
   label: string;
-  content: { text?: string; imageUrl?: string; description?: string };
+  content: {
+    text?: string;
+    imageUrl?: string;
+    description?: string;
+    fileUrl?: string;
+    fileType?: string;
+    fileName?: string;
+  };
 }
 
 interface ComparisonViewProps {
@@ -102,6 +110,8 @@ function ItemCard({
   onClick: () => void;
   disabled: boolean;
 }) {
+  const { fileUrl, fileType, fileName, imageUrl } = item.content;
+
   return (
     <Card
       className={`cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:shadow-lg ${
@@ -113,13 +123,48 @@ function ItemCard({
         <CardTitle className="text-base">{item.label}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {item.content.imageUrl && (
+        {/* Uploaded file rendering */}
+        {fileUrl && fileType?.startsWith("image/") && (
           <img
-            src={item.content.imageUrl}
+            src={fileUrl}
             alt={item.label}
             className="w-full rounded-md object-cover"
           />
         )}
+        {fileUrl && fileType === "application/pdf" && (
+          <iframe
+            src={fileUrl}
+            title={fileName || item.label}
+            className="w-full rounded-md border-0"
+            style={{ aspectRatio: "3/4" }}
+          />
+        )}
+        {fileUrl &&
+          fileType &&
+          !fileType.startsWith("image/") &&
+          fileType !== "application/pdf" && (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-md border p-3 text-sm hover:bg-muted"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <File className="h-5 w-5 text-blue-500 shrink-0" />
+              <span className="flex-1 truncate">{fileName || "Download file"}</span>
+              <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+            </a>
+          )}
+
+        {/* Fallback to external imageUrl */}
+        {!fileUrl && imageUrl && (
+          <img
+            src={imageUrl}
+            alt={item.label}
+            className="w-full rounded-md object-cover"
+          />
+        )}
+
         {item.content.text && (
           <p className="text-sm whitespace-pre-wrap">{item.content.text}</p>
         )}

@@ -6,6 +6,7 @@ import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema } fr
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fetchTapInTaps } from "@/lib/tapin";
+import { getServerSupabase, BUCKET } from "@/lib/supabase";
 
 export async function createSurvey(formData: FormData) {
   const session = await auth();
@@ -59,6 +60,20 @@ export async function updateSurvey(formData: FormData) {
 export async function deleteSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
+
+  // Delete all files in the survey's storage prefix
+  try {
+    const supabase = getServerSupabase();
+    const { data: files } = await supabase.storage
+      .from(BUCKET)
+      .list(surveyId);
+    if (files && files.length > 0) {
+      const paths = files.map((f) => `${surveyId}/${f.name}`);
+      await supabase.storage.from(BUCKET).remove(paths);
+    }
+  } catch (err) {
+    console.error("Failed to clean up survey files from storage:", err);
+  }
 
   await db.survey.delete({
     where: { id: surveyId, ownerId: session.user.id },
