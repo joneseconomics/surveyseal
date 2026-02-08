@@ -87,6 +87,7 @@ export default async function SurveySettingsPage({
 
       <TapInCard
         surveyId={survey.id}
+        surveyType={survey.type as "QUESTIONNAIRE" | "COMPARATIVE_JUDGMENT"}
         vpCount={survey.questions.length}
         verificationPointTimerSeconds={survey.verificationPointTimerSeconds}
         requireLogin={survey.requireLogin}

@@ -12,6 +12,7 @@ import { updateVerificationPointCount } from "@/lib/actions/cj-item";
 
 interface TapInCardProps {
   surveyId: string;
+  surveyType: "QUESTIONNAIRE" | "COMPARATIVE_JUDGMENT";
   vpCount: number;
   verificationPointTimerSeconds: number;
   requireLogin: boolean;
@@ -21,22 +22,28 @@ interface TapInCardProps {
 
 export function TapInCard({
   surveyId,
+  surveyType,
   vpCount: serverVpCount,
   verificationPointTimerSeconds,
   requireLogin,
   tapinApiKey,
   tapinCampaignId,
 }: TapInCardProps) {
+  const isCJ = surveyType === "COMPARATIVE_JUDGMENT";
   const [enabled, setEnabled] = useState(serverVpCount > 0);
   const [toggling, setToggling] = useState(false);
-  const [vpCountValue, setVpCountValue] = useState(serverVpCount > 0 ? serverVpCount.toString() : "2");
+  const [vpCountValue, setVpCountValue] = useState(
+    serverVpCount > 0 ? serverVpCount.toString() : "2"
+  );
   const [savingCount, setSavingCount] = useState(false);
 
   async function handleToggle(checked: boolean) {
     setToggling(true);
     setEnabled(checked);
     try {
-      await updateVerificationPointCount(surveyId, checked ? parseInt(vpCountValue, 10) || 2 : 0);
+      // CJ surveys always use exactly 2 VPs; questionnaires use the configured count
+      const count = checked ? (isCJ ? 2 : parseInt(vpCountValue, 10) || 2) : 0;
+      await updateVerificationPointCount(surveyId, count);
     } catch (e) {
       console.error(e);
       setEnabled(!checked);
@@ -79,7 +86,9 @@ export function TapInCard({
           </div>
         </div>
         <CardDescription>
-          Configure verification point settings and TapIn integration for post-survey verification.{" "}
+          {isCJ
+            ? "Add verification points at the beginning and end of the survey."
+            : "Add verification points distributed throughout the survey."}{" "}
           <a
             href="https://store.tapin.us"
             target="_blank"
@@ -93,37 +102,43 @@ export function TapInCard({
       </CardHeader>
       {enabled && (
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Number of Verification Points</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={2}
-                max={10}
-                value={vpCountValue}
-                onChange={(e) => setVpCountValue(e.target.value)}
-                className="w-24"
-                disabled={savingCount}
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={
-                  savingCount ||
-                  !vpCountValue ||
-                  parseInt(vpCountValue, 10) === serverVpCount ||
-                  parseInt(vpCountValue, 10) < 2 ||
-                  parseInt(vpCountValue, 10) > 10
-                }
-                onClick={handleUpdateCount}
-              >
-                {savingCount ? "Updating..." : "Update"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Minimum 2 (beginning and end). Verification points are evenly distributed throughout the survey.
+          {isCJ ? (
+            <p className="text-sm text-muted-foreground">
+              2 verification points: beginning and end of the survey.
             </p>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Number of Verification Points</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={2}
+                  max={10}
+                  value={vpCountValue}
+                  onChange={(e) => setVpCountValue(e.target.value)}
+                  className="w-24"
+                  disabled={savingCount}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    savingCount ||
+                    !vpCountValue ||
+                    parseInt(vpCountValue, 10) === serverVpCount ||
+                    parseInt(vpCountValue, 10) < 2 ||
+                    parseInt(vpCountValue, 10) > 10
+                  }
+                  onClick={handleUpdateCount}
+                >
+                  {savingCount ? "Updating..." : "Update"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Minimum 2 (beginning and end). Additional points are evenly distributed throughout the survey.
+              </p>
+            </div>
+          )}
 
           <TapInSettings
             surveyId={surveyId}

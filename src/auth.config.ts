@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import LinkedIn from "next-auth/providers/linkedin";
 
 export default {
   providers: [
@@ -12,6 +13,7 @@ export default {
         ? `https://login.microsoftonline.com/${process.env.AUTH_MICROSOFT_ENTRA_ID_TENANT_ID}/v2.0`
         : undefined,
     }),
+    LinkedIn,
   ],
   pages: {
     signIn: "/auth/signin",
