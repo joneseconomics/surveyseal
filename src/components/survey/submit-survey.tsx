@@ -53,7 +53,7 @@ export function SubmitSurvey({ sessionId, surveyId }: SubmitSurveyProps) {
           </div>
           <CardTitle>Ready to Submit</CardTitle>
           <CardDescription>
-            All verification points completed. Submit your responses to finish the survey.
+            Submit your responses to finish the survey.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

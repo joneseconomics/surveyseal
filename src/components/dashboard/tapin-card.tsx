@@ -6,9 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ExternalLink, Smartphone } from "lucide-react";
 import { TapInSettings } from "@/components/dashboard/tapin-settings";
+import { updateVerificationPointCount } from "@/lib/actions/cj-item";
 
 interface TapInCardProps {
   surveyId: string;
+  vpCount: number;
   verificationPointTimerSeconds: number;
   requireLogin: boolean;
   tapinApiKey: string | null;
@@ -17,13 +19,27 @@ interface TapInCardProps {
 
 export function TapInCard({
   surveyId,
+  vpCount,
   verificationPointTimerSeconds,
   requireLogin,
   tapinApiKey,
   tapinCampaignId,
 }: TapInCardProps) {
-  const hasConfig = !!(tapinApiKey || tapinCampaignId);
-  const [enabled, setEnabled] = useState(hasConfig);
+  const [enabled, setEnabled] = useState(vpCount > 0);
+  const [toggling, setToggling] = useState(false);
+
+  async function handleToggle(checked: boolean) {
+    setToggling(true);
+    setEnabled(checked);
+    try {
+      await updateVerificationPointCount(surveyId, checked ? 2 : 0);
+    } catch (e) {
+      console.error(e);
+      setEnabled(!checked);
+    } finally {
+      setToggling(false);
+    }
+  }
 
   return (
     <Card>
@@ -40,7 +56,8 @@ export function TapInCard({
             <Switch
               id="tapin-toggle"
               checked={enabled}
-              onCheckedChange={setEnabled}
+              disabled={toggling}
+              onCheckedChange={handleToggle}
             />
           </div>
         </div>

@@ -62,9 +62,9 @@ export default async function SurveyCompletePage({
 
           <p className="text-sm text-muted-foreground">
             {session.verificationStatus === "VERIFIED"
-              ? "All three verification points were verified with your TapIn card."
+              ? `All ${totalVerificationPoints} verification point${totalVerificationPoints !== 1 ? "s were" : " was"} verified with TapIn.`
               : session.verificationStatus === "PARTIAL"
-                ? "Some verification points were verified with your TapIn card."
+                ? `${verifiedCount} of ${totalVerificationPoints} verification point${totalVerificationPoints !== 1 ? "s were" : " was"} verified with TapIn.`
                 : "Your response was recorded."}
           </p>
 

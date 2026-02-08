@@ -29,6 +29,7 @@ export default async function SurveySettingsPage({
       tapinCampaignId: true,
       canvasBaseUrl: true,
       canvasApiToken: true,
+      questions: { where: { isVerificationPoint: true }, select: { id: true } },
     },
   });
 
@@ -86,6 +87,7 @@ export default async function SurveySettingsPage({
 
       <TapInCard
         surveyId={survey.id}
+        vpCount={survey.questions.length}
         verificationPointTimerSeconds={survey.verificationPointTimerSeconds}
         requireLogin={survey.requireLogin}
         tapinApiKey={survey.tapinApiKey}

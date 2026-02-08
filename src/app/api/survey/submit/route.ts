@@ -46,12 +46,19 @@ export async function POST(req: NextRequest) {
 
     const isCJ = session.survey.type === "COMPARATIVE_JUDGMENT";
 
-    // For CJ surveys, check that all comparisons have been judged
+    // For CJ surveys, check that enough comparisons have been judged
     if (isCJ) {
-      const unjudged = session.comparisons.filter((c) => c.winnerId === null);
-      if (unjudged.length > 0) {
+      const totalRequired =
+        session.survey.comparisonsPerJudge ??
+        Math.max(session.survey.cjItems.length - 1, 1);
+      const judgedCount = session.comparisons.filter(
+        (c) => c.winnerId !== null
+      ).length;
+      if (judgedCount < totalRequired) {
         return NextResponse.json(
-          { error: `${unjudged.length} comparison(s) not yet judged` },
+          {
+            error: `${totalRequired - judgedCount} comparison(s) not yet judged`,
+          },
           { status: 400 }
         );
       }
