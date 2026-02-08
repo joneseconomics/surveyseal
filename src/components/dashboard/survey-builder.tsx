@@ -59,7 +59,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
             </Badge>
             <Badge variant="outline">
               {survey.type === "COMPARATIVE_JUDGMENT"
-                ? "Comparative Judgment"
+                ? `CJ — ${survey.cjSubtype === "ASSIGNMENTS" ? "Assignments" : survey.cjSubtype === "RESUMES" ? "Resumes" : "General"}`
                 : "Questionnaire"}
             </Badge>
           </div>
@@ -141,6 +141,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           surveyId={survey.id}
           cjItems={cjItems ?? []}
           isDraft={isDraft}
+          cjSubtype={survey.cjSubtype}
         />
       ) : (
         <>

@@ -88,7 +88,7 @@ export default async function SurveySettingsPage({
         />
       )}
 
-      {isCJ && (
+      {isCJ && survey.cjSubtype === "ASSIGNMENTS" && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

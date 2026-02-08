@@ -68,7 +68,9 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {survey.type === "COMPARATIVE_JUDGMENT" ? "Comparative Judgment" : "Questionnaire"}
+                    {survey.type === "COMPARATIVE_JUDGMENT"
+                      ? `Comparative Judgment — ${survey.cjSubtype === "ASSIGNMENTS" ? "Assignments" : survey.cjSubtype === "RESUMES" ? "Resumes" : "General"}`
+                      : "Questionnaire"}
                   </p>
                 </CardHeader>
                 <CardContent>

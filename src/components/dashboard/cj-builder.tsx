@@ -37,12 +37,14 @@ interface CJBuilderProps {
   surveyId: string;
   cjItems: CJItemData[];
   isDraft: boolean;
+  cjSubtype?: string | null;
 }
 
 export function CJBuilder({
   surveyId,
   cjItems: serverItems,
   isDraft,
+  cjSubtype,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
@@ -104,13 +106,15 @@ export function CJBuilder({
                 <FolderOpen className="mr-2 h-4 w-4" />
                 Import from Folder
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowCanvasImport(true)}
-              >
-                <GraduationCap className="mr-2 h-4 w-4" />
-                Import from Canvas
-              </Button>
+              {cjSubtype === "ASSIGNMENTS" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCanvasImport(true)}
+                >
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Import from Canvas
+                </Button>
+              )}
               <Button
                 onClick={() => {
                   setEditingItem(null);
