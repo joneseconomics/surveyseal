@@ -139,6 +139,10 @@ model Survey {
   comparisonsPerJudge Int?    @map("comparisons_per_judge")
   cjPrompt            String? @map("cj_prompt") @db.Text
 
+  cjSubtype           String?  @map("cj_subtype")
+  cjJobTitle          String?  @map("cj_job_title")
+  cjJobUrl            String?  @map("cj_job_url")
+
   canvasBaseUrl       String? @map("canvas_base_url")
   canvasApiToken      String? @map("canvas_api_token")
 

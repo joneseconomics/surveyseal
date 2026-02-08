@@ -10,7 +10,7 @@ import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { CJBuilder } from "@/components/dashboard/cj-builder";
 import { EditableSurveyTitle } from "@/components/dashboard/editable-survey-title";
-import { Globe, Trash2, ExternalLink, Upload } from "lucide-react";
+import { Globe, Trash2, ExternalLink, Upload, Link2, Check } from "lucide-react";
 import type { Survey, Question } from "@/generated/prisma/client";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -33,6 +33,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [addAsVP, setAddAsVP] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isDraft = survey.status === "DRAFT";
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const regularQuestions = questions.filter((q) => !q.isVerificationPoint);
@@ -65,12 +66,30 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
         </div>
         <div className="flex gap-2">
           {survey.status === "LIVE" && (
-            <a href={`/s/${survey.id}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Survey
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const url = `${window.location.origin}/s/${survey.id}`;
+                  navigator.clipboard.writeText(url);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? (
+                  <><Check className="mr-2 h-4 w-4 text-green-600" />Copied!</>
+                ) : (
+                  <><Link2 className="mr-2 h-4 w-4" />Copy URL</>
+                )}
               </Button>
-            </a>
+              <a href={`/s/${survey.id}`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Survey
+                </Button>
+              </a>
+            </>
           )}
           {isDraft && (
             <form action={() => publishSurvey(survey.id)}>

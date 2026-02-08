@@ -14,9 +14,26 @@ export async function createSurvey(formData: FormData) {
 
   const parsed = createSurveySchema.parse({
     title: formData.get("title"),
-    description: formData.get("description") || undefined,
     type: formData.get("type") || "QUESTIONNAIRE",
+    cjSubtype: formData.get("cjSubtype") || undefined,
   });
+
+  const isCJ = parsed.type === "COMPARATIVE_JUDGMENT";
+
+  // Set default prompt based on CJ subtype
+  let cjPrompt: string | undefined;
+  if (isCJ) {
+    switch (parsed.cjSubtype) {
+      case "ASSIGNMENTS":
+        cjPrompt = "Which of these two submissions demonstrates higher quality?";
+        break;
+      case "RESUMES":
+        cjPrompt = "Which candidate would you be more likely to advance to the next round?";
+        break;
+      default:
+        cjPrompt = "Which of these two do you prefer?";
+    }
+  }
 
   const survey = await db.survey.create({
     data: {
@@ -25,6 +42,8 @@ export async function createSurvey(formData: FormData) {
       ownerId: session.user.id,
       requireLogin: true,
       authProviders: ["google"],
+      cjSubtype: isCJ ? (parsed.cjSubtype ?? "GENERIC") : null,
+      cjPrompt,
     },
   });
 
@@ -177,6 +196,18 @@ export async function updateSurveyTitle(surveyId: string, title: string) {
   });
 
   revalidatePath(`/dashboard/surveys/${surveyId}`);
+}
+
+export async function updateCJResumeConfig(surveyId: string, jobTitle: string, jobUrl: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: { cjJobTitle: jobTitle || null, cjJobUrl: jobUrl || null },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}/settings`);
 }
 
 export async function updateRespondentAuth(surveyId: string, requireLogin: boolean, authProviders: string[]) {

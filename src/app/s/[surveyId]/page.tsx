@@ -63,7 +63,7 @@ export default async function SurveyLandingPage({
       });
 
       await setSurveySessionId(surveyId, session.id);
-      redirect(surveyRoute);
+      redirect(`/s/${surveyId}/instructions`);
     }
 
     return (
@@ -74,9 +74,6 @@ export default async function SurveyLandingPage({
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-2xl">{survey.title}</CardTitle>
-            {survey.description && (
-              <CardDescription className="text-base">{survey.description}</CardDescription>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {hasVPs && (
@@ -154,7 +151,6 @@ export default async function SurveyLandingPage({
   async function beginSurvey(formData: FormData) {
     "use server";
     const email = (formData.get("email") as string)?.toLowerCase().trim() || null;
-    const surveyType = formData.get("surveyType") as string;
 
     const session = await db.surveySession.create({
       data: {
@@ -164,11 +160,7 @@ export default async function SurveyLandingPage({
     });
 
     await setSurveySessionId(surveyId, session.id);
-    redirect(
-      surveyType === "COMPARATIVE_JUDGMENT"
-        ? `/s/${surveyId}/compare`
-        : `/s/${surveyId}/q`
-    );
+    redirect(`/s/${surveyId}/instructions`);
   }
 
   return (
@@ -185,7 +177,6 @@ export default async function SurveyLandingPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <form action={beginSurvey} className="space-y-4">
-            <input type="hidden" name="surveyType" value={survey.type} />
             <div className="space-y-2 text-left">
               <Label htmlFor="email">Email address (optional)</Label>
               <Input

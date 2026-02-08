@@ -7,6 +7,7 @@ import { TapInCard } from "@/components/dashboard/tapin-card";
 import { AuthSettingsCard } from "@/components/dashboard/auth-settings-card";
 import { CanvasSettings } from "@/components/dashboard/canvas-settings";
 import { CJComparisonSettingsCard } from "@/components/dashboard/cj-comparison-settings-card";
+import { CJResumeSettings } from "@/components/dashboard/cj-resume-settings";
 
 export default async function SurveySettingsPage({
   params,
@@ -32,6 +33,9 @@ export default async function SurveySettingsPage({
       authProviders: true,
       cjPrompt: true,
       comparisonsPerJudge: true,
+      cjSubtype: true,
+      cjJobTitle: true,
+      cjJobUrl: true,
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
       _count: { select: { cjItems: true } },
     },
@@ -73,6 +77,14 @@ export default async function SurveySettingsPage({
           comparisonsPerJudge={survey.comparisonsPerJudge}
           cjItemCount={survey._count.cjItems}
           isDraft={survey.status === "DRAFT"}
+        />
+      )}
+
+      {isCJ && survey.cjSubtype === "RESUMES" && (
+        <CJResumeSettings
+          surveyId={survey.id}
+          jobTitle={survey.cjJobTitle}
+          jobUrl={survey.cjJobUrl}
         />
       )}
 
