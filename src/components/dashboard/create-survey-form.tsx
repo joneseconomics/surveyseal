@@ -15,7 +15,7 @@ export function CreateSurveyForm() {
       {/* Survey type selector */}
       <fieldset className="space-y-3">
         <Label>Survey Type</Label>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <label className="cursor-pointer">
             <input
               type="radio"
@@ -25,7 +25,7 @@ export function CreateSurveyForm() {
               onChange={() => setType("QUESTIONNAIRE")}
               className="peer sr-only"
             />
-            <div className="rounded-lg border p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5">
+            <div className="flex h-full flex-col rounded-lg border p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5">
               <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <ClipboardList className="h-5 w-5 text-primary" />
               </div>
@@ -45,7 +45,7 @@ export function CreateSurveyForm() {
               onChange={() => setType("COMPARATIVE_JUDGMENT")}
               className="peer sr-only"
             />
-            <div className="rounded-lg border p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5">
+            <div className="flex h-full flex-col rounded-lg border p-4 transition-colors peer-checked:border-primary peer-checked:bg-primary/5">
               <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <Scale className="h-5 w-5 text-primary" />
               </div>
@@ -68,7 +68,7 @@ export function CreateSurveyForm() {
               <input type="radio" name="cjSubtype" value="GENERIC" defaultChecked className="peer sr-only" />
               <div className="rounded-lg border p-3 text-center transition-colors peer-checked:border-primary peer-checked:bg-primary/5">
                 <LayoutGrid className="mx-auto h-5 w-5 text-primary mb-1" />
-                <p className="text-sm font-medium">Generic</p>
+                <p className="text-sm font-medium">General</p>
                 <p className="text-xs text-muted-foreground">General item comparison</p>
               </div>
             </label>
