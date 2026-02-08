@@ -67,6 +67,9 @@ export default async function DashboardPage() {
                       <DeleteSurveyButton surveyId={survey.id} />
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {survey.type === "COMPARATIVE_JUDGMENT" ? "Comparative Judgment" : "Questionnaire"}
+                  </p>
                   {survey.description && (
                     <CardDescription className="line-clamp-2">
                       {survey.description}
