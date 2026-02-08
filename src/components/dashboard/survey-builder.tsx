@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey, reopenSurvey } from "@/lib/actions/survey";
+import { updateVerificationPointCount } from "@/lib/actions/cj-item";
 import { SortableQuestionList } from "@/components/dashboard/sortable-question-list";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { CJBuilder } from "@/components/dashboard/cj-builder";
-import { Globe, Trash2, ExternalLink, Upload, Shield } from "lucide-react";
+import { Globe, Trash2, ExternalLink, Upload } from "lucide-react";
 import type { Survey, Question } from "@/generated/prisma/client";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -36,6 +37,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [addAsVP, setAddAsVP] = useState(false);
+  const [savingVPs, setSavingVPs] = useState(false);
   const isDraft = survey.status === "DRAFT";
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const regularQuestions = questions.filter((q) => !q.isVerificationPoint);
@@ -43,7 +45,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
   const cjItemCount = cjItems?.length ?? 0;
   const canPublish = isCJ
     ? vpCount >= 2 && cjItemCount >= 3 && !!survey.cjPrompt
-    : vpCount === 3;
+    : vpCount >= 2;
 
   return (
     <div className="space-y-6">
@@ -83,7 +85,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                   !canPublish
                     ? isCJ
                       ? `Need 2+ VPs (${vpCount}), 3+ items (${cjItemCount}), and a prompt`
-                      : `Need exactly 3 verification points (have ${vpCount})`
+                      : `Need 2+ verification points (have ${vpCount})`
                     : "Publish survey"
                 }
               >
@@ -162,6 +164,23 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
         />
       ) : (
         <>
+          {/* Verification Points setting */}
+          {isDraft && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Verification Points</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VPCountSetting
+                  surveyId={survey.id}
+                  vpCount={vpCount}
+                  saving={savingVPs}
+                  setSaving={setSavingVPs}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Questions section */}
           <div>
             <div className="mb-4 flex items-center justify-between">
@@ -170,8 +189,8 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                   Survey Items
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""} · {vpCount}/3 verification points
-                  {vpCount === 3 && " — Ready to publish"}
+                  {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""} · {vpCount} verification point{vpCount !== 1 ? "s" : ""}
+                  {vpCount >= 2 && " — Ready to publish"}
                 </p>
               </div>
               {isDraft && (
@@ -192,19 +211,6 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                   >
                     Add Question
                   </Button>
-                  {vpCount < 3 && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setAddAsVP(true);
-                        setEditingQuestion(null);
-                        setShowEditor(true);
-                      }}
-                    >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Add Verification Point
-                    </Button>
-                  )}
                 </div>
               )}
             </div>
@@ -249,6 +255,62 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           />
         </>
       )}
+    </div>
+  );
+}
+
+function VPCountSetting({
+  surveyId,
+  vpCount,
+  saving,
+  setSaving,
+}: {
+  surveyId: string;
+  vpCount: number;
+  saving: boolean;
+  setSaving: (v: boolean) => void;
+}) {
+  const [value, setValue] = useState(vpCount.toString());
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          min={2}
+          max={10}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="w-24"
+          disabled={saving}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={
+            saving ||
+            !value ||
+            parseInt(value, 10) === vpCount ||
+            parseInt(value, 10) < 2 ||
+            parseInt(value, 10) > 10
+          }
+          onClick={async () => {
+            setSaving(true);
+            try {
+              await updateVerificationPointCount(surveyId, parseInt(value, 10));
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          {saving ? "Updating..." : "Update"}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Minimum 2 (beginning and end). Verification points are evenly distributed throughout the survey.
+      </p>
     </div>
   );
 }

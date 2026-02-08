@@ -175,24 +175,22 @@ export default async function ComparePage({
   if (!leftFull || !rightFull) redirect(`/s/${surveyId}`);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <ComparisonView
-        sessionId={sessionId}
-        comparisonId={comparison.id}
-        leftItem={{
-          id: leftFull.id,
-          label: leftFull.label,
-          content: leftFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
-        }}
-        rightItem={{
-          id: rightFull.id,
-          label: rightFull.label,
-          content: rightFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
-        }}
-        prompt={survey.cjPrompt ?? "Which item is better?"}
-        currentComparison={completedComparisons + 1}
-        totalComparisons={totalComparisons}
-      />
-    </div>
+    <ComparisonView
+      sessionId={sessionId}
+      comparisonId={comparison.id}
+      leftItem={{
+        id: leftFull.id,
+        label: leftFull.label,
+        content: leftFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
+      }}
+      rightItem={{
+        id: rightFull.id,
+        label: rightFull.label,
+        content: rightFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
+      }}
+      prompt={survey.cjPrompt ?? "Which item is better?"}
+      currentComparison={completedComparisons + 1}
+      totalComparisons={totalComparisons}
+    />
   );
 }
