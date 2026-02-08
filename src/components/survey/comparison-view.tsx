@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { File, Download, ExternalLink } from "lucide-react";
+import { File, Download, ExternalLink, Info } from "lucide-react";
+import Link from "next/link";
 import { DocxViewer } from "@/components/survey/docx-viewer";
 import DOMPurify from "isomorphic-dompurify";
 
@@ -23,6 +24,7 @@ interface CJItemDisplay {
 
 interface ComparisonViewProps {
   sessionId: string;
+  surveyId: string;
   comparisonId: string;
   leftItem: CJItemDisplay;
   rightItem: CJItemDisplay;
@@ -33,6 +35,7 @@ interface ComparisonViewProps {
 
 export function ComparisonView({
   sessionId,
+  surveyId,
   comparisonId,
   leftItem,
   rightItem,
@@ -102,10 +105,17 @@ export function ComparisonView({
           {/* Prompt */}
           <p className="text-center text-base font-medium">{prompt}</p>
 
-          {/* Instruction */}
-          <p className="mt-1 text-center text-xs text-muted-foreground">
-            Read both items below, then click the one you believe is better.
-          </p>
+          {/* Instruction + link */}
+          <div className="mt-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Read both items below, then click the one you believe is better.</span>
+            <Link
+              href={`/s/${surveyId}/instructions`}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <Info className="h-3 w-3" />
+              Instructions
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -116,6 +126,7 @@ export function ComparisonView({
           onClick={() => handleChoice(leftItem.id)}
           disabled={loading}
           isSelected={selected === leftItem.id}
+          isRejected={selected !== null && selected !== leftItem.id}
         />
 
         {/* Divider */}
@@ -131,6 +142,7 @@ export function ComparisonView({
           onClick={() => handleChoice(rightItem.id)}
           disabled={loading}
           isSelected={selected === rightItem.id}
+          isRejected={selected !== null && selected !== rightItem.id}
         />
       </div>
 
@@ -149,11 +161,13 @@ function ItemPanel({
   onClick,
   disabled,
   isSelected,
+  isRejected,
 }: {
   item: CJItemDisplay;
   onClick: () => void;
   disabled: boolean;
   isSelected: boolean;
+  isRejected: boolean;
 }) {
   const { fileUrl, fileType: rawFileType, fileName, imageUrl, sourceType, submissionUrl } = item.content;
 
@@ -168,10 +182,12 @@ function ItemPanel({
       className={`
         group flex-1 text-left transition-all duration-200
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset
-        ${disabled && !isSelected ? "pointer-events-none opacity-50" : ""}
+        ${disabled && !isSelected && !isRejected ? "pointer-events-none opacity-50" : ""}
         ${isSelected
-          ? "bg-primary/5 ring-2 ring-inset ring-primary"
-          : "hover:bg-accent/50"
+          ? "bg-green-50 ring-2 ring-inset ring-green-400 dark:bg-green-950/30 dark:ring-green-600"
+          : isRejected
+            ? "bg-red-50 ring-2 ring-inset ring-red-300 opacity-60 pointer-events-none dark:bg-red-950/20 dark:ring-red-700"
+            : "hover:bg-accent/50"
         }
       `}
     >
@@ -183,12 +199,14 @@ function ItemPanel({
             className={`
               rounded-full px-5 py-2 text-sm font-semibold transition-all
               ${isSelected
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                ? "bg-green-600 text-white"
+                : isRejected
+                  ? "bg-red-200 text-red-700 dark:bg-red-900 dark:text-red-300"
+                  : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
               }
             `}
           >
-            {isSelected ? "Selected" : "Select"}
+            {isSelected ? "Selected" : isRejected ? "Not Selected" : "Select"}
           </span>
         </div>
 

@@ -177,6 +177,7 @@ export default async function ComparePage({
   return (
     <ComparisonView
       sessionId={sessionId}
+      surveyId={surveyId}
       comparisonId={comparison.id}
       leftItem={{
         id: leftFull.id,
