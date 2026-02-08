@@ -5,8 +5,8 @@ import { updateSurveySettings } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ExternalLink, Smartphone, Users, GraduationCap } from "lucide-react";
-import { TapInSettings } from "@/components/dashboard/tapin-settings";
+import { ExternalLink, Users, GraduationCap } from "lucide-react";
+import { TapInCard } from "@/components/dashboard/tapin-card";
 import { CanvasSettings } from "@/components/dashboard/canvas-settings";
 
 export default async function SurveySettingsPage({
@@ -84,35 +84,13 @@ export default async function SurveySettingsPage({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">TapIn Verification</CardTitle>
-          </div>
-          <CardDescription>
-            Configure verification point settings and TapIn integration for post-survey verification.{" "}
-            <a
-              href="https://store.tapin.us"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
-            >
-              Order TapIn Survey cards
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TapInSettings
-            surveyId={survey.id}
-            verificationPointTimerSeconds={survey.verificationPointTimerSeconds}
-            requireLogin={survey.requireLogin}
-            tapinApiKey={survey.tapinApiKey}
-            tapinGroupId={survey.tapinCampaignId}
-          />
-        </CardContent>
-      </Card>
+      <TapInCard
+        surveyId={survey.id}
+        verificationPointTimerSeconds={survey.verificationPointTimerSeconds}
+        requireLogin={survey.requireLogin}
+        tapinApiKey={survey.tapinApiKey}
+        tapinCampaignId={survey.tapinCampaignId}
+      />
 
       {survey.type === "COMPARATIVE_JUDGMENT" && (
         <Card>
