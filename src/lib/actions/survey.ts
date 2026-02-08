@@ -28,7 +28,7 @@ export async function createSurvey(formData: FormData) {
         cjPrompt = "Which of these two submissions demonstrates higher quality?";
         break;
       case "RESUMES":
-        cjPrompt = "Which candidate would you be more likely to advance to the next round?";
+        cjPrompt = "Which candidate would you be more likely to advance to the next round of interviews?";
         break;
       default:
         cjPrompt = "Which of these two do you prefer?";

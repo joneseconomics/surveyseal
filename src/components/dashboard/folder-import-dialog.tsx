@@ -9,7 +9,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, FileText, ImageIcon, File, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FolderOpen, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { addCJItem } from "@/lib/actions/cj-item";
 import { getSupabase, getCJFilePath, getPublicUrl, BUCKET } from "@/lib/supabase";
 
@@ -57,6 +58,7 @@ interface FolderImportDialogProps {
 
 export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImportDialogProps) {
   const [files, setFiles] = useState<FileEntry[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
@@ -81,7 +83,27 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
     // Sort alphabetically by name
     entries.sort((a, b) => a.name.localeCompare(b.name));
     setFiles(entries);
+    setSelected(new Set(entries.map((_, i) => i)));
   }
+
+  function toggleFile(index: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === files.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(files.map((_, i) => i)));
+    }
+  }
+
+  const selectedCount = selected.size;
 
   async function handleImport() {
     setImporting(true);
@@ -91,6 +113,7 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
     const supabase = getSupabase();
 
     for (let i = 0; i < files.length; i++) {
+      if (!selected.has(i)) continue;
       const entry = files[i];
       setFiles((prev) =>
         prev.map((f, idx) => (idx === i ? { ...f, status: "uploading" } : f))
@@ -146,6 +169,7 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
     // Reset state after close animation
     setTimeout(() => {
       setFiles([]);
+      setSelected(new Set());
       setDone(false);
       setImportedCount(0);
       setErrorCount(0);
@@ -156,12 +180,6 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  function getFileIcon(type: string) {
-    if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4 text-green-500 shrink-0" />;
-    if (type === "application/pdf") return <FileText className="h-4 w-4 text-red-500 shrink-0" />;
-    return <File className="h-4 w-4 text-blue-500 shrink-0" />;
   }
 
   return (
@@ -206,9 +224,21 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
 
         {files.length > 0 && !done && (
           <div className="space-y-4">
-            <p className="text-sm font-medium">
-              {files.length} file{files.length !== 1 ? "s" : ""} found
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">
+                {files.length} file{files.length !== 1 ? "s" : ""} found
+                {selectedCount < files.length && ` (${selectedCount} selected)`}
+              </p>
+              {!importing && (
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {selected.size === files.length ? "Deselect all" : "Select all"}
+                </button>
+              )}
+            </div>
             <div className="max-h-64 overflow-y-auto space-y-1 rounded-md border p-2">
               {files.map((entry, i) => (
                 <div key={i} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm">
@@ -219,9 +249,16 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
                   ) : entry.status === "error" ? (
                     <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                   ) : (
-                    getFileIcon(entry.type)
+                    <Checkbox
+                      checked={selected.has(i)}
+                      onCheckedChange={() => toggleFile(i)}
+                      disabled={importing}
+                      className="shrink-0"
+                    />
                   )}
-                  <span className="flex-1 truncate">{entry.name}</span>
+                  <span className={`flex-1 truncate ${!selected.has(i) && entry.status === "pending" ? "text-muted-foreground" : ""}`}>
+                    {entry.name}
+                  </span>
                   <span className="text-xs text-muted-foreground shrink-0">
                     {formatSize(entry.size)}
                   </span>
@@ -232,14 +269,14 @@ export function FolderImportDialog({ surveyId, open, onOpenChange }: FolderImpor
               <Button variant="outline" onClick={handleClose} disabled={importing}>
                 Cancel
               </Button>
-              <Button onClick={handleImport} disabled={importing}>
+              <Button onClick={handleImport} disabled={importing || selectedCount === 0}>
                 {importing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Importing...
                   </>
                 ) : (
-                  `Import ${files.length} File${files.length !== 1 ? "s" : ""}`
+                  `Import ${selectedCount} File${selectedCount !== 1 ? "s" : ""}`
                 )}
               </Button>
             </div>

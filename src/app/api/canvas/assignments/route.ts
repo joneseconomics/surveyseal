@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       assignments: assignments.map((a) => ({
         id: a.id,
         name: a.name,
+        description: a.description,
         dueAt: a.due_at,
         isGroup: !!a.group_category_id,
         submissionTypes: a.submission_types,

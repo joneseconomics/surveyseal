@@ -25,6 +25,7 @@ import { deleteCJItem, reorderCJItems } from "@/lib/actions/cj-item";
 import { updateCJAssignmentInstructions } from "@/lib/actions/survey";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
+import { CanvasInstructionsImport } from "@/components/dashboard/canvas-instructions-import";
 import { FolderImportDialog } from "@/components/dashboard/folder-import-dialog";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -58,6 +59,7 @@ export function CJBuilder({
   const [instructions, setInstructions] = useState(assignmentInstructions ?? "");
   const [savingInstructions, setSavingInstructions] = useState(false);
   const [instructionsSaved, setInstructionsSaved] = useState(false);
+  const [showCanvasInstructionsImport, setShowCanvasInstructionsImport] = useState(false);
 
   // Sync with server data
   if (
@@ -124,7 +126,15 @@ export function CJBuilder({
               placeholder="e.g. Write a 500-word essay analyzing the themes of..."
               rows={6}
             />
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCanvasInstructionsImport(true)}
+              >
+                <GraduationCap className="mr-2 h-4 w-4" />
+                Import from Canvas
+              </Button>
               <Button
                 size="sm"
                 onClick={handleSaveInstructions}
@@ -247,6 +257,13 @@ export function CJBuilder({
         surveyId={surveyId}
         open={showCanvasImport}
         onOpenChange={setShowCanvasImport}
+      />
+
+      <CanvasInstructionsImport
+        surveyId={surveyId}
+        open={showCanvasInstructionsImport}
+        onOpenChange={setShowCanvasInstructionsImport}
+        onImport={(text) => setInstructions(text)}
       />
     </div>
   );

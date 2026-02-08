@@ -13,6 +13,7 @@ export interface CanvasCourse {
 export interface CanvasAssignment {
   id: number;
   name: string;
+  description: string | null;
   due_at: string | null;
   group_category_id: number | null;
   submission_types: string[];
