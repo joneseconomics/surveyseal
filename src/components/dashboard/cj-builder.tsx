@@ -56,7 +56,7 @@ export function CJBuilder({
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
-  const [prompt, setPrompt] = useState(cjPrompt ?? "");
+  const [prompt, setPrompt] = useState(cjPrompt ?? "Which of these two do you prefer?");
   const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
   const [vpOn, setVpOn] = useState(serverVpEnabled);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -151,7 +151,7 @@ export function CJBuilder({
             <Button
               size="sm"
               onClick={handleSaveSettings}
-              disabled={savingSettings || !prompt.trim()}
+              disabled={savingSettings}
             >
               {savingSettings ? "Saving..." : "Save Settings"}
             </Button>

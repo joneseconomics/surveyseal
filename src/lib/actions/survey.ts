@@ -112,8 +112,12 @@ export async function publishSurvey(surveyId: string) {
         `Comparative Judgment surveys need at least 3 items to publish (found ${survey.cjItems.length})`
       );
     }
+    // If no custom prompt is set, use the default
     if (!survey.cjPrompt) {
-      throw new Error("Comparative Judgment surveys need a comparison prompt to publish");
+      await db.survey.update({
+        where: { id: surveyId },
+        data: { cjPrompt: "Which of these two do you prefer?" },
+      });
     }
   } else {
     const lastQuestion = survey.questions[survey.questions.length - 1];

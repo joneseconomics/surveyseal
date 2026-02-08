@@ -157,6 +157,12 @@ export async function updateCJSettings(data: {
   revalidatePath(`/dashboard/surveys/${parsed.surveyId}`);
 }
 
+function getVPLabel(index: number, total: number): string {
+  if (index === 0) return "Opening Verification Point";
+  if (index === total - 1) return "Closing Verification Point";
+  return `Verification Point ${index + 1}`;
+}
+
 export async function updateVerificationPointCount(surveyId: string, count: number) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -172,38 +178,32 @@ export async function updateVerificationPointCount(surveyId: string, count: numb
 
   const currentCount = existingVPs.length;
 
-  if (count > currentCount) {
-    // Add VPs
-    const lastQuestion = await db.question.findFirst({
-      where: { surveyId },
-      orderBy: { position: "desc" },
-      select: { position: true },
-    });
-    const startPosition = (lastQuestion?.position ?? -1) + 1;
+  // Delete all existing VPs and recreate with correct labels
+  if (count !== currentCount) {
+    if (currentCount > 0) {
+      await db.question.deleteMany({
+        where: { id: { in: existingVPs.map((vp) => vp.id) } },
+      });
+    }
 
-    const vpLabels = [
-      "Opening Verification Point",
-      "Closing Verification Point",
-      "Mid-Survey Verification Point",
-    ];
+    if (count > 0) {
+      const lastQuestion = await db.question.findFirst({
+        where: { surveyId },
+        orderBy: { position: "desc" },
+        select: { position: true },
+      });
+      const startPosition = (lastQuestion?.position ?? -1) + 1;
 
-    await db.question.createMany({
-      data: Array.from({ length: count - currentCount }, (_, i) => ({
-        surveyId,
-        position: startPosition + i,
-        type: "FREE_TEXT" as const,
-        content: {
-          text: vpLabels[currentCount + i] ?? `Verification Point ${currentCount + i + 1}`,
-        },
-        isVerificationPoint: true,
-      })),
-    });
-  } else if (count < currentCount) {
-    // Remove VPs from the end
-    const vpsToRemove = existingVPs.slice(count);
-    await db.question.deleteMany({
-      where: { id: { in: vpsToRemove.map((vp) => vp.id) } },
-    });
+      await db.question.createMany({
+        data: Array.from({ length: count }, (_, i) => ({
+          surveyId,
+          position: startPosition + i,
+          type: "FREE_TEXT" as const,
+          content: { text: getVPLabel(i, count) },
+          isVerificationPoint: true,
+        })),
+      });
+    }
   }
 
   revalidatePath(`/dashboard/surveys/${surveyId}`);

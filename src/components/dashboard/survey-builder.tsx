@@ -44,7 +44,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
   const vpCount = questions.filter((q) => q.isVerificationPoint).length;
   const cjItemCount = cjItems?.length ?? 0;
   const canPublish = isCJ
-    ? cjItemCount >= 3 && !!survey.cjPrompt
+    ? cjItemCount >= 3
     : vpCount >= 2;
 
   return (
@@ -84,7 +84,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                 title={
                   !canPublish
                     ? isCJ
-                      ? `Need 3+ items (${cjItemCount}) and a prompt`
+                      ? `Need 3+ items (${cjItemCount})`
                       : `Need 2+ verification points (have ${vpCount})`
                     : "Publish survey"
                 }
