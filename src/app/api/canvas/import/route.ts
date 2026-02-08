@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
       ) {
         // Upload first attachment to Supabase
         const attachment = sub.attachments[0];
+        const contentType = attachment["content-type"] ?? inferMimeType(attachment.filename);
         try {
           const fileBuffer = await downloadFile(
             survey.canvasApiToken,
@@ -94,14 +95,14 @@ export async function POST(req: NextRequest) {
           const filePath = getCJFilePath(surveyId, fileId, attachment.filename);
 
           await supabase.storage.from(BUCKET).upload(filePath, fileBuffer, {
-            contentType: attachment.content_type,
+            contentType,
             upsert: true,
           });
 
           const fileUrl = getPublicUrl(filePath);
           content.fileUrl = fileUrl;
           content.filePath = filePath;
-          content.fileType = attachment.content_type;
+          content.fileType = contentType;
           content.fileName = attachment.display_name;
         } catch (err) {
           console.error(`Failed to upload file for submission ${sub.id}:`, err);
@@ -133,4 +134,22 @@ export async function POST(req: NextRequest) {
     const message = error instanceof Error ? error.message : "Import failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+const MIME_MAP: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".doc": "application/msword",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".txt": "text/plain",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
+
+function inferMimeType(filename: string): string {
+  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  return MIME_MAP[ext] ?? "application/octet-stream";
 }

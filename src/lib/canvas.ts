@@ -32,7 +32,7 @@ export interface CanvasAttachment {
   filename: string;
   url: string;
   size: number;
-  content_type: string;
+  "content-type": string;
 }
 
 export interface CanvasSubmission {

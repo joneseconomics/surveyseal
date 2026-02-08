@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
           filename: a.filename,
           url: a.url,
           size: a.size,
-          contentType: a.content_type,
+          contentType: a["content-type"],
         })) ?? [],
       }));
 

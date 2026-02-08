@@ -148,7 +148,10 @@ function ItemPanel({
   disabled: boolean;
   isSelected: boolean;
 }) {
-  const { fileUrl, fileType, fileName, imageUrl, sourceType, submissionUrl } = item.content;
+  const { fileUrl, fileType: rawFileType, fileName, imageUrl, sourceType, submissionUrl } = item.content;
+
+  // Infer file type from filename when fileType is missing (e.g. Canvas imports)
+  const fileType = rawFileType ?? (fileName ? inferMimeType(fileName) : undefined);
 
   return (
     <button
@@ -266,4 +269,19 @@ function ItemPanel({
       </div>
     </button>
   );
+}
+
+const MIME_MAP: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".doc": "application/msword",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+};
+
+function inferMimeType(filename: string): string | undefined {
+  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  return MIME_MAP[ext];
 }
