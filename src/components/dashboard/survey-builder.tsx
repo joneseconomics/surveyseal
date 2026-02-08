@@ -142,6 +142,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           cjItems={cjItems ?? []}
           isDraft={isDraft}
           cjSubtype={survey.cjSubtype}
+          assignmentInstructions={survey.cjAssignmentInstructions}
         />
       ) : (
         <>

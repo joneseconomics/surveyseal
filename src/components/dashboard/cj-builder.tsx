@@ -18,9 +18,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen, Save, BookOpen } from "lucide-react";
 import { deleteCJItem, reorderCJItems } from "@/lib/actions/cj-item";
+import { updateCJAssignmentInstructions } from "@/lib/actions/survey";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
 import { FolderImportDialog } from "@/components/dashboard/folder-import-dialog";
@@ -38,6 +40,7 @@ interface CJBuilderProps {
   cjItems: CJItemData[];
   isDraft: boolean;
   cjSubtype?: string | null;
+  assignmentInstructions?: string | null;
 }
 
 export function CJBuilder({
@@ -45,12 +48,16 @@ export function CJBuilder({
   cjItems: serverItems,
   isDraft,
   cjSubtype,
+  assignmentInstructions,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
   const [showCanvasImport, setShowCanvasImport] = useState(false);
   const [showFolderImport, setShowFolderImport] = useState(false);
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
+  const [instructions, setInstructions] = useState(assignmentInstructions ?? "");
+  const [savingInstructions, setSavingInstructions] = useState(false);
+  const [instructionsSaved, setInstructionsSaved] = useState(false);
 
   // Sync with server data
   if (
@@ -85,8 +92,58 @@ export function CJBuilder({
     [items, surveyId]
   );
 
+  async function handleSaveInstructions() {
+    setSavingInstructions(true);
+    try {
+      await updateCJAssignmentInstructions(surveyId, instructions);
+      setInstructionsSaved(true);
+      setTimeout(() => setInstructionsSaved(false), 2000);
+    } finally {
+      setSavingInstructions(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Assignment instructions */}
+      {cjSubtype === "ASSIGNMENTS" && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Assignment Instructions</CardTitle>
+            </div>
+            <CardDescription>
+              Paste the assignment prompt or rubric here. Judges will see these instructions before comparing submissions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder="e.g. Write a 500-word essay analyzing the themes of..."
+              rows={6}
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSaveInstructions}
+                disabled={savingInstructions}
+              >
+                {instructionsSaved ? (
+                  "Saved!"
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {savingInstructions ? "Saving..." : "Save Instructions"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Items */}
       <div>
         <div className="mb-4 flex items-center justify-between">

@@ -22,6 +22,7 @@ export default async function InstructionsPage({
       cjSubtype: true,
       cjJobTitle: true,
       cjJobUrl: true,
+      cjAssignmentInstructions: true,
       verificationPointTimerSeconds: true,
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
     },
@@ -67,6 +68,7 @@ export default async function InstructionsPage({
             cjSubtype={survey.cjSubtype}
             cjJobTitle={survey.cjJobTitle}
             cjJobUrl={survey.cjJobUrl}
+            cjAssignmentInstructions={survey.cjAssignmentInstructions}
             hasVPs={hasVPs}
             vpTimerSeconds={survey.verificationPointTimerSeconds}
           />
@@ -87,6 +89,7 @@ function InstructionContent({
   cjSubtype,
   cjJobTitle,
   cjJobUrl,
+  cjAssignmentInstructions,
   hasVPs,
   vpTimerSeconds,
 }: {
@@ -94,6 +97,7 @@ function InstructionContent({
   cjSubtype: string | null;
   cjJobTitle: string | null;
   cjJobUrl: string | null;
+  cjAssignmentInstructions: string | null;
   hasVPs: boolean;
   vpTimerSeconds: number;
 }) {
@@ -156,6 +160,14 @@ function InstructionContent({
             carefully review both submissions and select the one you believe
             demonstrates higher quality.
           </p>
+          {cjAssignmentInstructions && (
+            <div className="rounded-lg border bg-muted/50 p-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                Assignment Prompt
+              </p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{cjAssignmentInstructions}</p>
+            </div>
+          )}
           <p>
             Consider the overall quality of each submission, including content,
             clarity, and thoroughness.

@@ -210,6 +210,18 @@ export async function updateCJResumeConfig(surveyId: string, jobTitle: string, j
   revalidatePath(`/dashboard/surveys/${surveyId}/settings`);
 }
 
+export async function updateCJAssignmentInstructions(surveyId: string, instructions: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: { cjAssignmentInstructions: instructions || null },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+}
+
 export async function updateRespondentAuth(surveyId: string, requireLogin: boolean, authProviders: string[]) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
