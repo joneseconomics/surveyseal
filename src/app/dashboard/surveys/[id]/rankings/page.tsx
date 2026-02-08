@@ -3,15 +3,8 @@ import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { computeReliability } from "@/lib/cj/reliability";
+import { RankingsTable } from "@/components/dashboard/rankings-table";
 
 export default async function RankingsPage({
   params,
@@ -124,34 +117,24 @@ export default async function RankingsPage({
       {/* Rankings table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Rank</TableHead>
-                <TableHead>Label</TableHead>
-                <TableHead className="text-right">Rating</TableHead>
-                <TableHead className="text-right">Uncertainty</TableHead>
-                <TableHead className="text-right">Comparisons</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item, index) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>{item.label}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {Math.round(item.mu)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {Math.round(Math.sqrt(item.sigmaSq))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {item.comparisonCount}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <RankingsTable
+            items={items.map((item) => ({
+              id: item.id,
+              label: item.label,
+              mu: item.mu,
+              sigmaSq: item.sigmaSq,
+              comparisonCount: item.comparisonCount,
+              content: item.content as {
+                sourceType?: string;
+                studentName?: string;
+                studentEmail?: string;
+              } | null,
+            }))}
+            hasCanvasItems={items.some(
+              (item) =>
+                (item.content as { sourceType?: string } | null)?.sourceType === "canvas",
+            )}
+          />
         </CardContent>
       </Card>
     </div>

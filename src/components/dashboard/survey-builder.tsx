@@ -30,9 +30,10 @@ interface SurveyBuilderProps {
   questions: Question[];
   responseCount: number;
   cjItems?: CJItemData[];
+  hasCanvasConfig?: boolean;
 }
 
-export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps) {
+export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: SurveyBuilderProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -161,6 +162,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           comparisonsPerJudge={survey.comparisonsPerJudge}
           vpEnabled={vpCount >= 2}
           isDraft={isDraft}
+          hasCanvasConfig={hasCanvasConfig}
         />
       ) : (
         <>

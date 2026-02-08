@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema } from "@/lib/validations/survey";
+import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema, updateCanvasSettingsSchema } from "@/lib/validations/survey";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fetchTapInTaps } from "@/lib/tapin";
@@ -291,6 +291,27 @@ export async function importTapInCsv(surveyId: string, csvText: string) {
 
   revalidatePath(`/dashboard/surveys/${surveyId}/responses`);
   return { imported };
+}
+
+export async function updateCanvasSettings(data: {
+  surveyId: string;
+  canvasBaseUrl: string;
+  canvasApiToken: string;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const parsed = updateCanvasSettingsSchema.parse(data);
+
+  await db.survey.update({
+    where: { id: parsed.surveyId, ownerId: session.user.id },
+    data: {
+      canvasBaseUrl: parsed.canvasBaseUrl,
+      canvasApiToken: parsed.canvasApiToken,
+    },
+  });
+
+  revalidatePath(`/dashboard/surveys/${parsed.surveyId}/settings`);
 }
 
 export async function closeSurvey(surveyId: string) {

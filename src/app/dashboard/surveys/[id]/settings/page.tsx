@@ -5,8 +5,9 @@ import { updateSurveySettings } from "@/lib/actions/survey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ExternalLink, Smartphone, Users } from "lucide-react";
+import { ExternalLink, Smartphone, Users, GraduationCap } from "lucide-react";
 import { TapInSettings } from "@/components/dashboard/tapin-settings";
+import { CanvasSettings } from "@/components/dashboard/canvas-settings";
 
 export default async function SurveySettingsPage({
   params,
@@ -21,10 +22,13 @@ export default async function SurveySettingsPage({
     where: { id, ownerId: session.user.id },
     select: {
       id: true,
+      type: true,
       verificationPointTimerSeconds: true,
       requireLogin: true,
       tapinApiKey: true,
       tapinCampaignId: true,
+      canvasBaseUrl: true,
+      canvasApiToken: true,
     },
   });
 
@@ -109,6 +113,36 @@ export default async function SurveySettingsPage({
           />
         </CardContent>
       </Card>
+
+      {survey.type === "COMPARATIVE_JUDGMENT" && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Canvas LMS Integration</CardTitle>
+            </div>
+            <CardDescription>
+              Connect to Canvas LMS to import student assignment submissions as comparison items.{" "}
+              <a
+                href="https://community.canvaslms.com/t5/Student-Guide/How-do-I-manage-API-access-tokens-as-a-student/ta-p/273"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                How to generate a Canvas API token
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CanvasSettings
+              surveyId={survey.id}
+              canvasBaseUrl={survey.canvasBaseUrl}
+              canvasApiToken={survey.canvasApiToken}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

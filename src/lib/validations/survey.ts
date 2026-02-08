@@ -23,6 +23,12 @@ export const updateSurveySettingsSchema = z.object({
   tapinCampaignId: z.string().optional(),
 });
 
+export const updateCanvasSettingsSchema = z.object({
+  surveyId: z.string(),
+  canvasBaseUrl: z.string().url("Must be a valid URL").min(1),
+  canvasApiToken: z.string().min(1, "API token is required"),
+});
+
 // ─── Question content schemas (discriminated by type) ──────────────────────
 
 const textOnlyContent = z.object({

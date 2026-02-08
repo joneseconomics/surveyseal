@@ -8,6 +8,12 @@ export const cjItemContentSchema = z.object({
   fileType: z.string().optional(),
   fileName: z.string().optional(),
   filePath: z.string().optional(),
+  sourceType: z.enum(["canvas", "manual"]).optional(),
+  studentName: z.string().optional(),
+  studentEmail: z.string().optional(),
+  canvasUserId: z.number().optional(),
+  canvasSubmissionId: z.number().optional(),
+  submissionUrl: z.string().url().optional(),
 });
 
 export type CJItemContent = z.infer<typeof cjItemContentSchema>;

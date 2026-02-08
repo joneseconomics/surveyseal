@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { File, Download } from "lucide-react";
+import { File, Download, ExternalLink } from "lucide-react";
 import { DocxViewer } from "@/components/survey/docx-viewer";
+import DOMPurify from "isomorphic-dompurify";
 
 interface CJItemDisplay {
   id: string;
@@ -15,6 +16,8 @@ interface CJItemDisplay {
     fileUrl?: string;
     fileType?: string;
     fileName?: string;
+    sourceType?: string;
+    submissionUrl?: string;
   };
 }
 
@@ -145,7 +148,7 @@ function ItemPanel({
   disabled: boolean;
   isSelected: boolean;
 }) {
-  const { fileUrl, fileType, fileName, imageUrl } = item.content;
+  const { fileUrl, fileType, fileName, imageUrl, sourceType, submissionUrl } = item.content;
 
   return (
     <button
@@ -228,12 +231,33 @@ function ItemPanel({
           />
         )}
 
-        {/* Text content */}
-        {item.content.text && (
+        {/* URL submission */}
+        {submissionUrl && (
+          <a
+            href={submissionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-4 flex items-center gap-2 rounded-lg border p-4 text-sm text-primary hover:bg-muted"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLink className="h-5 w-5 shrink-0" />
+            <span className="flex-1 truncate">{submissionUrl}</span>
+          </a>
+        )}
+
+        {/* Text content — Canvas HTML or plain text */}
+        {item.content.text && sourceType === "canvas" ? (
+          <div
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(item.content.text),
+            }}
+          />
+        ) : item.content.text ? (
           <div className="prose prose-sm max-w-none">
             <p className="whitespace-pre-wrap">{item.content.text}</p>
           </div>
-        )}
+        ) : null}
 
         {/* Description */}
         {item.content.description && (

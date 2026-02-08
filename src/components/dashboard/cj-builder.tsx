@@ -24,9 +24,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon } from "lucide-react";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap } from "lucide-react";
 import { deleteCJItem, reorderCJItems, updateCJSettings, updateVerificationPointCount } from "@/lib/actions/cj-item";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
+import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
 import type { CJItemContent } from "@/lib/validations/cj";
 
 interface CJItemData {
@@ -43,6 +44,7 @@ interface CJBuilderProps {
   comparisonsPerJudge: number | null;
   vpEnabled: boolean;
   isDraft: boolean;
+  hasCanvasConfig?: boolean;
 }
 
 export function CJBuilder({
@@ -52,9 +54,11 @@ export function CJBuilder({
   comparisonsPerJudge,
   vpEnabled: serverVpEnabled,
   isDraft,
+  hasCanvasConfig,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
+  const [showCanvasImport, setShowCanvasImport] = useState(false);
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
   const [prompt, setPrompt] = useState(cjPrompt ?? "Which of these two do you prefer?");
   const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
@@ -198,15 +202,26 @@ export function CJBuilder({
             </p>
           </div>
           {isDraft && (
-            <Button
-              onClick={() => {
-                setEditingItem(null);
-                setShowEditor(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex gap-2">
+              {hasCanvasConfig && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCanvasImport(true)}
+                >
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Import from Canvas
+                </Button>
+              )}
+              <Button
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowEditor(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
           )}
         </div>
 
@@ -259,6 +274,14 @@ export function CJBuilder({
             setShowEditor(false);
             setEditingItem(null);
           }}
+        />
+      )}
+
+      {hasCanvasConfig && (
+        <CanvasImportDialog
+          surveyId={surveyId}
+          open={showCanvasImport}
+          onOpenChange={setShowCanvasImport}
         />
       )}
     </div>

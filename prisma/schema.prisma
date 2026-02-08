@@ -139,6 +139,9 @@ model Survey {
   comparisonsPerJudge Int?    @map("comparisons_per_judge")
   cjPrompt            String? @map("cj_prompt") @db.Text
 
+  canvasBaseUrl       String? @map("canvas_base_url")
+  canvasApiToken      String? @map("canvas_api_token")
+
   owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   questions Question[]
   sessions  SurveySession[]
