@@ -21,13 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap } from "lucide-react";
-import { deleteCJItem, reorderCJItems, updateCJSettings, updateVerificationPointCount } from "@/lib/actions/cj-item";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen } from "lucide-react";
+import { deleteCJItem, reorderCJItems, updateCJSettings } from "@/lib/actions/cj-item";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
+import { FolderImportDialog } from "@/components/dashboard/folder-import-dialog";
 import type { CJItemContent } from "@/lib/validations/cj";
 
 interface CJItemData {
@@ -42,7 +41,6 @@ interface CJBuilderProps {
   cjItems: CJItemData[];
   cjPrompt: string | null;
   comparisonsPerJudge: number | null;
-  vpEnabled: boolean;
   isDraft: boolean;
   hasCanvasConfig?: boolean;
 }
@@ -52,19 +50,17 @@ export function CJBuilder({
   cjItems: serverItems,
   cjPrompt,
   comparisonsPerJudge,
-  vpEnabled: serverVpEnabled,
   isDraft,
   hasCanvasConfig,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
   const [showCanvasImport, setShowCanvasImport] = useState(false);
+  const [showFolderImport, setShowFolderImport] = useState(false);
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
   const [prompt, setPrompt] = useState(cjPrompt ?? "Which of these two do you prefer?");
   const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
-  const [vpOn, setVpOn] = useState(serverVpEnabled);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [togglingVP, setTogglingVP] = useState(false);
 
   // Sync with server data
   if (
@@ -160,34 +156,6 @@ export function CJBuilder({
               {savingSettings ? "Saving..." : "Save Settings"}
             </Button>
           )}
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="cj-vp-toggle">Verification Points</Label>
-              <p className="text-xs text-muted-foreground">
-                {vpOn
-                  ? "Judges will verify at the beginning and end of the survey."
-                  : "No verification required."}
-              </p>
-            </div>
-            <Switch
-              id="cj-vp-toggle"
-              checked={vpOn}
-              disabled={!isDraft || togglingVP}
-              onCheckedChange={async (checked) => {
-                setTogglingVP(true);
-                setVpOn(checked);
-                try {
-                  await updateVerificationPointCount(surveyId, checked ? 2 : 0);
-                } catch (e) {
-                  console.error(e);
-                  setVpOn(!checked);
-                } finally {
-                  setTogglingVP(false);
-                }
-              }}
-            />
-          </div>
         </CardContent>
       </Card>
 
@@ -203,6 +171,13 @@ export function CJBuilder({
           </div>
           {isDraft && (
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFolderImport(true)}
+              >
+                <FolderOpen className="mr-2 h-4 w-4" />
+                Import from Folder
+              </Button>
               {hasCanvasConfig && (
                 <Button
                   variant="outline"
@@ -276,6 +251,12 @@ export function CJBuilder({
           }}
         />
       )}
+
+      <FolderImportDialog
+        surveyId={surveyId}
+        open={showFolderImport}
+        onOpenChange={setShowFolderImport}
+      />
 
       {hasCanvasConfig && (
         <CanvasImportDialog

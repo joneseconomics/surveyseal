@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey, reopenSurvey } from "@/lib/actions/survey";
-import { updateVerificationPointCount } from "@/lib/actions/cj-item";
 import { SortableQuestionList } from "@/components/dashboard/sortable-question-list";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
@@ -38,7 +37,6 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [addAsVP, setAddAsVP] = useState(false);
-  const [savingVPs, setSavingVPs] = useState(false);
   const isDraft = survey.status === "DRAFT";
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const regularQuestions = questions.filter((q) => !q.isVerificationPoint);
@@ -46,7 +44,7 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
   const cjItemCount = cjItems?.length ?? 0;
   const canPublish = isCJ
     ? cjItemCount >= 3
-    : vpCount >= 2;
+    : regularQuestions.length >= 1;
 
   return (
     <div className="space-y-6">
@@ -86,7 +84,7 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
                   !canPublish
                     ? isCJ
                       ? `Need 3+ items (${cjItemCount})`
-                      : `Need 2+ verification points (have ${vpCount})`
+                      : `Need at least 1 question`
                     : "Publish survey"
                 }
               >
@@ -160,29 +158,11 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
           cjItems={cjItems ?? []}
           cjPrompt={survey.cjPrompt}
           comparisonsPerJudge={survey.comparisonsPerJudge}
-          vpEnabled={vpCount >= 2}
           isDraft={isDraft}
           hasCanvasConfig={hasCanvasConfig}
         />
       ) : (
         <>
-          {/* Verification Points setting */}
-          {isDraft && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Verification Points</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VPCountSetting
-                  surveyId={survey.id}
-                  vpCount={vpCount}
-                  saving={savingVPs}
-                  setSaving={setSavingVPs}
-                />
-              </CardContent>
-            </Card>
-          )}
-
           {/* Questions section */}
           <div>
             <div className="mb-4 flex items-center justify-between">
@@ -257,62 +237,6 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
           />
         </>
       )}
-    </div>
-  );
-}
-
-function VPCountSetting({
-  surveyId,
-  vpCount,
-  saving,
-  setSaving,
-}: {
-  surveyId: string;
-  vpCount: number;
-  saving: boolean;
-  setSaving: (v: boolean) => void;
-}) {
-  const [value, setValue] = useState(vpCount.toString());
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={2}
-          max={10}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="w-24"
-          disabled={saving}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={
-            saving ||
-            !value ||
-            parseInt(value, 10) === vpCount ||
-            parseInt(value, 10) < 2 ||
-            parseInt(value, 10) > 10
-          }
-          onClick={async () => {
-            setSaving(true);
-            try {
-              await updateVerificationPointCount(surveyId, parseInt(value, 10));
-            } catch (e) {
-              console.error(e);
-            } finally {
-              setSaving(false);
-            }
-          }}
-        >
-          {saving ? "Updating..." : "Update"}
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Minimum 2 (beginning and end). Verification points are evenly distributed throughout the survey.
-      </p>
     </div>
   );
 }
