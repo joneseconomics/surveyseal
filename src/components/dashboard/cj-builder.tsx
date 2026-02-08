@@ -18,12 +18,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen } from "lucide-react";
-import { deleteCJItem, reorderCJItems, updateCJSettings } from "@/lib/actions/cj-item";
+import { deleteCJItem, reorderCJItems } from "@/lib/actions/cj-item";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
 import { FolderImportDialog } from "@/components/dashboard/folder-import-dialog";
@@ -39,28 +36,19 @@ interface CJItemData {
 interface CJBuilderProps {
   surveyId: string;
   cjItems: CJItemData[];
-  cjPrompt: string | null;
-  comparisonsPerJudge: number | null;
   isDraft: boolean;
-  hasCanvasConfig?: boolean;
 }
 
 export function CJBuilder({
   surveyId,
   cjItems: serverItems,
-  cjPrompt,
-  comparisonsPerJudge,
   isDraft,
-  hasCanvasConfig,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
   const [showCanvasImport, setShowCanvasImport] = useState(false);
   const [showFolderImport, setShowFolderImport] = useState(false);
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
-  const [prompt, setPrompt] = useState(cjPrompt ?? "Which of these two do you prefer?");
-  const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
-  const [savingSettings, setSavingSettings] = useState(false);
 
   // Sync with server data
   if (
@@ -95,70 +83,8 @@ export function CJBuilder({
     [items, surveyId]
   );
 
-  async function handleSaveSettings() {
-    setSavingSettings(true);
-    try {
-      await updateCJSettings({
-        surveyId,
-        cjPrompt: prompt,
-        comparisonsPerJudge: perJudge ? parseInt(perJudge, 10) : null,
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSavingSettings(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {/* CJ Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Comparison Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="cj-prompt">Comparison Prompt</Label>
-            <Textarea
-              id="cj-prompt"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Which of these two items is better? Consider..."
-              rows={2}
-              disabled={!isDraft}
-            />
-            <p className="text-xs text-muted-foreground">
-              This prompt is shown to judges above each comparison.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cj-per-judge">Comparisons per Judge (optional)</Label>
-            <Input
-              id="cj-per-judge"
-              type="number"
-              min={1}
-              value={perJudge}
-              onChange={(e) => setPerJudge(e.target.value)}
-              placeholder={`Default: ${Math.max(serverItems.length - 1, 1)}`}
-              disabled={!isDraft}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank for default (number of items - 1).
-            </p>
-          </div>
-          {isDraft && (
-            <Button
-              size="sm"
-              onClick={handleSaveSettings}
-              disabled={savingSettings}
-            >
-              {savingSettings ? "Saving..." : "Save Settings"}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Items */}
       <div>
         <div className="mb-4 flex items-center justify-between">
@@ -178,15 +104,13 @@ export function CJBuilder({
                 <FolderOpen className="mr-2 h-4 w-4" />
                 Import from Folder
               </Button>
-              {hasCanvasConfig && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCanvasImport(true)}
-                >
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  Import from Canvas
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={() => setShowCanvasImport(true)}
+              >
+                <GraduationCap className="mr-2 h-4 w-4" />
+                Import from Canvas
+              </Button>
               <Button
                 onClick={() => {
                   setEditingItem(null);
@@ -258,13 +182,11 @@ export function CJBuilder({
         onOpenChange={setShowFolderImport}
       />
 
-      {hasCanvasConfig && (
-        <CanvasImportDialog
-          surveyId={surveyId}
-          open={showCanvasImport}
-          onOpenChange={setShowCanvasImport}
-        />
-      )}
+      <CanvasImportDialog
+        surveyId={surveyId}
+        open={showCanvasImport}
+        onOpenChange={setShowCanvasImport}
+      />
     </div>
   );
 }

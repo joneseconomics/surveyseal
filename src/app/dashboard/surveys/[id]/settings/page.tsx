@@ -1,13 +1,12 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
-import { updateSurveySettings } from "@/lib/actions/survey";
-import { Button } from "@/components/ui/button";
+import { ExternalLink, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { ExternalLink, Users, GraduationCap } from "lucide-react";
 import { TapInCard } from "@/components/dashboard/tapin-card";
+import { AuthSettingsCard } from "@/components/dashboard/auth-settings-card";
 import { CanvasSettings } from "@/components/dashboard/canvas-settings";
+import { CJComparisonSettingsCard } from "@/components/dashboard/cj-comparison-settings-card";
 
 export default async function SurveySettingsPage({
   params,
@@ -23,17 +22,24 @@ export default async function SurveySettingsPage({
     select: {
       id: true,
       type: true,
+      status: true,
       verificationPointTimerSeconds: true,
       requireLogin: true,
       tapinApiKey: true,
       tapinCampaignId: true,
       canvasBaseUrl: true,
       canvasApiToken: true,
+      authProviders: true,
+      cjPrompt: true,
+      comparisonsPerJudge: true,
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
+      _count: { select: { cjItems: true } },
     },
   });
 
   if (!survey) notFound();
+
+  const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
 
   return (
     <div className="space-y-6">
@@ -44,46 +50,11 @@ export default async function SurveySettingsPage({
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Respondent Authentication</CardTitle>
-          </div>
-          <CardDescription>
-            Control whether respondents must sign in before taking the survey.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={updateSurveySettings} className="space-y-6">
-            <input type="hidden" name="id" value={survey.id} />
-            <input type="hidden" name="verificationPointTimerSeconds" value={survey.verificationPointTimerSeconds} />
-            <input type="hidden" name="tapinApiKey" value={survey.tapinApiKey ?? ""} />
-            <input type="hidden" name="tapinCampaignId" value={survey.tapinCampaignId ?? ""} />
-
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="requireLogin"
-                name="requireLogin"
-                defaultChecked={survey.requireLogin}
-                className="mt-1 h-4 w-4"
-              />
-              <div>
-                <Label htmlFor="requireLogin" className="font-medium">
-                  Require sign-in to take this survey
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  When enabled, respondents must sign in with Google or Microsoft before starting.
-                  When disabled, respondents enter only an email address, making the survey anonymous.
-                </p>
-              </div>
-            </div>
-
-            <Button type="submit">Save</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <AuthSettingsCard
+        surveyId={survey.id}
+        requireLogin={survey.requireLogin}
+        authProviders={survey.authProviders}
+      />
 
       <TapInCard
         surveyId={survey.id}
@@ -95,7 +66,17 @@ export default async function SurveySettingsPage({
         tapinCampaignId={survey.tapinCampaignId}
       />
 
-      {survey.type === "COMPARATIVE_JUDGMENT" && (
+      {isCJ && (
+        <CJComparisonSettingsCard
+          surveyId={survey.id}
+          cjPrompt={survey.cjPrompt}
+          comparisonsPerJudge={survey.comparisonsPerJudge}
+          cjItemCount={survey._count.cjItems}
+          isDraft={survey.status === "DRAFT"}
+        />
+      )}
+
+      {isCJ && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

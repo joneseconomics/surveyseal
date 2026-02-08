@@ -38,7 +38,6 @@ export default async function SurveyDetailPage({
             }))
           : undefined
       }
-      hasCanvasConfig={!!survey.canvasApiToken}
     />
   );
 }

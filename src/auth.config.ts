@@ -2,6 +2,8 @@ import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import LinkedIn from "next-auth/providers/linkedin";
+import Apple from "next-auth/providers/apple";
+import GitHub from "next-auth/providers/github";
 
 export default {
   providers: [
@@ -14,6 +16,8 @@ export default {
         : undefined,
     }),
     LinkedIn,
+    Apple,
+    GitHub,
   ],
   pages: {
     signIn: "/auth/signin",

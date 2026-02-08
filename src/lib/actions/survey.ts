@@ -21,9 +21,9 @@ export async function createSurvey(formData: FormData) {
   const survey = await db.survey.create({
     data: {
       title: parsed.title,
-      description: parsed.description,
       type: parsed.type,
       ownerId: session.user.id,
+      authProviders: ["google"],
       questions: {
         createMany: {
           data: [
@@ -161,6 +161,42 @@ export async function updateSurveySettings(formData: FormData) {
   });
 
   revalidatePath(`/dashboard/surveys/${parsed.id}/settings`);
+}
+
+export async function updateAuthProviders(surveyId: string, providers: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: { authProviders: providers },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}/settings`);
+}
+
+export async function updateSurveyTitle(surveyId: string, title: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: { title },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+}
+
+export async function updateRespondentAuth(surveyId: string, requireLogin: boolean, authProviders: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: { requireLogin, authProviders },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}/settings`);
 }
 
 export async function reconcileTapIn(surveyId: string) {

@@ -142,6 +142,8 @@ model Survey {
   canvasBaseUrl       String? @map("canvas_base_url")
   canvasApiToken      String? @map("canvas_api_token")
 
+  authProviders       String[] @default([]) @map("auth_providers")
+
   owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   questions Question[]
   sessions  SurveySession[]

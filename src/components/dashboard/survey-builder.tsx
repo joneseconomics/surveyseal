@@ -2,17 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { updateSurvey, deleteSurvey, publishSurvey, closeSurvey, reopenSurvey } from "@/lib/actions/survey";
+import { deleteSurvey, publishSurvey, closeSurvey, reopenSurvey } from "@/lib/actions/survey";
 import { SortableQuestionList } from "@/components/dashboard/sortable-question-list";
 import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { CJBuilder } from "@/components/dashboard/cj-builder";
+import { EditableSurveyTitle } from "@/components/dashboard/editable-survey-title";
 import { Globe, Trash2, ExternalLink, Upload } from "lucide-react";
 import type { Survey, Question } from "@/generated/prisma/client";
 import type { CJItemContent } from "@/lib/validations/cj";
@@ -29,10 +26,9 @@ interface SurveyBuilderProps {
   questions: Question[];
   responseCount: number;
   cjItems?: CJItemData[];
-  hasCanvasConfig?: boolean;
 }
 
-export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: SurveyBuilderProps) {
+export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -52,7 +48,11 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">{survey.title}</h1>
+            <EditableSurveyTitle
+              surveyId={survey.id}
+              title={survey.title}
+              isDraft={isDraft}
+            />
             <Badge variant={survey.status === "LIVE" ? "default" : "secondary"}>
               {survey.status}
             </Badge>
@@ -62,9 +62,6 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
                 : "Questionnaire"}
             </Badge>
           </div>
-          {survey.description && (
-            <p className="mt-1 text-muted-foreground">{survey.description}</p>
-          )}
         </div>
         <div className="flex gap-2">
           {survey.status === "LIVE" && (
@@ -119,47 +116,12 @@ export function SurveyBuilder({ survey, questions, cjItems, hasCanvasConfig }: S
         </div>
       </div>
 
-      {/* Survey details (editable in draft) */}
-      {isDraft && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Survey Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={updateSurvey} className="space-y-4">
-              <input type="hidden" name="id" value={survey.id} />
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" defaultValue={survey.title} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={survey.description ?? ""}
-                  rows={2}
-                />
-              </div>
-              <Button type="submit" size="sm">
-                Save
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      <Separator />
-
       {/* Content section: CJ builder or Questionnaire builder */}
       {isCJ ? (
         <CJBuilder
           surveyId={survey.id}
           cjItems={cjItems ?? []}
-          cjPrompt={survey.cjPrompt}
-          comparisonsPerJudge={survey.comparisonsPerJudge}
           isDraft={isDraft}
-          hasCanvasConfig={hasCanvasConfig}
         />
       ) : (
         <>

@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ClipboardList, Scale } from "lucide-react";
 
 export default function NewSurveyPage() {
@@ -65,15 +64,6 @@ export default function NewSurveyPage() {
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input id="title" name="title" placeholder="e.g. Campus Dining Experience Survey" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe what this survey is about..."
-                rows={3}
-              />
             </div>
             <div className="flex justify-end gap-2">
               <Button type="submit">Create Survey</Button>
