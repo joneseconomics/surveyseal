@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { detectAutomation, type AutomationCheckResult } from "@/lib/bot-detection";
 
 interface SubmitSurveyProps {
   sessionId: string;
@@ -15,6 +16,11 @@ export function SubmitSurvey({ sessionId, surveyId }: SubmitSurveyProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const automationRef = useRef<AutomationCheckResult | null>(null);
+
+  useEffect(() => {
+    try { automationRef.current = detectAutomation(); } catch { /* graceful degradation */ }
+  }, []);
 
   async function handleSubmit() {
     setLoading(true);
@@ -23,7 +29,7 @@ export function SubmitSurvey({ sessionId, surveyId }: SubmitSurveyProps) {
       const res = await fetch("/api/survey/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, automationCheck: automationRef.current }),
       });
       const data = await res.json();
       if (!res.ok) {

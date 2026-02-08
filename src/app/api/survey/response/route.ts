@@ -6,6 +6,7 @@ const requestSchema = z.object({
   sessionId: z.string(),
   questionId: z.string(),
   answer: z.unknown(),
+  telemetry: z.unknown().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Upsert response
+    const telemetryData = parsed.telemetry ? (parsed.telemetry as object) : undefined;
     await db.response.upsert({
       where: {
         sessionId_questionId: {
@@ -68,9 +70,11 @@ export async function POST(req: NextRequest) {
         sessionId: parsed.sessionId,
         questionId: parsed.questionId,
         answer: parsed.answer as object,
+        ...(telemetryData && { telemetry: telemetryData }),
       },
       update: {
         answer: parsed.answer as object,
+        ...(telemetryData && { telemetry: telemetryData }),
       },
     });
 

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import type { Question } from "@/generated/prisma/client";
+import { useBotTelemetry } from "@/lib/bot-detection";
 
 interface QuestionRendererProps {
   sessionId: string;
@@ -40,15 +41,18 @@ export function QuestionRenderer({
   const content = question.content as unknown as QuestionContent;
   const [answer, setAnswer] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
+  const { getTelemetry } = useBotTelemetry(question.id);
 
   async function handleSubmit() {
     if (answer === null || answer === undefined) return;
     setLoading(true);
     try {
+      let telemetry;
+      try { telemetry = getTelemetry(); } catch { /* graceful degradation */ }
       const res = await fetch("/api/survey/response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, questionId: question.id, answer }),
+        body: JSON.stringify({ sessionId, questionId: question.id, answer, telemetry }),
       });
       if (res.ok) {
         window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
