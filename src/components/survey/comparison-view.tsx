@@ -139,7 +139,6 @@ function ItemPanel({
   onClick,
   disabled,
   isSelected,
-  side,
 }: {
   item: CJItemDisplay;
   onClick: () => void;

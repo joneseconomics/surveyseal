@@ -161,7 +161,7 @@ export async function updateVerificationPointCount(surveyId: string, count: numb
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  if (count < 2 || count > 10) throw new Error("VP count must be between 2 and 10");
+  if (count < 0 || count > 10) throw new Error("VP count must be between 0 and 10");
 
   await verifyOwnership(surveyId, session.user.id);
 
@@ -174,13 +174,17 @@ export async function updateVerificationPointCount(surveyId: string, count: numb
 
   if (count > currentCount) {
     // Add VPs
-    const lastVP = existingVPs[existingVPs.length - 1];
-    const startPosition = (lastVP?.position ?? -1) + 1;
+    const lastQuestion = await db.question.findFirst({
+      where: { surveyId },
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
+    const startPosition = (lastQuestion?.position ?? -1) + 1;
 
     const vpLabels = [
       "Opening Verification Point",
-      "Mid-Survey Verification Point",
       "Closing Verification Point",
+      "Mid-Survey Verification Point",
     ];
 
     await db.question.createMany({

@@ -100,7 +100,7 @@ export async function publishSurvey(surveyId: string) {
 
   const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
 
-  if (verificationPoints.length < 2) {
+  if (survey.type !== "COMPARATIVE_JUDGMENT" && verificationPoints.length < 2) {
     throw new Error(
       `Surveys need at least 2 verification points to publish (found ${verificationPoints.length})`
     );

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon } from "lucide-react";
@@ -40,7 +41,7 @@ interface CJBuilderProps {
   cjItems: CJItemData[];
   cjPrompt: string | null;
   comparisonsPerJudge: number | null;
-  vpCount: number;
+  vpEnabled: boolean;
   isDraft: boolean;
 }
 
@@ -49,7 +50,7 @@ export function CJBuilder({
   cjItems: serverItems,
   cjPrompt,
   comparisonsPerJudge,
-  vpCount: serverVpCount,
+  vpEnabled: serverVpEnabled,
   isDraft,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
@@ -57,9 +58,9 @@ export function CJBuilder({
   const [editingItem, setEditingItem] = useState<CJItemData | null>(null);
   const [prompt, setPrompt] = useState(cjPrompt ?? "");
   const [perJudge, setPerJudge] = useState(comparisonsPerJudge?.toString() ?? "");
-  const [vpCountStr, setVpCountStr] = useState(serverVpCount.toString());
+  const [vpOn, setVpOn] = useState(serverVpEnabled);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [savingVPs, setSavingVPs] = useState(false);
+  const [togglingVP, setTogglingVP] = useState(false);
 
   // Sync with server data
   if (
@@ -156,51 +157,32 @@ export function CJBuilder({
             </Button>
           )}
           <Separator />
-          <div className="space-y-2">
-            <Label htmlFor="cj-vp-count">Verification Points</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="cj-vp-count"
-                type="number"
-                min={2}
-                max={10}
-                value={vpCountStr}
-                onChange={(e) => setVpCountStr(e.target.value)}
-                className="w-24"
-                disabled={!isDraft || savingVPs}
-              />
-              {isDraft && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={
-                    savingVPs ||
-                    !vpCountStr ||
-                    parseInt(vpCountStr, 10) === serverVpCount ||
-                    parseInt(vpCountStr, 10) < 2 ||
-                    parseInt(vpCountStr, 10) > 10
-                  }
-                  onClick={async () => {
-                    setSavingVPs(true);
-                    try {
-                      await updateVerificationPointCount(
-                        surveyId,
-                        parseInt(vpCountStr, 10)
-                      );
-                    } catch (e) {
-                      console.error(e);
-                    } finally {
-                      setSavingVPs(false);
-                    }
-                  }}
-                >
-                  {savingVPs ? "Updating..." : "Update"}
-                </Button>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="cj-vp-toggle">Verification Points</Label>
+              <p className="text-xs text-muted-foreground">
+                {vpOn
+                  ? "Judges will verify at the beginning and end of the survey."
+                  : "No verification required."}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Minimum 2 (beginning and end). Verification points are evenly distributed across comparisons.
-            </p>
+            <Switch
+              id="cj-vp-toggle"
+              checked={vpOn}
+              disabled={!isDraft || togglingVP}
+              onCheckedChange={async (checked) => {
+                setTogglingVP(true);
+                setVpOn(checked);
+                try {
+                  await updateVerificationPointCount(surveyId, checked ? 2 : 0);
+                } catch (e) {
+                  console.error(e);
+                  setVpOn(!checked);
+                } finally {
+                  setTogglingVP(false);
+                }
+              }}
+            />
           </div>
         </CardContent>
       </Card>

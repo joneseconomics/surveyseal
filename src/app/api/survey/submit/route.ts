@@ -80,7 +80,9 @@ export async function POST(req: NextRequest) {
     const totalVerificationPoints = session.survey.questions.length;
 
     let verificationStatus: VerificationStatus;
-    if (verifiedCount === totalVerificationPoints) {
+    if (totalVerificationPoints === 0) {
+      verificationStatus = "UNVERIFIED";
+    } else if (verifiedCount === totalVerificationPoints) {
       verificationStatus = "VERIFIED";
     } else if (verifiedCount === 0) {
       verificationStatus = "UNVERIFIED";
