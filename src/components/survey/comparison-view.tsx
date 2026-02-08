@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { File, Download } from "lucide-react";
+import { DocxViewer } from "@/components/survey/docx-viewer";
 
 interface CJItemDisplay {
   id: string;
@@ -140,9 +141,14 @@ function ItemCard({
           />
         )}
         {fileUrl &&
+          fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
+            <DocxViewer url={fileUrl} />
+          )}
+        {fileUrl &&
           fileType &&
           !fileType.startsWith("image/") &&
-          fileType !== "application/pdf" && (
+          fileType !== "application/pdf" &&
+          fileType !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
             <a
               href={fileUrl}
               target="_blank"
