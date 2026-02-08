@@ -181,12 +181,12 @@ export default async function ComparePage({
       leftItem={{
         id: leftFull.id,
         label: leftFull.label,
-        content: leftFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
+        content: leftFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string; sourceType?: string; submissionUrl?: string },
       }}
       rightItem={{
         id: rightFull.id,
         label: rightFull.label,
-        content: rightFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string },
+        content: rightFull.content as { text?: string; imageUrl?: string; description?: string; fileUrl?: string; fileType?: string; fileName?: string; sourceType?: string; submissionUrl?: string },
       }}
       prompt={survey.cjPrompt ?? "Which item is better?"}
       currentComparison={completedComparisons + 1}
