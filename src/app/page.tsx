@@ -547,7 +547,7 @@ export default function LandingPage() {
                 icon: LogIn,
                 title: "Flexible Authentication",
                 description:
-                  "Require sign-in with Google or Microsoft for identified responses, or toggle it off for fully anonymous surveys.",
+                  "Require sign-in with Google for identified responses, or toggle it off for fully anonymous surveys. More providers coming soon.",
               },
               {
                 icon: Clock,

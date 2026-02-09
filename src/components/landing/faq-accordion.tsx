@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Can I make my survey anonymous?",
     answer:
-      "Yes. By default, respondents sign in with Google or Microsoft before taking a survey. You can turn this off in your survey settings to allow fully anonymous responses — respondents can optionally provide an email, or leave it blank.",
+      "Yes. By default, respondents sign in with Google before taking a survey. You can turn this off in your survey settings to allow fully anonymous responses — respondents can optionally provide an email, or leave it blank.",
   },
   {
     question: "What is Comparative Judgment?",
@@ -71,7 +71,7 @@ const faqs = [
   {
     question: "How do I get started?",
     answer:
-      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. For Comparative Judgment surveys, upload items (or import from Canvas), share the link with judges, and view rankings as results come in. The survey builder is designed to be simple — no technical expertise required.",
+      "Sign in with your Google account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. For Comparative Judgment surveys, upload items (or import from Canvas), share the link with judges, and view rankings as results come in. The survey builder is designed to be simple — no technical expertise required.",
   },
 ];
 

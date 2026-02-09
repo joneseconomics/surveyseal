@@ -74,16 +74,22 @@ export function AuthMethodsCard({ surveyId, authProviders: serverProviders }: Au
           {AUTH_PROVIDERS.map((provider) => (
             <label
               key={provider.id}
-              className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+              className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                provider.enabled
+                  ? "cursor-pointer hover:bg-accent/50"
+                  : "opacity-40 cursor-not-allowed"
+              }`}
             >
               <input
                 type="checkbox"
-                checked={selected.has(provider.id)}
-                onChange={() => toggleProvider(provider.id)}
+                checked={provider.enabled ? selected.has(provider.id) : false}
+                onChange={() => provider.enabled && toggleProvider(provider.id)}
+                disabled={!provider.enabled}
                 className="h-4 w-4"
               />
               {provider.icon}
               <span className="text-sm font-medium">{provider.name}</span>
+              {!provider.enabled && <span className="ml-auto text-xs text-muted-foreground">Coming soon</span>}
             </label>
           ))}
         </div>

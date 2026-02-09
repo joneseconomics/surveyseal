@@ -134,9 +134,15 @@ export default async function SurveyLandingPage({
               {providers.map((provider) => (
                 <form key={provider.id} action={signInWithProvider}>
                   <input type="hidden" name="provider" value={provider.id} />
-                  <Button variant="outline" className="w-full" type="submit">
+                  <Button
+                    variant="outline"
+                    className={`w-full ${!provider.enabled ? "opacity-40 pointer-events-none" : ""}`}
+                    type="submit"
+                    disabled={!provider.enabled}
+                  >
                     {provider.icon}
                     Continue with {provider.name}
+                    {!provider.enabled && <span className="ml-auto text-xs text-muted-foreground">Coming soon</span>}
                   </Button>
                 </form>
               ))}

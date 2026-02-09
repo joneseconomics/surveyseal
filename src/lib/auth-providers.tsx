@@ -2,12 +2,14 @@ export interface AuthProvider {
   id: string;
   name: string;
   icon: React.ReactNode;
+  enabled: boolean;
 }
 
 export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "google",
     name: "Google",
+    enabled: true,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path
@@ -32,6 +34,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "microsoft-entra-id",
     name: "Microsoft",
+    enabled: false,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
         <path fill="#f35325" d="M1 1h10v10H1z" />
@@ -44,6 +47,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "linkedin",
     name: "LinkedIn",
+    enabled: false,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path
@@ -56,6 +60,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "apple",
     name: "Apple",
+    enabled: false,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path
@@ -68,6 +73,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "github",
     name: "GitHub",
+    enabled: false,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path
