@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Shield,
   ArrowRight,
   ArrowLeft,
   CheckCircle,
@@ -371,7 +370,7 @@ export default function SampleSurveyPage() {
             <>
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
-                  <Shield className="h-3.5 w-3.5" />
+                  <SurveySealLogo className="h-3.5 w-3.5" />
                   Verification Point {currentStep.verificationPointNumber} of 3
                 </Badge>
               </div>

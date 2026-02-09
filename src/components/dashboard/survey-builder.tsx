@@ -10,7 +10,8 @@ import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { CJBuilder } from "@/components/dashboard/cj-builder";
 import { EditableSurveyTitle } from "@/components/dashboard/editable-survey-title";
-import { Globe, Trash2, ExternalLink, Upload, Link2, Check } from "lucide-react";
+import { Globe, Trash2, ExternalLink, Upload, Link2, Check, Clock } from "lucide-react";
+import { SurveySealLogo } from "@/components/logo";
 import type { Survey, Question } from "@/generated/prisma/client";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -26,6 +27,96 @@ interface SurveyBuilderProps {
   questions: Question[];
   responseCount: number;
   cjItems?: CJItemData[];
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function estimateQuestionSeconds(question: Question): number {
+  const content = question.content as {
+    text?: string;
+    options?: string[];
+    rows?: string[];
+    columns?: string[];
+    scale?: { min?: number; max?: number };
+  };
+
+  const questionText = content?.text ?? "";
+  // Reading time: ~250 words/min = ~4 words/sec
+  const readingSeconds = countWords(questionText) / 4;
+
+  switch (question.type) {
+    case "YES_NO":
+    case "NPS":
+    case "RATING":
+    case "SLIDER":
+    case "NUMBER":
+    case "PERCENTAGE":
+    case "DATE":
+    case "DATE_TIME":
+      // Simple single-input: read + quick answer
+      return readingSeconds + 5;
+
+    case "MULTIPLE_CHOICE":
+    case "CHECKBOX":
+    case "CUSTOMER_SATISFACTION": {
+      // Read question + read each option (~1.5s per option) + decide
+      const optionCount = content?.options?.length ?? 3;
+      const optionWords = (content?.options ?? []).reduce((sum, o) => sum + countWords(o), 0);
+      return readingSeconds + (optionWords / 4) + (optionCount * 1.5) + 3;
+    }
+
+    case "LIKERT": {
+      // Read question + scan scale labels + decide
+      const scalePoints = (content?.scale?.max ?? 5) - (content?.scale?.min ?? 1) + 1;
+      return readingSeconds + (scalePoints * 1) + 3;
+    }
+
+    case "MATRIX": {
+      // Read question + each row × each column interaction
+      const rowCount = content?.rows?.length ?? 3;
+      const colCount = content?.columns?.length ?? 3;
+      const rowWords = (content?.rows ?? []).reduce((sum, r) => sum + countWords(r), 0);
+      const colWords = (content?.columns ?? []).reduce((sum, c) => sum + countWords(c), 0);
+      return readingSeconds + (rowWords / 4) + (colWords / 4) + (rowCount * colCount * 1.5) + 3;
+    }
+
+    case "RANKING": {
+      // Read question + read each option + drag-and-drop ordering
+      const itemCount = content?.options?.length ?? 4;
+      const optionWords = (content?.options ?? []).reduce((sum, o) => sum + countWords(o), 0);
+      return readingSeconds + (optionWords / 4) + (itemCount * 3) + 5;
+    }
+
+    case "SHORT_TEXT":
+    case "EMAIL":
+    case "URL":
+    case "PHONE_NUMBER":
+      // Read question + type short answer
+      return readingSeconds + 10;
+
+    case "FREE_TEXT":
+      // Read question + compose a paragraph
+      return readingSeconds + 45;
+
+    default:
+      return readingSeconds + 15;
+  }
+}
+
+function estimateCompletionTime(questions: Question[], vpCount: number, vpTimerSeconds: number): string {
+  const questionTimeSeconds = questions.reduce((sum, q) => sum + estimateQuestionSeconds(q), 0);
+  // VP time: timer duration + ~10s for the tap/skip interaction
+  const vpTimeSeconds = vpCount * (vpTimerSeconds + 10);
+  const totalSeconds = questionTimeSeconds + vpTimeSeconds;
+
+  const minutes = Math.ceil(totalSeconds / 60);
+  if (minutes <= 1) return "1 minute";
+  if (minutes <= 2) return "1\u20132 minutes";
+  const low = Math.max(1, minutes - 1);
+  const high = minutes + 1;
+  return `${low}\u2013${high} minutes`;
 }
 
 export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps) {
@@ -158,11 +249,10 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">
-                  Survey Items
+                  Survey Questions
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""} · {vpCount} verification point{vpCount !== 1 ? "s" : ""}
-                  {vpCount >= 2 && " — Ready to publish"}
+                  {regularQuestions.length} question{regularQuestions.length !== 1 ? "s" : ""}
                 </p>
               </div>
               {isDraft && (
@@ -187,7 +277,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
               )}
             </div>
 
-            {questions.length === 0 ? (
+            {regularQuestions.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   No questions yet. Add your first question to get started.
@@ -196,7 +286,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
             ) : (
               <SortableQuestionList
                 surveyId={survey.id}
-                questions={questions}
+                questions={regularQuestions}
                 isDraft={isDraft}
                 onEdit={(question) => {
                   setEditingQuestion(question);
@@ -205,6 +295,40 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
               />
             )}
           </div>
+
+          {/* Verification points note */}
+          {vpCount > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <SurveySealLogo className="mt-0.5 h-5 w-5 shrink-0" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  {vpCount} verification point{vpCount !== 1 ? "s" : ""} included
+                </p>
+                <p className="mt-1">
+                  {vpCount === 1
+                    ? "The verification point will appear at the beginning of the survey."
+                    : vpCount === 2
+                      ? "Verification points will appear at the beginning and the end of the survey."
+                      : `Verification points will appear at the beginning and end of the survey. The remaining ${vpCount - 2} will be evenly distributed throughout.`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Time estimate */}
+          {regularQuestions.length > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border bg-muted/50 p-4">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  Estimated completion time
+                </p>
+                <p className="mt-1">
+                  Approximately {estimateCompletionTime(regularQuestions, vpCount, survey.verificationPointTimerSeconds)}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Question editor dialog */}
           {showEditor && (

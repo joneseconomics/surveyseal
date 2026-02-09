@@ -2,7 +2,8 @@ import { db } from "@/lib/db";
 import { getSurveySessionId } from "@/lib/session";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Shield, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
+import { SurveySealLogo } from "@/components/logo";
 import { redirect } from "next/navigation";
 
 export default async function SurveyCompletePage({
@@ -42,7 +43,7 @@ export default async function SurveyCompletePage({
         <CardContent className="space-y-4">
           {session.verificationStatus === "VERIFIED" && (
             <Badge className="gap-1.5 bg-green-100 text-green-800 hover:bg-green-100">
-              <Shield className="h-3.5 w-3.5" />
+              <SurveySealLogo className="h-3.5 w-3.5" />
               Human Verified with TapIn
             </Badge>
           )}

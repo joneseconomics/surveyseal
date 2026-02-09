@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { deleteQuestion } from "@/lib/actions/question";
-import { GripVertical, Trash2, Pencil, Shield } from "lucide-react";
+import { GripVertical, Trash2, Pencil } from "lucide-react";
+import { SurveySealLogo } from "@/components/logo";
 import type { Question } from "@/generated/prisma/client";
 
 interface QuestionCardProps {
@@ -88,7 +89,7 @@ export function QuestionCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {question.isVerificationPoint && (
-              <Shield className="h-4 w-4 text-primary shrink-0" />
+              <SurveySealLogo className="h-4 w-4 shrink-0" />
             )}
             <span className="truncate text-sm font-medium">
               {content?.text || "Untitled question"}

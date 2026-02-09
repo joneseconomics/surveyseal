@@ -10,7 +10,7 @@ import {
 import {
   ArrowRight,
   Smartphone,
-  ShieldCheck,
+  Lock,
   BarChart3,
   TestTube2,
   LogIn,
@@ -33,6 +33,7 @@ import {
   Navigation,
   Copy,
   Download,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
@@ -323,7 +324,7 @@ export default function LandingPage() {
               },
               {
                 step: 3,
-                icon: ShieldCheck,
+                icon: Download,
                 title: "Export verified data",
                 description:
                   "Download CSV files with verified proof of physical presence at every verification point.",
@@ -507,7 +508,7 @@ export default function LandingPage() {
                   "Verification points create an unbroken chain of physical presence proof using TapIn Survey cards.",
               },
               {
-                icon: ShieldCheck,
+                icon: Lock,
                 title: "Server-Side Gating",
                 description:
                   "Questions beyond the current verification point are never sent to the browser, preventing data leakage or skip-ahead.",
@@ -547,6 +548,12 @@ export default function LandingPage() {
                 title: "Flexible Authentication",
                 description:
                   "Require sign-in with Google or Microsoft for identified responses, or toggle it off for fully anonymous surveys.",
+              },
+              {
+                icon: Clock,
+                title: "Completion Time Estimates",
+                description:
+                  "The survey builder estimates how long respondents will take based on question types and complexity, so you can design surveys that respect their time.",
               },
               {
                 icon: Copy,

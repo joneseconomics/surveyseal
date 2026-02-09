@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward, Timer } from "lucide-react";
+import { Loader2, AlertCircle, Smartphone, CheckCircle, SkipForward, Timer } from "lucide-react";
+import { SurveySealLogo } from "@/components/logo";
 
 interface VerificationGateProps {
   sessionId: string;
@@ -135,7 +136,7 @@ export function VerificationGate({
     <Card className="w-full max-w-md text-center">
       <CardHeader>
         <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Shield className="h-6 w-6 text-primary" />
+          <SurveySealLogo className="h-6 w-6" />
         </div>
         <CardTitle>Verification Point</CardTitle>
         <CardDescription>
