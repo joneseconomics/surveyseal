@@ -153,12 +153,10 @@ export async function publishSurvey(surveyId: string) {
       });
     }
   } else {
-    const lastQuestion = survey.questions[survey.questions.length - 1];
-    const closingVP = verificationPoints[verificationPoints.length - 1];
-    if (lastQuestion.id !== closingVP.id) {
-      throw new Error(
-        "The closing verification point must be the last item in the survey. No questions can come after it."
-      );
+    // Ensure at least 1 regular question exists
+    const regularQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
+    if (regularQuestions.length < 1) {
+      throw new Error("Surveys need at least 1 question to publish.");
     }
   }
 
