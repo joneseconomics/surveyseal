@@ -22,7 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen, Save, BookOpen, ExternalLink } from "lucide-react";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen, Save, BookOpen, ExternalLink, Upload, X } from "lucide-react";
+import { getSupabase, getCJFilePath, getPublicUrl, BUCKET } from "@/lib/supabase";
 import { deleteCJItem, reorderCJItems } from "@/lib/actions/cj-item";
 import { updateCJAssignmentInstructions, updateCJJudgeInstructions } from "@/lib/actions/survey";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
@@ -47,6 +48,10 @@ interface CJBuilderProps {
   judgeInstructions?: string | null;
   jobUrl?: string | null;
   jobTitle?: string | null;
+  jobDescFileUrl?: string | null;
+  jobDescFileType?: string | null;
+  jobDescFileName?: string | null;
+  jobDescFilePath?: string | null;
 }
 
 export function CJBuilder({
@@ -58,6 +63,10 @@ export function CJBuilder({
   judgeInstructions,
   jobUrl: initialJobUrl,
   jobTitle: initialJobTitle,
+  jobDescFileUrl: initialJobDescFileUrl,
+  jobDescFileType: initialJobDescFileType,
+  jobDescFileName: initialJobDescFileName,
+  jobDescFilePath: initialJobDescFilePath,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
@@ -71,6 +80,12 @@ export function CJBuilder({
   const [judgeText, setJudgeText] = useState(judgeInstructions ?? "");
   const [jobUrl, setJobUrl] = useState(initialJobUrl ?? "");
   const [jobTitleText, setJobTitleText] = useState(initialJobTitle ?? "");
+  const [jobDescFileUrl, setJobDescFileUrl] = useState(initialJobDescFileUrl ?? "");
+  const [jobDescFileType, setJobDescFileType] = useState(initialJobDescFileType ?? "");
+  const [jobDescFileName, setJobDescFileName] = useState(initialJobDescFileName ?? "");
+  const [jobDescFilePath, setJobDescFilePath] = useState(initialJobDescFilePath ?? "");
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [savingJudge, setSavingJudge] = useState(false);
   const [judgeSaved, setJudgeSaved] = useState(false);
 
@@ -118,10 +133,73 @@ export function CJBuilder({
     }
   }
 
+  async function handleJobDescFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const accepted = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!accepted.includes(file.type)) {
+      setUploadError("Only PDF and Word (.docx) files are supported.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("File must be under 10 MB.");
+      return;
+    }
+
+    setUploadingFile(true);
+    setUploadError("");
+    try {
+      const fileId = crypto.randomUUID();
+      const path = getCJFilePath(surveyId, fileId, file.name);
+      const supabase = getSupabase();
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+
+      const publicUrl = getPublicUrl(path);
+      setJobDescFileUrl(publicUrl);
+      setJobDescFileType(file.type);
+      setJobDescFileName(file.name);
+      setJobDescFilePath(path);
+      // Clear URL since they're mutually exclusive
+      setJobUrl("");
+    } catch (err) {
+      console.error(err);
+      setUploadError("Upload failed. Please try again.");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  async function handleRemoveJobDescFile() {
+    if (jobDescFilePath) {
+      try {
+        const supabase = getSupabase();
+        await supabase.storage.from(BUCKET).remove([jobDescFilePath]);
+      } catch (err) {
+        console.error("Failed to delete file:", err);
+      }
+    }
+    setJobDescFileUrl("");
+    setJobDescFileType("");
+    setJobDescFileName("");
+    setJobDescFilePath("");
+  }
+
   async function handleSaveJudgeInstructions() {
     setSavingJudge(true);
     try {
-      await updateCJJudgeInstructions(surveyId, judgeText, jobUrl, jobTitleText);
+      await updateCJJudgeInstructions(surveyId, judgeText, jobUrl, jobTitleText, {
+        fileUrl: jobDescFileUrl || null,
+        fileType: jobDescFileType || null,
+        fileName: jobDescFileName || null,
+        filePath: jobDescFilePath || null,
+      });
       setJudgeSaved(true);
       setTimeout(() => setJudgeSaved(false), 2000);
     } finally {
@@ -167,22 +245,71 @@ export function CJBuilder({
               </p>
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="job-url">Job Posting URL (optional)</Label>
-            <div className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Input
-                id="job-url"
-                value={jobUrl}
-                onChange={(e) => setJobUrl(e.target.value)}
-                placeholder="https://example.com/job-posting"
-                type="url"
-              />
+          {/* Job description: URL or file upload (mutually exclusive) */}
+          {!jobDescFileUrl && (
+            <div className="space-y-2">
+              <Label htmlFor="job-url">Job Description URL (optional)</Label>
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  id="job-url"
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  placeholder="https://example.com/job-posting"
+                  type="url"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Judges will see this job description embedded on the instructions page.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              If provided, judges will see this job description embedded on the instructions page.
-            </p>
-          </div>
+          )}
+
+          {!jobUrl && (
+            <div className="space-y-2">
+              <Label>Job Description File Upload (optional)</Label>
+              {jobDescFileName ? (
+                <div className="flex items-center gap-2 rounded-lg border p-3">
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
+                  <span className="flex-1 truncate text-sm">{jobDescFileName}</span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveJobDescFile}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    title="Remove file"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    id="job-desc-file"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleJobDescFileUpload}
+                    className="hidden"
+                    disabled={uploadingFile}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById("job-desc-file")?.click()}
+                    disabled={uploadingFile}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {uploadingFile ? "Uploading..." : "Upload PDF or Word file"}
+                  </Button>
+                </>
+              )}
+              {uploadError && (
+                <p className="text-xs text-destructive">{uploadError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Upload a PDF or Word document. Judges will see it on the instructions page.
+              </p>
+            </div>
+          )}
           <div className="flex justify-end">
             <Button
               size="sm"

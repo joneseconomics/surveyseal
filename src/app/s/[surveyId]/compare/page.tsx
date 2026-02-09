@@ -106,6 +106,9 @@ export default async function ComparePage({
         judgeInstructions={survey.cjJudgeInstructions}
         cjSubtype={survey.cjSubtype}
         cjJobUrl={survey.cjJobUrl}
+        cjJobDescFileUrl={survey.cjJobDescFileUrl}
+        cjJobDescFileType={survey.cjJobDescFileType}
+        cjJobDescFileName={survey.cjJobDescFileName}
         cjAssignmentInstructions={survey.cjAssignmentInstructions}
         currentPosition={currentPosition}
         totalJudged={completedCount}

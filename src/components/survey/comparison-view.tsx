@@ -39,6 +39,9 @@ interface ComparisonViewProps {
   judgeInstructions?: string | null;
   cjSubtype?: string | null;
   cjJobUrl?: string | null;
+  cjJobDescFileUrl?: string | null;
+  cjJobDescFileType?: string | null;
+  cjJobDescFileName?: string | null;
   cjAssignmentInstructions?: string | null;
   currentPosition: number;
   totalJudged: number;
@@ -58,6 +61,9 @@ export function ComparisonView({
   judgeInstructions,
   cjSubtype,
   cjJobUrl,
+  cjJobDescFileUrl,
+  cjJobDescFileType,
+  cjJobDescFileName,
   cjAssignmentInstructions,
   currentPosition,
   totalJudged,
@@ -251,28 +257,43 @@ export function ComparisonView({
               </p>
             )}
 
-            {/* Embedded job posting */}
-            {cjJobUrl && (
+            {/* Embedded job description (URL or file) */}
+            {(cjJobUrl || cjJobDescFileUrl) && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Job Description
                 </p>
-                <iframe
-                  src={cjJobUrl}
-                  title="Job description"
-                  className="w-full rounded-lg border"
-                  style={{ minHeight: "400px" }}
-                  sandbox="allow-scripts allow-same-origin"
-                />
-                <a
-                  href={cjJobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  Open in new tab
-                  <ExternalLink className="h-3 w-3" />
-                </a>
+                {cjJobUrl && (
+                  <>
+                    <iframe
+                      src={cjJobUrl}
+                      title="Job description"
+                      className="w-full rounded-lg border"
+                      style={{ minHeight: "400px" }}
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                    <a
+                      href={cjJobUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Open in new tab
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </>
+                )}
+                {!cjJobUrl && cjJobDescFileUrl && cjJobDescFileType === "application/pdf" && (
+                  <iframe
+                    src={`${cjJobDescFileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                    title={cjJobDescFileName || "Job description"}
+                    className="w-full rounded-lg border-0"
+                    style={{ minHeight: "500px" }}
+                  />
+                )}
+                {!cjJobUrl && cjJobDescFileUrl && cjJobDescFileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
+                  <DocxViewer url={cjJobDescFileUrl} />
+                )}
               </div>
             )}
 

@@ -227,7 +227,13 @@ export async function updateCJAssignmentInstructions(surveyId: string, instructi
   revalidatePath(`/dashboard/surveys/${surveyId}`);
 }
 
-export async function updateCJJudgeInstructions(surveyId: string, instructions: string, jobUrl: string, jobTitle?: string) {
+export async function updateCJJudgeInstructions(
+  surveyId: string,
+  instructions: string,
+  jobUrl: string,
+  jobTitle?: string,
+  jobDescFile?: { fileUrl: string | null; fileType: string | null; fileName: string | null; filePath: string | null },
+) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -237,6 +243,12 @@ export async function updateCJJudgeInstructions(surveyId: string, instructions: 
       cjJudgeInstructions: instructions || null,
       cjJobUrl: jobUrl || null,
       ...(jobTitle !== undefined && { cjJobTitle: jobTitle || null }),
+      ...(jobDescFile !== undefined && {
+        cjJobDescFileUrl: jobDescFile.fileUrl,
+        cjJobDescFileType: jobDescFile.fileType,
+        cjJobDescFileName: jobDescFile.fileName,
+        cjJobDescFilePath: jobDescFile.filePath,
+      }),
     },
   });
 
@@ -447,6 +459,10 @@ export async function copySurvey(surveyId: string) {
       cjJudgeInstructions: source.cjJudgeInstructions,
       cjJobTitle: source.cjJobTitle,
       cjJobUrl: source.cjJobUrl,
+      cjJobDescFileUrl: source.cjJobDescFileUrl,
+      cjJobDescFileType: source.cjJobDescFileType,
+      cjJobDescFileName: source.cjJobDescFileName,
+      cjJobDescFilePath: source.cjJobDescFilePath,
       cjAssignmentInstructions: source.cjAssignmentInstructions,
       comparisonsPerJudge: source.comparisonsPerJudge,
       tapinApiKey: source.tapinApiKey,

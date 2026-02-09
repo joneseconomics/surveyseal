@@ -146,6 +146,10 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           judgeInstructions={survey.cjJudgeInstructions}
           jobUrl={survey.cjJobUrl}
           jobTitle={survey.cjJobTitle}
+          jobDescFileUrl={survey.cjJobDescFileUrl}
+          jobDescFileType={survey.cjJobDescFileType}
+          jobDescFileName={survey.cjJobDescFileName}
+          jobDescFilePath={survey.cjJobDescFilePath}
         />
       ) : (
         <>
