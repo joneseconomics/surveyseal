@@ -86,9 +86,6 @@ export default function LandingPage() {
                 Sign In
               </Button>
             </Link>
-            <Link href="/dashboard" className="hidden sm:block">
-              <Button size="sm">Get Started</Button>
-            </Link>
           </div>
         </div>
       </header>
@@ -108,33 +105,30 @@ export default function LandingPage() {
           </h1>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
             SurveySeal introduces physical-tap verification to give you
-            trustworthy survey data.
-          </p>
-          <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/dashboard">
-              <Button size="lg">
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/sample-survey">
-              <Button variant="outline" size="lg">
-                <ClipboardList className="mr-2 h-4 w-4" />
-                Try a Sample Survey
-              </Button>
-            </Link>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Powered by{" "}
+            trustworthy survey data. Powered by{" "}
             <a
               href="https://tapin.me"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-foreground"
+              className="text-foreground font-medium underline underline-offset-2 hover:text-primary"
             >
-              TapIn Survey Cards
+              TapIn
             </a>
+            {" "}smart cards, each survey response is backed by a real,
+            physical tap — proving the respondent is a human who is
+            actually present, not a bot, not a proxy, and not a duplicate.
           </p>
+          <a
+            href="https://tapin.me"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button size="lg" variant="outline">
+              <CreditCard className="mr-2 h-4 w-4" />
+              Learn More About TapIn
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Button>
+          </a>
         </div>
       </section>
 

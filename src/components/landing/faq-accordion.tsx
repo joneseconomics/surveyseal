@@ -19,9 +19,14 @@ const faqs = [
       "Each survey includes three verification points: opening, mid-survey, and closing. At each verification point, a countdown timer gives the respondent time to tap their TapIn Survey card on their phone. After tapping, the TapIn platform shows a green checkmark, and the respondent clicks Continue. After the survey, you can reconcile TapIn tap logs with SurveySeal sessions by email and timestamp. Respondents without a card can skip verification points — their responses are tagged as unverified.",
   },
   {
+    question: "What is TapIn?",
+    answer:
+      "TapIn (tapin.me) is the smart card platform that powers SurveySeal's physical-tap verification. TapIn produces credit-card-sized smart cards with built-in hardware security — each card carries a unique identity that generates verifiable taps impossible to clone, share, or replay. When a respondent taps their TapIn card on their phone, the TapIn platform verifies the tap and matches it to the respondent's email. SurveySeal uses this to confirm that the person taking the survey is physically present and real.",
+  },
+  {
     question: "What are TapIn Survey cards?",
     answer:
-      "TapIn Survey cards are durable, credit-card-sized smart cards with built-in hardware security. Each card has a unique identity and produces verifiable taps. They're reusable across multiple surveys and don't require any app to use — just tap the card on any compatible phone.",
+      "TapIn Survey cards are the specific TapIn card product designed for survey verification. They're durable, reusable across multiple surveys, and don't require any app — just tap the card on any compatible phone. You can order TapIn Survey cards at tapin.me.",
   },
   {
     question: "What devices are compatible?",
