@@ -20,9 +20,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen, Save, BookOpen } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { GripVertical, Trash2, Pencil, Plus, FileText, File as FileIcon, ImageIcon, GraduationCap, FolderOpen, Save, BookOpen, ExternalLink } from "lucide-react";
 import { deleteCJItem, reorderCJItems } from "@/lib/actions/cj-item";
-import { updateCJAssignmentInstructions } from "@/lib/actions/survey";
+import { updateCJAssignmentInstructions, updateCJJudgeInstructions } from "@/lib/actions/survey";
 import { CJItemEditor } from "@/components/dashboard/cj-item-editor";
 import { CanvasImportDialog } from "@/components/dashboard/canvas-import-dialog";
 import { CanvasInstructionsImport } from "@/components/dashboard/canvas-instructions-import";
@@ -42,6 +44,8 @@ interface CJBuilderProps {
   isDraft: boolean;
   cjSubtype?: string | null;
   assignmentInstructions?: string | null;
+  judgeInstructions?: string | null;
+  jobUrl?: string | null;
 }
 
 export function CJBuilder({
@@ -50,6 +54,8 @@ export function CJBuilder({
   isDraft,
   cjSubtype,
   assignmentInstructions,
+  judgeInstructions,
+  jobUrl: initialJobUrl,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
@@ -60,6 +66,10 @@ export function CJBuilder({
   const [savingInstructions, setSavingInstructions] = useState(false);
   const [instructionsSaved, setInstructionsSaved] = useState(false);
   const [showCanvasInstructionsImport, setShowCanvasInstructionsImport] = useState(false);
+  const [judgeText, setJudgeText] = useState(judgeInstructions ?? "");
+  const [jobUrl, setJobUrl] = useState(initialJobUrl ?? "");
+  const [savingJudge, setSavingJudge] = useState(false);
+  const [judgeSaved, setJudgeSaved] = useState(false);
 
   // Sync with server data
   if (
@@ -105,9 +115,77 @@ export function CJBuilder({
     }
   }
 
+  async function handleSaveJudgeInstructions() {
+    setSavingJudge(true);
+    try {
+      await updateCJJudgeInstructions(surveyId, judgeText, jobUrl);
+      setJudgeSaved(true);
+      setTimeout(() => setJudgeSaved(false), 2000);
+    } finally {
+      setSavingJudge(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Assignment instructions */}
+      {/* Judge instructions — all CJ types */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Judge Instructions</CardTitle>
+          </div>
+          <CardDescription>
+            Customize the instructions shown to judges before they begin comparing items.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="judge-instructions">Instructions</Label>
+            <Textarea
+              id="judge-instructions"
+              value={judgeText}
+              onChange={(e) => setJudgeText(e.target.value)}
+              placeholder="Describe what judges should consider when comparing items..."
+              rows={6}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="job-url">Job Posting URL (optional)</Label>
+            <div className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Input
+                id="job-url"
+                value={jobUrl}
+                onChange={(e) => setJobUrl(e.target.value)}
+                placeholder="https://example.com/job-posting"
+                type="url"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              If provided, judges will see a link to this job description on the instructions page.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSaveJudgeInstructions}
+              disabled={savingJudge}
+            >
+              {judgeSaved ? (
+                "Saved!"
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {savingJudge ? "Saving..." : "Save"}
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Assignment-specific instructions */}
       {cjSubtype === "ASSIGNMENTS" && (
         <Card>
           <CardHeader>

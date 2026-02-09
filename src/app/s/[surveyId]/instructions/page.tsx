@@ -23,6 +23,7 @@ export default async function InstructionsPage({
       cjJobTitle: true,
       cjJobUrl: true,
       cjAssignmentInstructions: true,
+      cjJudgeInstructions: true,
       verificationPointTimerSeconds: true,
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
     },
@@ -69,6 +70,7 @@ export default async function InstructionsPage({
             cjJobTitle={survey.cjJobTitle}
             cjJobUrl={survey.cjJobUrl}
             cjAssignmentInstructions={survey.cjAssignmentInstructions}
+            cjJudgeInstructions={survey.cjJudgeInstructions}
             hasVPs={hasVPs}
             vpTimerSeconds={survey.verificationPointTimerSeconds}
           />
@@ -90,6 +92,7 @@ function InstructionContent({
   cjJobTitle,
   cjJobUrl,
   cjAssignmentInstructions,
+  cjJudgeInstructions,
   hasVPs,
   vpTimerSeconds,
 }: {
@@ -98,6 +101,7 @@ function InstructionContent({
   cjJobTitle: string | null;
   cjJobUrl: string | null;
   cjAssignmentInstructions: string | null;
+  cjJudgeInstructions: string | null;
   hasVPs: boolean;
   vpTimerSeconds: number;
 }) {
@@ -105,7 +109,7 @@ function InstructionContent({
 
   return (
     <div className="space-y-3 text-sm text-muted-foreground">
-      {/* Survey-type-specific instructions */}
+      {/* Questionnaire instructions */}
       {!isCJ && (
         <>
           <p>
@@ -118,73 +122,65 @@ function InstructionContent({
         </>
       )}
 
-      {isCJ && cjSubtype === "RESUMES" && (
-        <>
-          <p className="font-medium text-foreground">
-            You are acting as a hiring manager reviewing candidates.
-          </p>
+      {/* CJ instructions — custom or fallback defaults */}
+      {isCJ && cjJudgeInstructions && (
+        <div className="whitespace-pre-wrap">{linkifyText(cjJudgeInstructions)}</div>
+      )}
+
+      {isCJ && !cjJudgeInstructions && cjSubtype === "RESUMES" && (
+        <p>
+          You will be shown pairs of resumes side by side. For each pair,
+          carefully review both candidates and select the one you would be more
+          likely to advance to the next round of interviews.
+        </p>
+      )}
+
+      {isCJ && !cjJudgeInstructions && cjSubtype === "ASSIGNMENTS" && (
+        <p>
+          You will be comparing student submissions side by side. For each pair,
+          carefully review both submissions and select the one you believe
+          demonstrates higher quality.
+        </p>
+      )}
+
+      {isCJ && !cjJudgeInstructions && (!cjSubtype || cjSubtype === "GENERIC") && (
+        <p>
+          You will be shown pairs of items side by side. For each pair,
+          carefully review both items and select the one you believe is better.
+        </p>
+      )}
+
+      {/* Job posting link */}
+      {isCJ && cjJobUrl && (
+        <div className="rounded-lg border bg-muted/50 p-3">
           {cjJobTitle && (
-            <div className="rounded-lg border bg-muted/50 p-3">
+            <>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 Position
               </p>
               <p className="text-base font-semibold text-foreground">{cjJobTitle}</p>
-              {cjJobUrl && (
-                <a
-                  href={cjJobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  View full job posting
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
+            </>
           )}
-          <p>
-            You will be shown pairs of resumes side by side. For each pair,
-            carefully review both candidates and select the one you would be more
-            likely to advance to the next round of interviews.
-          </p>
-          <p>
-            Consider qualifications, experience, skills, and overall fit for the role.
-          </p>
-        </>
+          <a
+            href={cjJobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            View job description
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       )}
 
-      {isCJ && cjSubtype === "ASSIGNMENTS" && (
-        <>
-          <p>
-            You will be comparing student submissions side by side. For each pair,
-            carefully review both submissions and select the one you believe
-            demonstrates higher quality.
+      {/* Assignment prompt */}
+      {isCJ && cjSubtype === "ASSIGNMENTS" && cjAssignmentInstructions && (
+        <div className="rounded-lg border bg-muted/50 p-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+            Assignment Prompt
           </p>
-          {cjAssignmentInstructions && (
-            <div className="rounded-lg border bg-muted/50 p-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                Assignment Prompt
-              </p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{cjAssignmentInstructions}</p>
-            </div>
-          )}
-          <p>
-            Consider the overall quality of each submission, including content,
-            clarity, and thoroughness.
-          </p>
-        </>
-      )}
-
-      {isCJ && (!cjSubtype || cjSubtype === "GENERIC") && (
-        <>
-          <p>
-            You will be shown pairs of items side by side. For each pair,
-            carefully review both items and select the one you believe is better.
-          </p>
-          <p>
-            Take your time with each comparison — there are no right or wrong answers.
-          </p>
-        </>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{cjAssignmentInstructions}</p>
+        </div>
       )}
 
       {/* Verification point notice */}
@@ -198,5 +194,26 @@ function InstructionContent({
         </div>
       )}
     </div>
+  );
+}
+
+/** Turn URLs in plain text into clickable links */
+function linkifyText(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) =>
+    urlRegex.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline break-all"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    )
   );
 }

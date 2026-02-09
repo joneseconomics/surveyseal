@@ -143,6 +143,7 @@ model Survey {
   cjJobTitle          String?  @map("cj_job_title")
   cjJobUrl            String?  @map("cj_job_url")
   cjAssignmentInstructions String? @map("cj_assignment_instructions") @db.Text
+  cjJudgeInstructions String? @map("cj_judge_instructions") @db.Text
 
   canvasBaseUrl       String? @map("canvas_base_url")
   canvasApiToken      String? @map("canvas_api_token")

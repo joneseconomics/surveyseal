@@ -20,18 +20,22 @@ export async function createSurvey(formData: FormData) {
 
   const isCJ = parsed.type === "COMPARATIVE_JUDGMENT";
 
-  // Set default prompt based on CJ subtype
+  // Set default prompt and judge instructions based on CJ subtype
   let cjPrompt: string | undefined;
+  let cjJudgeInstructions: string | undefined;
   if (isCJ) {
     switch (parsed.cjSubtype) {
       case "ASSIGNMENTS":
         cjPrompt = "Which of these two submissions demonstrates higher quality?";
+        cjJudgeInstructions = "You will be comparing student submissions side by side. For each pair, carefully review both submissions and select the one you believe demonstrates higher quality.\n\nConsider the overall quality of each submission, including content, clarity, and thoroughness.";
         break;
       case "RESUMES":
         cjPrompt = "Which candidate would you be more likely to advance to the next round of interviews?";
+        cjJudgeInstructions = "You are acting as a hiring manager reviewing candidates. You will be shown pairs of resumes side by side. For each pair, carefully review both candidates and select the one you would be more likely to advance to the next round of interviews.\n\nConsider qualifications, experience, skills, and overall fit for the role.";
         break;
       default:
         cjPrompt = "Which of these two do you prefer?";
+        cjJudgeInstructions = "You will be shown pairs of items side by side. For each pair, carefully review both items and select the one you believe is better.\n\nTake your time with each comparison — there are no right or wrong answers.";
     }
   }
 
@@ -44,6 +48,7 @@ export async function createSurvey(formData: FormData) {
       authProviders: ["google"],
       cjSubtype: isCJ ? (parsed.cjSubtype ?? "GENERIC") : null,
       cjPrompt,
+      cjJudgeInstructions,
     },
   });
 
@@ -217,6 +222,21 @@ export async function updateCJAssignmentInstructions(surveyId: string, instructi
   await db.survey.update({
     where: { id: surveyId, ownerId: session.user.id },
     data: { cjAssignmentInstructions: instructions || null },
+  });
+
+  revalidatePath(`/dashboard/surveys/${surveyId}`);
+}
+
+export async function updateCJJudgeInstructions(surveyId: string, instructions: string, jobUrl: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.survey.update({
+    where: { id: surveyId, ownerId: session.user.id },
+    data: {
+      cjJudgeInstructions: instructions || null,
+      cjJobUrl: jobUrl || null,
+    },
   });
 
   revalidatePath(`/dashboard/surveys/${surveyId}`);
