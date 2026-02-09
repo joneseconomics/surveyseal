@@ -52,6 +52,26 @@ export async function createSurvey(formData: FormData) {
     },
   });
 
+  // Auto-create 2 default verification points (opening + closing)
+  await db.question.createMany({
+    data: [
+      {
+        surveyId: survey.id,
+        position: 0,
+        type: "FREE_TEXT",
+        content: { text: "Opening Verification Point" },
+        isVerificationPoint: true,
+      },
+      {
+        surveyId: survey.id,
+        position: 1,
+        type: "FREE_TEXT",
+        content: { text: "Closing Verification Point" },
+        isVerificationPoint: true,
+      },
+    ],
+  });
+
   redirect(`/dashboard/surveys/${survey.id}`);
 }
 
@@ -116,11 +136,8 @@ export async function publishSurvey(surveyId: string) {
 
   const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
 
-  if (survey.type !== "COMPARATIVE_JUDGMENT" && verificationPoints.length < 2) {
-    throw new Error(
-      `Surveys need at least 2 verification points to publish (found ${verificationPoints.length})`
-    );
-  }
+  // Questionnaires can be published with or without VPs
+  // (VPs are created by default but can be removed in settings)
 
   if (survey.type === "COMPARATIVE_JUDGMENT") {
     if (survey.cjItems.length < 3) {

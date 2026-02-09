@@ -10,8 +10,9 @@ import { QuestionEditor } from "@/components/dashboard/question-editor";
 import { ImportQuestions } from "@/components/dashboard/import-questions";
 import { CJBuilder } from "@/components/dashboard/cj-builder";
 import { EditableSurveyTitle } from "@/components/dashboard/editable-survey-title";
-import { Globe, Trash2, ExternalLink, Upload, Link2, Check, Clock } from "lucide-react";
+import { Globe, Trash2, ExternalLink, Upload, Link2, Check, Clock, Eye, Smartphone, Timer, SkipForward, X } from "lucide-react";
 import { SurveySealLogo } from "@/components/logo";
+import Link from "next/link";
 import type { Survey, Question } from "@/generated/prisma/client";
 import type { CJItemContent } from "@/lib/validations/cj";
 
@@ -125,6 +126,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [addAsVP, setAddAsVP] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showVPPreview, setShowVPPreview] = useState(false);
   const isDraft = survey.status === "DRAFT";
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const regularQuestions = questions.filter((q) => !q.isVerificationPoint);
@@ -244,6 +246,119 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
         />
       ) : (
         <>
+          {/* Time estimate */}
+          {regularQuestions.length > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border bg-muted/50 p-4">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  Estimated completion time
+                </p>
+                <p className="mt-1">
+                  Approximately {estimateCompletionTime(regularQuestions, vpCount, survey.verificationPointTimerSeconds)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Verification points note */}
+          {vpCount > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <SurveySealLogo className="mt-0.5 h-5 w-5 shrink-0" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  {vpCount} verification point{vpCount !== 1 ? "s" : ""} included
+                </p>
+                <p className="mt-1">
+                  {vpCount === 1
+                    ? "The verification point will appear at the beginning of the survey."
+                    : vpCount === 2
+                      ? "Verification points will appear at the beginning and the end of the survey."
+                      : `Verification points will appear at the beginning and end of the survey. The remaining ${vpCount - 2} will be evenly distributed throughout.`}
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowVPPreview(true)}
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview what respondents see
+                  </button>
+                </p>
+                <p className="mt-1 text-xs">
+                  Verification points can be adjusted or removed in{" "}
+                  <Link
+                    href={`/dashboard/surveys/${survey.id}/settings`}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Settings
+                  </Link>.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* VP Preview Dialog */}
+          {showVPPreview && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowVPPreview(false)}>
+              <div className="relative w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-10 right-0 text-white hover:text-white/80 hover:bg-white/10"
+                  onClick={() => setShowVPPreview(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+                <Card className="w-full text-center">
+                  <div className="p-6 space-y-4">
+                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                      <SurveySealLogo className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Verification Point</h3>
+                      <p className="text-sm text-muted-foreground">Verification Point 1 of {vpCount}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-2 text-2xl font-mono font-bold tabular-nums">
+                        <Timer className="h-5 w-5 text-primary" />
+                        <span>{Math.floor(survey.verificationPointTimerSeconds / 60)}:{(survey.verificationPointTimerSeconds % 60).toString().padStart(2, "0")}</span>
+                      </div>
+                      <div className="mx-auto h-1.5 w-48 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary" style={{ width: "100%" }} />
+                      </div>
+                    </div>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        <Smartphone className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="font-medium text-foreground">
+                        Tap your TapIn Survey card on your phone now
+                      </p>
+                      <p>
+                        After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
+                      </p>
+                    </div>
+                    <Button disabled className="w-full">
+                      I see the green checkmark — Continue
+                    </Button>
+                    <div className="pt-2 border-t">
+                      <Button disabled variant="ghost" className="w-full text-muted-foreground">
+                        <SkipForward className="mr-2 h-4 w-4" />
+                        I don&apos;t have a TapIn card — Skip verification
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="border-t bg-muted/50 px-6 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      This is a preview. Buttons are disabled.
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {/* Questions section */}
           <div>
             <div className="mb-4 flex items-center justify-between">
@@ -295,40 +410,6 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
               />
             )}
           </div>
-
-          {/* Verification points note */}
-          {vpCount > 0 && (
-            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <SurveySealLogo className="mt-0.5 h-5 w-5 shrink-0" />
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">
-                  {vpCount} verification point{vpCount !== 1 ? "s" : ""} included
-                </p>
-                <p className="mt-1">
-                  {vpCount === 1
-                    ? "The verification point will appear at the beginning of the survey."
-                    : vpCount === 2
-                      ? "Verification points will appear at the beginning and the end of the survey."
-                      : `Verification points will appear at the beginning and end of the survey. The remaining ${vpCount - 2} will be evenly distributed throughout.`}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Time estimate */}
-          {regularQuestions.length > 0 && (
-            <div className="flex items-start gap-3 rounded-lg border bg-muted/50 p-4">
-              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">
-                  Estimated completion time
-                </p>
-                <p className="mt-1">
-                  Approximately {estimateCompletionTime(regularQuestions, vpCount, survey.verificationPointTimerSeconds)}
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Question editor dialog */}
           {showEditor && (
