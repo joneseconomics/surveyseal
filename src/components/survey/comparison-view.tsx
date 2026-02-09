@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { File, Download, ExternalLink, Info } from "lucide-react";
+import { File, Download, ExternalLink, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { DocxViewer } from "@/components/survey/docx-viewer";
 import {
   Dialog,
@@ -40,6 +40,10 @@ interface ComparisonViewProps {
   cjSubtype?: string | null;
   cjJobUrl?: string | null;
   cjAssignmentInstructions?: string | null;
+  currentPosition: number;
+  totalJudged: number;
+  isReview: boolean;
+  existingWinnerId: string | null;
 }
 
 export function ComparisonView({
@@ -55,21 +59,28 @@ export function ComparisonView({
   cjSubtype,
   cjJobUrl,
   cjAssignmentInstructions,
+  currentPosition,
+  totalJudged,
+  isReview,
+  existingWinnerId,
 }: ComparisonViewProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(existingWinnerId);
   const [showInstructions, setShowInstructions] = useState(false);
 
   // Reset state when a new comparison is loaded via server refresh
   useEffect(() => {
     setLoading(false);
-    setSelected(null);
+    setSelected(existingWinnerId);
     setError("");
-  }, [comparisonId]);
+  }, [comparisonId, existingWinnerId]);
 
   async function handleChoice(winnerId: string) {
+    // In review mode, clicking the already-selected item is a no-op
+    if (isReview && winnerId === selected) return;
+
     setSelected(winnerId);
     setLoading(true);
     setError("");
@@ -83,14 +94,37 @@ export function ComparisonView({
       if (!res.ok) {
         setError(data.error);
         setLoading(false);
-        setSelected(null);
+        setSelected(isReview ? existingWinnerId : null);
         return;
       }
-      router.refresh();
+      if (isReview) {
+        // Stay on current comparison after re-judgment
+        setLoading(false);
+      } else {
+        router.refresh();
+      }
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
-      setSelected(null);
+      setSelected(isReview ? existingWinnerId : null);
+    }
+  }
+
+  const canGoPrev = currentPosition > 0;
+  const canGoNext = currentPosition < totalJudged;
+
+  function goToPrev() {
+    if (!canGoPrev || loading) return;
+    router.push(`/s/${surveyId}/compare?pos=${currentPosition - 1}`);
+  }
+
+  function goToNext() {
+    if (!canGoNext || loading) return;
+    if (currentPosition + 1 === totalJudged) {
+      // Going to frontier — strip pos param
+      router.push(`/s/${surveyId}/compare`);
+    } else {
+      router.push(`/s/${surveyId}/compare?pos=${currentPosition + 1}`);
     }
   }
 
@@ -101,8 +135,17 @@ export function ComparisonView({
       {/* Top bar: progress + prompt */}
       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto max-w-7xl px-4 py-3">
-          {/* Progress bar */}
+          {/* Progress bar + navigation */}
           <div className="mb-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={goToPrev}
+              disabled={!canGoPrev || loading}
+              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+              aria-label="Previous comparison"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
             <div className="flex-1">
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -114,18 +157,26 @@ export function ComparisonView({
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
               {currentComparison} / {totalComparisons}
             </span>
+            <button
+              type="button"
+              onClick={goToNext}
+              disabled={!canGoNext || loading}
+              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+              aria-label="Next comparison"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Prompt */}
           <p className="text-center text-base font-medium">{prompt}</p>
 
-          {/* Instruction + link */}
-          <div className="mt-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>Read both items below, then click the one you believe is better.</span>
+          {/* Instruction link */}
+          <div className="mt-1 flex items-center justify-center">
             <button
               type="button"
               onClick={() => setShowInstructions(true)}
-              className="inline-flex items-center gap-1 text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
             >
               <Info className="h-3 w-3" />
               Instructions
@@ -180,9 +231,10 @@ export function ComparisonView({
             )}
             {!judgeInstructions && cjSubtype === "RESUMES" && (
               <p>
-                You will be shown pairs of resumes side by side. For each pair,
-                carefully review both candidates and select the one you would be more
-                likely to advance to the next round of interviews.
+                You are a hiring manager for the position described below, and you will
+                be shown two potential candidate r&#233;sum&#233;s to review. Please select the
+                r&#233;sum&#233; of the candidate whom you would advance to the next round of
+                interviews. Please note that you can only select one of the r&#233;sum&#233;s.
               </p>
             )}
             {!judgeInstructions && cjSubtype === "ASSIGNMENTS" && (

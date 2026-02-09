@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield } from "lucide-react";
+import { SurveySealLogo } from "@/components/logo";
 import { notFound, redirect } from "next/navigation";
 import { getFilteredProviders } from "@/lib/auth-providers";
 
@@ -70,8 +70,8 @@ export default async function SurveyLandingPage({
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-lg text-center">
           <CardHeader>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-4">
+              <SurveySealLogo className="h-12 w-12" />
             </div>
             <CardTitle className="text-2xl">{survey.title}</CardTitle>
           </CardHeader>
@@ -111,8 +111,8 @@ export default async function SurveyLandingPage({
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-lg text-center">
           <CardHeader>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-4">
+              <SurveySealLogo className="h-12 w-12" />
             </div>
             <CardTitle className="text-2xl">{survey.title}</CardTitle>
             {survey.description && (
@@ -167,8 +167,8 @@ export default async function SurveyLandingPage({
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-lg text-center">
         <CardHeader>
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-6 w-6 text-primary" />
+          <div className="mx-auto mb-4">
+            <SurveySealLogo className="h-12 w-12" />
           </div>
           <CardTitle className="text-2xl">{survey.title}</CardTitle>
           {survey.description && (

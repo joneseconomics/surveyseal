@@ -35,10 +35,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session is not active" }, { status: 400 });
     }
 
-    if (comparison.winnerId !== null) {
-      return NextResponse.json({ error: "Comparison already judged" }, { status: 400 });
-    }
-
     if (
       parsed.winnerId !== comparison.leftItemId &&
       parsed.winnerId !== comparison.rightItemId
@@ -46,7 +42,94 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Winner must be one of the two items" }, { status: 400 });
     }
 
-    // Determine winner and loser
+    // ─── Re-judgment: same winner → no-op ─────────────────────────
+    if (comparison.winnerId === parsed.winnerId) {
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── Re-judgment: different winner ─────────────────────────────
+    if (comparison.winnerId !== null) {
+      // We need stored snapshots to reverse the old judgment
+      if (
+        comparison.prevLeftMu == null ||
+        comparison.prevLeftSigmaSq == null ||
+        comparison.prevRightMu == null ||
+        comparison.prevRightSigmaSq == null
+      ) {
+        return NextResponse.json(
+          { error: "Cannot re-judge: missing rating snapshots" },
+          { status: 400 }
+        );
+      }
+
+      const prevLeft = { mu: comparison.prevLeftMu, sigmaSq: comparison.prevLeftSigmaSq };
+      const prevRight = { mu: comparison.prevRightMu, sigmaSq: comparison.prevRightSigmaSq };
+
+      // Compute what the old judgment produced
+      const oldIsLeftWinner = comparison.winnerId === comparison.leftItemId;
+      const oldWinner = oldIsLeftWinner ? prevLeft : prevRight;
+      const oldLoser = oldIsLeftWinner ? prevRight : prevLeft;
+      const oldResult = updateRatings(oldWinner, oldLoser);
+
+      // Compute deltas the old judgment applied
+      const oldWinnerDelta = {
+        mu: oldResult.winner.mu - oldWinner.mu,
+        sigmaSq: oldResult.winner.sigmaSq - oldWinner.sigmaSq,
+      };
+      const oldLoserDelta = {
+        mu: oldResult.loser.mu - oldLoser.mu,
+        sigmaSq: oldResult.loser.sigmaSq - oldLoser.sigmaSq,
+      };
+
+      // Subtract old deltas from current ratings to get adjusted baseline
+      const adjustedLeft = {
+        mu: comparison.leftItem.mu - (oldIsLeftWinner ? oldWinnerDelta.mu : oldLoserDelta.mu),
+        sigmaSq: comparison.leftItem.sigmaSq - (oldIsLeftWinner ? oldWinnerDelta.sigmaSq : oldLoserDelta.sigmaSq),
+      };
+      const adjustedRight = {
+        mu: comparison.rightItem.mu - (!oldIsLeftWinner ? oldWinnerDelta.mu : oldLoserDelta.mu),
+        sigmaSq: comparison.rightItem.sigmaSq - (!oldIsLeftWinner ? oldWinnerDelta.sigmaSq : oldLoserDelta.sigmaSq),
+      };
+
+      // Apply new judgment on adjusted ratings
+      const newIsLeftWinner = parsed.winnerId === comparison.leftItemId;
+      const newWinner = newIsLeftWinner ? adjustedLeft : adjustedRight;
+      const newLoser = newIsLeftWinner ? adjustedRight : adjustedLeft;
+      const newResult = updateRatings(newWinner, newLoser);
+
+      await db.$transaction([
+        db.comparison.update({
+          where: { id: parsed.comparisonId },
+          data: {
+            winnerId: parsed.winnerId,
+            judgedAt: new Date(),
+            prevLeftMu: adjustedLeft.mu,
+            prevLeftSigmaSq: adjustedLeft.sigmaSq,
+            prevRightMu: adjustedRight.mu,
+            prevRightSigmaSq: adjustedRight.sigmaSq,
+          },
+        }),
+        db.cJItem.update({
+          where: { id: newIsLeftWinner ? comparison.leftItemId : comparison.rightItemId },
+          data: {
+            mu: newResult.winner.mu,
+            sigmaSq: newResult.winner.sigmaSq,
+            // comparisonCount stays unchanged
+          },
+        }),
+        db.cJItem.update({
+          where: { id: newIsLeftWinner ? comparison.rightItemId : comparison.leftItemId },
+          data: {
+            mu: newResult.loser.mu,
+            sigmaSq: newResult.loser.sigmaSq,
+          },
+        }),
+      ]);
+
+      return NextResponse.json({ success: true });
+    }
+
+    // ─── First judgment ────────────────────────────────────────────
     const isLeftWinner = parsed.winnerId === comparison.leftItemId;
     const winnerItem = isLeftWinner ? comparison.leftItem : comparison.rightItem;
     const loserItem = isLeftWinner ? comparison.rightItem : comparison.leftItem;
@@ -59,7 +142,14 @@ export async function POST(req: NextRequest) {
     await db.$transaction([
       db.comparison.update({
         where: { id: parsed.comparisonId },
-        data: { winnerId: parsed.winnerId, judgedAt: new Date() },
+        data: {
+          winnerId: parsed.winnerId,
+          judgedAt: new Date(),
+          prevLeftMu: comparison.leftItem.mu,
+          prevLeftSigmaSq: comparison.leftItem.sigmaSq,
+          prevRightMu: comparison.rightItem.mu,
+          prevRightSigmaSq: comparison.rightItem.sigmaSq,
+        },
       }),
       db.cJItem.update({
         where: { id: winnerItem.id },

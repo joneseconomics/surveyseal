@@ -3,7 +3,7 @@ import { getSurveySessionId } from "@/lib/session";
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Briefcase, FileText, LayoutGrid, ClipboardList } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 export default async function InstructionsPage({
@@ -48,19 +48,6 @@ export default async function InstructionsPage({
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            {isCJ ? (
-              survey.cjSubtype === "RESUMES" ? (
-                <Briefcase className="h-6 w-6 text-primary" />
-              ) : survey.cjSubtype === "ASSIGNMENTS" ? (
-                <FileText className="h-6 w-6 text-primary" />
-              ) : (
-                <LayoutGrid className="h-6 w-6 text-primary" />
-              )
-            ) : (
-              <ClipboardList className="h-6 w-6 text-primary" />
-            )}
-          </div>
           <CardTitle className="text-2xl">Instructions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -129,9 +116,10 @@ function InstructionContent({
 
       {isCJ && !cjJudgeInstructions && cjSubtype === "RESUMES" && (
         <p>
-          You will be shown pairs of resumes side by side. For each pair,
-          carefully review both candidates and select the one you would be more
-          likely to advance to the next round of interviews.
+          You are a hiring manager for the position described below, and you will
+          be shown two potential candidate r&#233;sum&#233;s to review. Please select the
+          r&#233;sum&#233; of the candidate whom you would advance to the next round of
+          interviews. Please note that you can only select one of the r&#233;sum&#233;s.
         </p>
       )}
 

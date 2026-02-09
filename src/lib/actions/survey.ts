@@ -30,8 +30,8 @@ export async function createSurvey(formData: FormData) {
         cjJudgeInstructions = "You will be comparing student submissions side by side. For each pair, carefully review both submissions and select the one you believe demonstrates higher quality.\n\nConsider the overall quality of each submission, including content, clarity, and thoroughness.";
         break;
       case "RESUMES":
-        cjPrompt = "Which candidate would you be more likely to advance to the next round of interviews?";
-        cjJudgeInstructions = "You are acting as a hiring manager reviewing candidates. You will be shown pairs of resumes side by side. For each pair, carefully review both candidates and select the one you would be more likely to advance to the next round of interviews.\n\nConsider qualifications, experience, skills, and overall fit for the role.";
+        cjPrompt = "Which candidate would you advance to the next round of interviews?";
+        cjJudgeInstructions = "You are a hiring manager for the position described below, and you will be shown two potential candidate r\u00e9sum\u00e9s to review. Please select the r\u00e9sum\u00e9 of the candidate whom you would advance to the next round of interviews. Please note that you can only select one of the r\u00e9sum\u00e9s.";
         break;
       default:
         cjPrompt = "Which of these two do you prefer?";

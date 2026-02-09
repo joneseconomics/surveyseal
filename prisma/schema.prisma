@@ -274,6 +274,11 @@ model Comparison {
   createdAt   DateTime  @default(now()) @map("created_at")
   judgedAt    DateTime? @map("judged_at")
 
+  prevLeftMu       Float?  @map("prev_left_mu")
+  prevLeftSigmaSq  Float?  @map("prev_left_sigma_sq")
+  prevRightMu      Float?  @map("prev_right_mu")
+  prevRightSigmaSq Float?  @map("prev_right_sigma_sq")
+
   session   SurveySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   leftItem  CJItem        @relation("LeftItem", fields: [leftItemId], references: [id], onDelete: Cascade)
   rightItem CJItem        @relation("RightItem", fields: [rightItemId], references: [id], onDelete: Cascade)
