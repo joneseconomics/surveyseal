@@ -134,10 +134,11 @@ export async function publishSurvey(surveyId: string) {
   if (!survey) throw new Error("Survey not found");
   if (survey.status !== "DRAFT") throw new Error("Survey is not in draft state");
 
-  const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
-
   // Questionnaires can be published with or without VPs
   // (VPs are created by default but can be removed in settings)
+
+  const verificationPoints = survey.questions.filter((q) => q.isVerificationPoint);
+  const regularQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
 
   if (survey.type === "COMPARATIVE_JUDGMENT") {
     if (survey.cjItems.length < 3) {
@@ -153,11 +154,57 @@ export async function publishSurvey(surveyId: string) {
       });
     }
   } else {
-    // Ensure at least 1 regular question exists
-    const regularQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
     if (regularQuestions.length < 1) {
       throw new Error("Surveys need at least 1 question to publish.");
     }
+  }
+
+  // Redistribute VPs: first at beginning, last at end, rest evenly spaced
+  if (verificationPoints.length > 0 && regularQuestions.length > 0) {
+    const vpIds = verificationPoints.map((vp) => vp.id);
+    const regIds = regularQuestions.map((q) => q.id);
+
+    // Build interleaved order
+    const finalOrder: string[] = [];
+
+    if (vpIds.length === 1) {
+      // Single VP goes at the beginning
+      finalOrder.push(vpIds[0], ...regIds);
+    } else {
+      // First VP at beginning, last VP at end, middle VPs evenly distributed
+      const middleVPs = vpIds.slice(1, -1);
+      const closingVP = vpIds[vpIds.length - 1];
+
+      finalOrder.push(vpIds[0]); // Opening VP
+
+      if (middleVPs.length > 0) {
+        // Distribute middle VPs evenly among regular questions
+        const chunkSize = Math.ceil(regIds.length / (middleVPs.length + 1));
+        let regIndex = 0;
+        for (let i = 0; i < middleVPs.length; i++) {
+          const end = Math.min(regIndex + chunkSize, regIds.length);
+          finalOrder.push(...regIds.slice(regIndex, end));
+          finalOrder.push(middleVPs[i]);
+          regIndex = end;
+        }
+        // Remaining regular questions
+        finalOrder.push(...regIds.slice(regIndex));
+      } else {
+        finalOrder.push(...regIds);
+      }
+
+      finalOrder.push(closingVP); // Closing VP
+    }
+
+    // Update positions using negative temps to avoid unique constraint
+    await db.$transaction([
+      ...finalOrder.map((id, i) =>
+        db.question.update({ where: { id }, data: { position: -(i + 1) } })
+      ),
+      ...finalOrder.map((id, i) =>
+        db.question.update({ where: { id }, data: { position: i } })
+      ),
+    ]);
   }
 
   await db.survey.update({

@@ -99,7 +99,16 @@ export default async function SurveyQuestionPage({
       );
     }
     // Otherwise redirect to the next verification point
-    redirect(`/s/${surveyId}/q?q=${nextUnvalidatedVP!.position}`);
+    if (nextUnvalidatedVP) {
+      redirect(`/s/${surveyId}/q?q=${nextUnvalidatedVP.position}`);
+    }
+    // Fallback: all VPs resolved but no current question — go to submit
+    return (
+      <SubmitSurvey
+        sessionId={sessionId}
+        surveyId={surveyId}
+      />
+    );
   }
 
   // If this is a verification point question, show the verification gate
