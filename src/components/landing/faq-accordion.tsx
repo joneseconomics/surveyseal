@@ -44,9 +44,29 @@ const faqs = [
       "Yes. By default, respondents sign in with Google or Microsoft before taking a survey. You can turn this off in your survey settings to allow fully anonymous responses — respondents can optionally provide an email, or leave it blank.",
   },
   {
+    question: "What is Comparative Judgment?",
+    answer:
+      "Comparative Judgment (CJ) is a survey mode where judges compare items in pairs rather than scoring them individually. For each comparison, a judge sees two items side by side and picks the better one. SurveySeal uses an adaptive Elo rating algorithm to turn these pairwise judgments into a reliable ranking. It's available in three subtypes: Resume Screening, Assignment Grading, and General Comparison.",
+  },
+  {
+    question: "How does adaptive pairing work?",
+    answer:
+      "Instead of showing random pairs, SurveySeal's algorithm selects the pair with the highest expected information gain — prioritizing items with similar ratings or high uncertainty. This means every comparison a judge makes contributes maximum value to the ranking, reaching reliable results with fewer total comparisons.",
+  },
+  {
+    question: "Can I import submissions from Canvas LMS?",
+    answer:
+      "Yes. For Assignment Grading CJ surveys, you can connect your Canvas account and import student submissions directly. Submissions are imported as CJ items with student metadata attached, ready for side-by-side comparison. Student names can be shown or hidden on the rankings page.",
+  },
+  {
+    question: "Can judges go back and change a comparison?",
+    answer:
+      "Yes. Judges can navigate back to any earlier comparison using the Go Back button and change their selection. The Elo ratings update automatically — the old judgment is reversed and the new one is applied. Judges can then navigate forward to return to where they left off.",
+  },
+  {
     question: "How do I get started?",
     answer:
-      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. The survey builder is designed to be simple — no technical expertise required.",
+      "Sign in with your Google or Microsoft account, create a survey in the dashboard, and distribute TapIn Survey cards to your respondents. For Comparative Judgment surveys, upload items (or import from Canvas), share the link with judges, and view rankings as results come in. The survey builder is designed to be simple — no technical expertise required.",
   },
 ];
 

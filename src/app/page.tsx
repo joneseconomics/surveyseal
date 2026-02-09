@@ -26,6 +26,13 @@ import {
   ChartNoAxesCombined,
   MonitorSmartphone,
   XCircle,
+  Scale,
+  GraduationCap,
+  FileText,
+  TrendingUp,
+  Navigation,
+  Copy,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { FaqAccordion } from "@/components/landing/faq-accordion";
@@ -47,6 +54,12 @@ export default function LandingPage() {
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
               How It Works
+            </a>
+            <a
+              href="#comparative-judgment"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Comparative Judgment
             </a>
             <a
               href="#features"
@@ -91,12 +104,12 @@ export default function LandingPage() {
             Human-Verified Survey Platform
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Prove your survey respondents are real.
+            Verified surveys. Smarter rankings.
           </h1>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            SurveySeal pairs TapIn Survey cards with physical-tap
-            verification to guarantee every response comes from a real,
-            present human — not a bot, not a proxy.
+            SurveySeal combines physical-tap verification with comparative
+            judgment to give you trustworthy survey data and defensible
+            rankings — for hiring, grading, research, and beyond.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/dashboard">
@@ -340,7 +353,96 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. Features ── */}
+      {/* ── 6. Comparative Judgment ── */}
+      <section id="comparative-judgment" className="border-t bg-muted/40 px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <Badge
+              variant="secondary"
+              className="mb-4 gap-1.5 px-3 py-1 text-sm font-normal"
+            >
+              <Scale className="h-3.5 w-3.5" />
+              Comparative Judgment
+            </Badge>
+            <h2 className="text-3xl font-bold tracking-tight">
+              Rank anything with pairwise comparisons.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+              Instead of rubrics or scores, judges see two items side by side and
+              pick the better one. SurveySeal uses an adaptive Elo rating system to
+              produce reliable, defensible rankings from these simple comparisons.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: FileText,
+                title: "Resume Screening",
+                description:
+                  "Upload r\u00e9sum\u00e9s and a job description (URL, PDF, or Word file). Judges act as hiring managers and pick the stronger candidate in each pair.",
+              },
+              {
+                icon: GraduationCap,
+                title: "Assignment Grading",
+                description:
+                  "Import student submissions directly from Canvas LMS. Compare work side by side to produce fair, consistent rankings without rubric fatigue.",
+              },
+              {
+                icon: Scale,
+                title: "General Comparison",
+                description:
+                  "Rank any collection of items — essays, designs, proposals, portfolios. Upload content or paste text, and let judges compare.",
+              },
+              {
+                icon: TrendingUp,
+                title: "Adaptive Pairing",
+                description:
+                  "The algorithm picks the most informative pair for each comparison — items with similar ratings or high uncertainty — so every judgment counts.",
+              },
+              {
+                icon: BarChart3,
+                title: "Judge Analytics",
+                description:
+                  "Track reliability, left/right bias, consensus agreement, speed flags, and bot risk for every judge from a detailed analytics dashboard.",
+              },
+              {
+                icon: Navigation,
+                title: "Revisit & Revise",
+                description:
+                  "Judges can navigate back to any earlier comparison and change their pick. Ratings update automatically with differential Elo reversal.",
+              },
+            ].map((item) => (
+              <Card key={item.title} className="border-0 shadow-none bg-background">
+                <CardHeader>
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <item.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-base">{item.title}</CardTitle>
+                  <CardDescription>{item.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-10 rounded-lg border bg-background p-6">
+            <h3 className="mb-2 font-semibold">How Comparative Judgment works</h3>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <li>
+                <span className="text-foreground font-medium">Create a CJ survey</span> — choose Resume, Assignment, or General mode. Upload items or import from Canvas.
+              </li>
+              <li>
+                <span className="text-foreground font-medium">Share with judges</span> — distribute your survey link. Each judge sees a series of pairwise comparisons selected by the adaptive algorithm.
+              </li>
+              <li>
+                <span className="text-foreground font-medium">View rankings</span> — items are ranked by Elo rating with reliability scores, uncertainty estimates, and full judge analytics. Export everything as CSV.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 7. Features ── */}
       <section id="features" className="border-t bg-muted/40 px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
@@ -355,7 +457,7 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Physical-Tap Verification",
                 description:
-                  "Opening, mid-survey, and closing verification points create an unbroken chain of physical presence proof.",
+                  "Verification points create an unbroken chain of physical presence proof using TapIn Survey cards.",
               },
               {
                 icon: ShieldCheck,
@@ -364,10 +466,22 @@ export default function LandingPage() {
                   "Questions beyond the current verification point are never sent to the browser, preventing data leakage or skip-ahead.",
               },
               {
-                icon: BarChart3,
-                title: "CSV Export",
+                icon: Scale,
+                title: "Comparative Judgment",
                 description:
-                  "Export responses with verification status, verification point results, and timestamps for analysis or compliance.",
+                  "Rank resumes, assignments, or any items via pairwise comparisons with adaptive Elo ratings and reliability scores.",
+              },
+              {
+                icon: GraduationCap,
+                title: "Canvas LMS Integration",
+                description:
+                  "Import student submissions directly from Canvas courses. Submissions become CJ items ready for side-by-side comparison.",
+              },
+              {
+                icon: Download,
+                title: "Data Export",
+                description:
+                  "Export survey responses, item rankings, and judge analytics as CSV for analysis, compliance, or further processing.",
               },
               {
                 icon: Users,
@@ -386,6 +500,12 @@ export default function LandingPage() {
                 title: "Flexible Authentication",
                 description:
                   "Require sign-in with Google or Microsoft for identified responses, or toggle it off for fully anonymous surveys.",
+              },
+              {
+                icon: Copy,
+                title: "Survey Duplication",
+                description:
+                  "Copy any existing survey — including all questions, CJ items, and settings — to create a new version in one click.",
               },
             ].map((feature) => (
               <Card key={feature.title} className="border-0 shadow-none bg-background">
@@ -421,11 +541,13 @@ export default function LandingPage() {
             <Card>
               <CardContent className="space-y-4">
                 {[
+                  "Resume screening and hiring decisions",
+                  "Assignment grading and student assessment",
+                  "Academic and scientific research",
                   "Brand feedback and product research",
                   "Political polling and public opinion",
-                  "Academic and scientific research",
                   "Customer satisfaction and NPS surveys",
-                  "Employee engagement and internal surveys",
+                  "Portfolio and design evaluation",
                   "Event and conference feedback",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
