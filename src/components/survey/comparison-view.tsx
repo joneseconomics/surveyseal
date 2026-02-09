@@ -147,10 +147,11 @@ export function ComparisonView({
               type="button"
               onClick={goToPrev}
               disabled={!canGoPrev || loading}
-              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Previous comparison"
             >
               <ChevronLeft className="h-4 w-4" />
+              <span>Go Back</span>
             </button>
             <div className="flex-1">
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -167,9 +168,10 @@ export function ComparisonView({
               type="button"
               onClick={goToNext}
               disabled={!canGoNext || loading}
-              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
               aria-label="Next comparison"
             >
+              <span>Go Forward</span>
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
