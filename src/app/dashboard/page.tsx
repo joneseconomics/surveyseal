@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteSurveyButton } from "@/components/dashboard/delete-survey-button";
+import { CopySurveyButton } from "@/components/dashboard/copy-survey-button";
 
 const statusColors = {
   DRAFT: "secondary",
@@ -64,6 +65,7 @@ export default async function DashboardPage() {
                     <CardTitle className="text-lg">{survey.title}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant={statusColors[survey.status]}>{survey.status}</Badge>
+                      <CopySurveyButton surveyId={survey.id} />
                       <DeleteSurveyButton surveyId={survey.id} />
                     </div>
                   </div>

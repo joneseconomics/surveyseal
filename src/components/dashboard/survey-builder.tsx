@@ -145,6 +145,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
           assignmentInstructions={survey.cjAssignmentInstructions}
           judgeInstructions={survey.cjJudgeInstructions}
           jobUrl={survey.cjJobUrl}
+          jobTitle={survey.cjJobTitle}
         />
       ) : (
         <>

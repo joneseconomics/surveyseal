@@ -46,6 +46,7 @@ interface CJBuilderProps {
   assignmentInstructions?: string | null;
   judgeInstructions?: string | null;
   jobUrl?: string | null;
+  jobTitle?: string | null;
 }
 
 export function CJBuilder({
@@ -56,6 +57,7 @@ export function CJBuilder({
   assignmentInstructions,
   judgeInstructions,
   jobUrl: initialJobUrl,
+  jobTitle: initialJobTitle,
 }: CJBuilderProps) {
   const [items, setItems] = useState(serverItems);
   const [showEditor, setShowEditor] = useState(false);
@@ -68,6 +70,7 @@ export function CJBuilder({
   const [showCanvasInstructionsImport, setShowCanvasInstructionsImport] = useState(false);
   const [judgeText, setJudgeText] = useState(judgeInstructions ?? "");
   const [jobUrl, setJobUrl] = useState(initialJobUrl ?? "");
+  const [jobTitleText, setJobTitleText] = useState(initialJobTitle ?? "");
   const [savingJudge, setSavingJudge] = useState(false);
   const [judgeSaved, setJudgeSaved] = useState(false);
 
@@ -118,7 +121,7 @@ export function CJBuilder({
   async function handleSaveJudgeInstructions() {
     setSavingJudge(true);
     try {
-      await updateCJJudgeInstructions(surveyId, judgeText, jobUrl);
+      await updateCJJudgeInstructions(surveyId, judgeText, jobUrl, jobTitleText);
       setJudgeSaved(true);
       setTimeout(() => setJudgeSaved(false), 2000);
     } finally {
@@ -150,6 +153,20 @@ export function CJBuilder({
               rows={6}
             />
           </div>
+          {cjSubtype === "RESUMES" && (
+            <div className="space-y-2">
+              <Label htmlFor="job-title">Job Title</Label>
+              <Input
+                id="job-title"
+                value={jobTitleText}
+                onChange={(e) => setJobTitleText(e.target.value)}
+                placeholder="e.g. Senior Software Engineer"
+              />
+              <p className="text-xs text-muted-foreground">
+                The position judges will imagine hiring for.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="job-url">Job Posting URL (optional)</Label>
             <div className="flex items-center gap-2">
@@ -163,7 +180,7 @@ export function CJBuilder({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              If provided, judges will see a link to this job description on the instructions page.
+              If provided, judges will see this job description embedded on the instructions page.
             </p>
           </div>
           <div className="flex justify-end">

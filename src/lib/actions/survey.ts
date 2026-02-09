@@ -227,7 +227,7 @@ export async function updateCJAssignmentInstructions(surveyId: string, instructi
   revalidatePath(`/dashboard/surveys/${surveyId}`);
 }
 
-export async function updateCJJudgeInstructions(surveyId: string, instructions: string, jobUrl: string) {
+export async function updateCJJudgeInstructions(surveyId: string, instructions: string, jobUrl: string, jobTitle?: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -236,6 +236,7 @@ export async function updateCJJudgeInstructions(surveyId: string, instructions: 
     data: {
       cjJudgeInstructions: instructions || null,
       cjJobUrl: jobUrl || null,
+      ...(jobTitle !== undefined && { cjJobTitle: jobTitle || null }),
     },
   });
 
@@ -416,6 +417,72 @@ export async function closeSurvey(surveyId: string) {
 
   revalidatePath(`/dashboard/surveys/${surveyId}`);
   revalidatePath("/dashboard");
+}
+
+export async function copySurvey(surveyId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const source = await db.survey.findUnique({
+    where: { id: surveyId, ownerId: session.user.id },
+    include: {
+      questions: { orderBy: { position: "asc" } },
+      cjItems: { orderBy: { position: "asc" } },
+    },
+  });
+
+  if (!source) throw new Error("Survey not found");
+
+  const copy = await db.survey.create({
+    data: {
+      title: `${source.title} (Copy)`,
+      description: source.description,
+      type: source.type,
+      ownerId: session.user.id,
+      requireLogin: source.requireLogin,
+      authProviders: source.authProviders,
+      verificationPointTimerSeconds: source.verificationPointTimerSeconds,
+      cjSubtype: source.cjSubtype,
+      cjPrompt: source.cjPrompt,
+      cjJudgeInstructions: source.cjJudgeInstructions,
+      cjJobTitle: source.cjJobTitle,
+      cjJobUrl: source.cjJobUrl,
+      cjAssignmentInstructions: source.cjAssignmentInstructions,
+      comparisonsPerJudge: source.comparisonsPerJudge,
+      tapinApiKey: source.tapinApiKey,
+      tapinCampaignId: source.tapinCampaignId,
+      canvasBaseUrl: source.canvasBaseUrl,
+      canvasApiToken: source.canvasApiToken,
+    },
+  });
+
+  // Copy questions
+  if (source.questions.length > 0) {
+    await db.question.createMany({
+      data: source.questions.map((q) => ({
+        surveyId: copy.id,
+        position: q.position,
+        type: q.type,
+        content: q.content as object,
+        isVerificationPoint: q.isVerificationPoint,
+      })),
+    });
+  }
+
+  // Copy CJ items (without ratings — start fresh)
+  if (source.cjItems.length > 0) {
+    await db.cJItem.createMany({
+      data: source.cjItems.map((item) => ({
+        surveyId: copy.id,
+        label: item.label,
+        content: item.content as object,
+        position: item.position,
+      })),
+    });
+  }
+
+  revalidatePath("/dashboard");
+  redirect(`/dashboard/surveys/${copy.id}`);
 }
 
 export async function reopenSurvey(surveyId: string) {
