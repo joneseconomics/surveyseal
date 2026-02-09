@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
@@ -13,9 +13,8 @@ interface QuestionRendererProps {
   sessionId: string;
   surveyId: string;
   question: Question;
-  position: number;
-  totalQuestions: number;
   isAnswered: boolean;
+  nextPosition: number;
 }
 
 interface QuestionContent {
@@ -34,9 +33,8 @@ export function QuestionRenderer({
   sessionId,
   surveyId,
   question,
-  position,
-  totalQuestions,
   isAnswered,
+  nextPosition,
 }: QuestionRendererProps) {
   const content = question.content as unknown as QuestionContent;
   const [answer, setAnswer] = useState<unknown>(null);
@@ -55,7 +53,7 @@ export function QuestionRenderer({
         body: JSON.stringify({ sessionId, questionId: question.id, answer, telemetry }),
       });
       if (res.ok) {
-        window.location.href = `/s/${surveyId}/q?q=${position + 1}`;
+        window.location.href = `/s/${surveyId}/q?q=${nextPosition}`;
         return;
       }
     } finally {
@@ -66,9 +64,6 @@ export function QuestionRenderer({
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardDescription>
-          Question {position + 1} of {totalQuestions}
-        </CardDescription>
         <CardTitle className="text-lg">{content.text}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

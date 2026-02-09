@@ -134,22 +134,52 @@ export default async function SurveyQuestionPage({
 
   // Render the question
   const isAnswered = answeredQuestions.has(currentQuestion.id);
-  const totalNonVPs = allQuestions.filter((q) => !q.isVerificationPoint).length;
+  const nonVPQuestions = allQuestions.filter((q) => !q.isVerificationPoint);
+  const totalNonVPs = nonVPQuestions.length;
 
   // Compute this question's display number (1-based, among non-verification-point questions)
-  const nonVPQuestions = allQuestions.filter((q) => !q.isVerificationPoint);
   const questionDisplayIndex = nonVPQuestions.findIndex((q) => q.id === currentQuestion.id);
 
+  // Find the next position in the question list (database position, not display index)
+  const currentIdx = allQuestions.findIndex((q) => q.id === currentQuestion.id);
+  const nextPosition = currentIdx < allQuestions.length - 1
+    ? allQuestions[currentIdx + 1].position
+    : allQuestions[allQuestions.length - 1].position + 1;
+
+  // Progress: how many non-VP questions have been answered
+  const answeredNonVPCount = nonVPQuestions.filter((q) => answeredQuestions.has(q.id)).length;
+  const progress = totalNonVPs > 0 ? (answeredNonVPCount / totalNonVPs) * 100 : 0;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <QuestionRenderer
-        sessionId={sessionId}
-        surveyId={surveyId}
-        question={currentQuestion}
-        position={questionDisplayIndex >= 0 ? questionDisplayIndex : currentPosition}
-        totalQuestions={totalNonVPs}
-        isAnswered={isAnswered}
-      />
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      {/* Progress bar */}
+      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto max-w-lg px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {questionDisplayIndex >= 0 ? questionDisplayIndex + 1 : "?"} / {totalNonVPs}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center p-4">
+        <QuestionRenderer
+          sessionId={sessionId}
+          surveyId={surveyId}
+          question={currentQuestion}
+          isAnswered={isAnswered}
+          nextPosition={nextPosition}
+        />
+      </div>
     </div>
   );
 }
