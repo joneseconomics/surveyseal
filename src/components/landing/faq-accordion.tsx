@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "What is Comparative Judgment?",
     answer:
-      "Comparative Judgment (CJ) is a survey mode where judges compare items in pairs rather than scoring them individually. For each comparison, a judge sees two items side by side and picks the better one. SurveySeal uses an adaptive Elo rating algorithm to turn these pairwise judgments into a reliable ranking. It's available in three subtypes: Resume Screening, Assignment Grading, and General Comparison.",
+      "Comparative Judgment is a survey mode where judges compare items in pairs rather than scoring them individually. For each comparison, a judge sees two items side by side and picks the better one. SurveySeal uses an adaptive Elo rating algorithm to turn these pairwise judgments into a reliable ranking. It's available in three modes: Resume Screening, Assignment Grading, and General Comparison.",
   },
   {
     question: "How does adaptive pairing work?",
@@ -56,7 +56,7 @@ const faqs = [
   {
     question: "Can I import submissions from Canvas LMS?",
     answer:
-      "Yes. For Assignment Grading CJ surveys, you can connect your Canvas account and import student submissions directly. Submissions are imported as CJ items with student metadata attached, ready for side-by-side comparison. Student names can be shown or hidden on the rankings page.",
+      "Yes. For Assignment Grading Comparative Judgment surveys, you can connect your Canvas account and import student submissions directly. Submissions are imported as items with student metadata attached, ready for side-by-side comparison. Student names can be shown or hidden on the rankings page.",
   },
   {
     question: "Can judges go back and change a comparison?",
