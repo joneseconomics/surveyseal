@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getSurveySessionId } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { VerificationGate } from "@/components/survey/verification-gate";
 import { QuestionRenderer } from "@/components/survey/question-renderer";
 import { SubmitSurvey } from "@/components/survey/submit-survey";
@@ -146,16 +147,40 @@ export default async function SurveyQuestionPage({
     ? allQuestions[currentIdx + 1].position
     : allQuestions[allQuestions.length - 1].position + 1;
 
+  // Find the previous answered non-VP question for "Go Back"
+  const prevNonVP = questionDisplayIndex > 0 ? nonVPQuestions[questionDisplayIndex - 1] : null;
+  const prevPosition = prevNonVP ? prevNonVP.position : null;
+
+  // "Go Forward" — only if the current question is answered and there's a next answered question
+  const nextNonVP = questionDisplayIndex < nonVPQuestions.length - 1
+    ? nonVPQuestions[questionDisplayIndex + 1]
+    : null;
+  const canGoForward = isAnswered && nextNonVP && answeredQuestions.has(nextNonVP.id);
+
   // Progress: how many non-VP questions have been answered
   const answeredNonVPCount = nonVPQuestions.filter((q) => answeredQuestions.has(q.id)).length;
   const progress = totalNonVPs > 0 ? (answeredNonVPCount / totalNonVPs) * 100 : 0;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      {/* Progress bar */}
+      {/* Progress bar + navigation */}
       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto max-w-lg px-4 py-3">
           <div className="flex items-center gap-3">
+            {prevPosition !== null ? (
+              <a
+                href={`/s/${surveyId}/q?q=${prevPosition}`}
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Go Back</span>
+              </a>
+            ) : (
+              <span className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground opacity-30">
+                <ChevronLeft className="h-4 w-4" />
+                <span>Go Back</span>
+              </span>
+            )}
             <div className="flex-1">
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -167,6 +192,20 @@ export default async function SurveyQuestionPage({
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
               {questionDisplayIndex >= 0 ? questionDisplayIndex + 1 : "?"} / {totalNonVPs}
             </span>
+            {canGoForward && nextNonVP ? (
+              <a
+                href={`/s/${surveyId}/q?q=${nextNonVP.position}`}
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <span>Go Forward</span>
+                <ChevronRight className="h-4 w-4" />
+              </a>
+            ) : (
+              <span className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground opacity-30">
+                <span>Go Forward</span>
+                <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
           </div>
         </div>
       </div>

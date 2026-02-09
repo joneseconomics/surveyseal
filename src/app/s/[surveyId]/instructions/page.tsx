@@ -28,8 +28,6 @@ export default async function InstructionsPage({
       cjJobDescFileName: true,
       cjAssignmentInstructions: true,
       cjJudgeInstructions: true,
-      verificationPointTimerSeconds: true,
-      questions: { where: { isVerificationPoint: true }, select: { id: true } },
     },
   });
 
@@ -46,7 +44,6 @@ export default async function InstructionsPage({
 
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const surveyRoute = isCJ ? `/s/${surveyId}/compare` : `/s/${surveyId}/q`;
-  const hasVPs = survey.questions.length > 0;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -65,8 +62,6 @@ export default async function InstructionsPage({
             cjJobDescFileName={survey.cjJobDescFileName}
             cjAssignmentInstructions={survey.cjAssignmentInstructions}
             cjJudgeInstructions={survey.cjJudgeInstructions}
-            hasVPs={hasVPs}
-            vpTimerSeconds={survey.verificationPointTimerSeconds}
           />
 
           <Link href={surveyRoute}>
@@ -90,8 +85,6 @@ function InstructionContent({
   cjJobDescFileName,
   cjAssignmentInstructions,
   cjJudgeInstructions,
-  hasVPs,
-  vpTimerSeconds,
 }: {
   type: string;
   cjSubtype: string | null;
@@ -102,8 +95,6 @@ function InstructionContent({
   cjJobDescFileName: string | null;
   cjAssignmentInstructions: string | null;
   cjJudgeInstructions: string | null;
-  hasVPs: boolean;
-  vpTimerSeconds: number;
 }) {
   const isCJ = type === "COMPARATIVE_JUDGMENT";
 
@@ -203,16 +194,6 @@ function InstructionContent({
         </div>
       )}
 
-      {/* Verification point notice */}
-      {hasVPs && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-yellow-800">
-          <p className="text-xs">
-            This survey includes TapIn verification points. At each verification point,
-            you&apos;ll have {vpTimerSeconds} seconds to tap your TapIn Survey card on your phone.
-            If you don&apos;t have a card, you can skip verification points and still complete the survey.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
