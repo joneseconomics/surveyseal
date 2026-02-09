@@ -145,8 +145,6 @@ export default async function ComparePage({
             position={0}
             totalQuestions={totalComparisons}
             timerSeconds={survey.verificationPointTimerSeconds}
-            verificationPointNumber={i + 1}
-            totalVerificationPoints={vpQuestions.length}
             returnUrl={`/s/${surveyId}/compare`}
           />
         </div>
@@ -163,7 +161,6 @@ export default async function ComparePage({
       );
     }
     const nextVP = vpQuestions.find((vp) => !validatedVPs.has(vp.id))!;
-    const vpIndex = vpQuestions.indexOf(nextVP);
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <VerificationGate
@@ -173,8 +170,6 @@ export default async function ComparePage({
           position={0}
           totalQuestions={totalComparisons}
           timerSeconds={survey.verificationPointTimerSeconds}
-          verificationPointNumber={vpIndex + 1}
-          totalVerificationPoints={vpQuestions.length}
         />
       </div>
     );
@@ -210,8 +205,7 @@ export default async function ComparePage({
         );
       }
       const nextVP = vpQuestions.find((vp) => !validatedVPs.has(vp.id))!;
-      const vpIndex = vpQuestions.indexOf(nextVP);
-      return (
+        return (
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
           <VerificationGate
             sessionId={sessionId}
@@ -220,8 +214,6 @@ export default async function ComparePage({
             position={0}
             totalQuestions={totalComparisons}
             timerSeconds={survey.verificationPointTimerSeconds}
-            verificationPointNumber={vpIndex + 1}
-            totalVerificationPoints={vpQuestions.length}
           />
         </div>
       );

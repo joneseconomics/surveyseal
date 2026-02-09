@@ -317,7 +317,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">Verification Point</h3>
-                      <p className="text-sm text-muted-foreground">Verification Point 1 of {vpCount}</p>
+                      <p className="text-sm text-muted-foreground">Please verify your identity to continue.</p>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-center gap-2 text-2xl font-mono font-bold tabular-nums">

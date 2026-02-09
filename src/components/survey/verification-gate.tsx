@@ -11,10 +11,8 @@ interface VerificationGateProps {
   surveyId: string;
   questionId: string;
   position: number;
-  totalQuestions: number;
+  totalQuestions?: number;
   timerSeconds: number;
-  verificationPointNumber?: number;
-  totalVerificationPoints?: number;
   returnUrl?: string;
 }
 
@@ -23,10 +21,7 @@ export function VerificationGate({
   surveyId,
   questionId,
   position,
-  totalQuestions,
   timerSeconds,
-  verificationPointNumber,
-  totalVerificationPoints,
   returnUrl,
 }: VerificationGateProps) {
   const [error, setError] = useState("");
@@ -140,9 +135,7 @@ export function VerificationGate({
         </div>
         <CardTitle>Verification Point</CardTitle>
         <CardDescription>
-          {verificationPointNumber && totalVerificationPoints
-            ? `Verification Point ${verificationPointNumber} of ${totalVerificationPoints}`
-            : `Question ${position + 1} of ${totalQuestions}`}
+          Please verify your identity to continue.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

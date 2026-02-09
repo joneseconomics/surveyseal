@@ -113,9 +113,6 @@ export default async function SurveyQuestionPage({
 
   // If this is a verification point question, show the verification gate
   if (currentQuestion.isVerificationPoint && !validatedVPs.has(currentQuestion.id)) {
-    const allVPQuestions = allQuestions.filter((q) => q.isVerificationPoint);
-    const verificationPointNumber = allVPQuestions.findIndex((q) => q.id === currentQuestion.id) + 1;
-
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <VerificationGate
@@ -125,8 +122,6 @@ export default async function SurveyQuestionPage({
           position={currentQuestion.position}
           totalQuestions={allQuestions.length}
           timerSeconds={survey?.verificationPointTimerSeconds ?? 30}
-          verificationPointNumber={verificationPointNumber}
-          totalVerificationPoints={allVPQuestions.length}
         />
       </div>
     );

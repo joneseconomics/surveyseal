@@ -371,7 +371,7 @@ export default function SampleSurveyPage() {
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
                   <SurveySealLogo className="h-3.5 w-3.5" />
-                  Verification Point {currentStep.verificationPointNumber} of 3
+                  Verification Point
                 </Badge>
               </div>
 
@@ -434,7 +434,7 @@ export default function SampleSurveyPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-green-700 dark:text-green-400">
-                          Verification Point {currentStep.verificationPointNumber} Verified with TapIn
+                          Verified with TapIn
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Identity confirmed via card tap.
@@ -452,8 +452,8 @@ export default function SampleSurveyPage() {
                       <div>
                         <p className="font-medium text-muted-foreground">
                           {vpSeconds === 0
-                            ? `Verification Point ${currentStep.verificationPointNumber} — Time expired`
-                            : `Verification Point ${currentStep.verificationPointNumber} Skipped`}
+                            ? "Time expired — verification skipped"
+                            : "Verification skipped"}
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           This verification point will be marked as unverified in the export.

@@ -114,9 +114,6 @@ function InstructionContent({
         <>
           <p>
             Please read each question carefully and provide your honest response.
-            There are no right or wrong answers — we are interested in your genuine opinion.
-          </p>
-          <p>
             Take your time and answer each question to the best of your ability.
           </p>
         </>
