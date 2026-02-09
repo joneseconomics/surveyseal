@@ -90,7 +90,6 @@ function computeJudgeMetrics(judge: JudgeData, items: ItemMap) {
     totalTimeMs,
     leftBias,
     consensusRate,
-    durations,
   };
 }
 
@@ -237,53 +236,12 @@ function JudgeDetailRow({ judge, items }: { judge: JudgeData; items: ItemMap }) 
             </Table>
           </div>
 
-          {/* Time distribution */}
-          {metrics.durations.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                Time Distribution (per comparison)
-              </p>
-              <TimeDistribution durations={metrics.durations} />
-            </div>
-          )}
         </div>
       </TableCell>
     </TableRow>
   );
 }
 
-function TimeDistribution({ durations }: { durations: number[] }) {
-  // Simple histogram with 6 buckets
-  const buckets = [
-    { label: "<2s", max: 2000 },
-    { label: "2-5s", max: 5000 },
-    { label: "5-10s", max: 10000 },
-    { label: "10-30s", max: 30000 },
-    { label: "30-60s", max: 60000 },
-    { label: ">60s", max: Infinity },
-  ];
-
-  const counts = buckets.map((b, i) => {
-    const min = i === 0 ? 0 : buckets[i - 1].max;
-    return durations.filter((d) => d >= min && d < b.max).length;
-  });
-
-  const maxCount = Math.max(...counts, 1);
-
-  return (
-    <div className="flex items-end gap-1 h-12">
-      {buckets.map((bucket, i) => (
-        <div key={bucket.label} className="flex flex-col items-center gap-1 flex-1">
-          <div
-            className={`w-full rounded-t ${i === 0 && counts[i] > 0 ? "bg-red-400" : "bg-primary/60"}`}
-            style={{ height: `${(counts[i] / maxCount) * 32}px`, minHeight: counts[i] > 0 ? 2 : 0 }}
-          />
-          <span className="text-[10px] text-muted-foreground">{bucket.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function JudgesTable({ judges, items }: JudgesTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);

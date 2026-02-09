@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { computeReliability } from "@/lib/cj/reliability";
 import { RankingsTable } from "@/components/dashboard/rankings-table";
 import { JudgesTable } from "@/components/dashboard/judges-table";
+import { ExportDataButtons } from "@/components/dashboard/export-data-buttons";
 
 export default async function RankingsPage({
   params,
@@ -117,6 +118,65 @@ export default async function RankingsPage({
     itemMap[item.id] = { label: item.label, mu: item.mu };
   }
 
+  // Rankings export data
+  const hasCanvasItems = items.some(
+    (item) => (item.content as { sourceType?: string } | null)?.sourceType === "canvas",
+  );
+  const rankingsExport = items.map((item, index) => {
+    const content = item.content as { sourceType?: string; studentName?: string; studentEmail?: string } | null;
+    return {
+      rank: index + 1,
+      label: item.label,
+      rating: Math.round(item.mu),
+      uncertainty: Math.round(Math.sqrt(item.sigmaSq)),
+      comparisons: item.comparisonCount,
+      studentName: content?.studentName,
+      studentEmail: content?.studentEmail,
+    };
+  });
+
+  // Judge metrics for export
+  const judgesExport = sessions.map((s) => {
+    const judged = s.comparisons.filter((c) => c.winnerId !== null && c.judgedAt);
+    const durations = judged
+      .map((c) => new Date(c.judgedAt!).getTime() - new Date(c.createdAt).getTime())
+      .filter((d) => d > 0 && d < 600_000);
+    durations.sort((a, b) => a - b);
+    const medianMs = durations.length > 0 ? durations[Math.floor(durations.length / 2)] : null;
+    const totalMs = s.completedAt
+      ? new Date(s.completedAt).getTime() - new Date(s.startedAt).getTime()
+      : null;
+    const leftPicks = judged.filter((c) => c.winnerId === c.leftItemId).length;
+    const leftBias = judged.length > 0 ? leftPicks / judged.length : 0.5;
+
+    let agreesWithConsensus = 0;
+    let comparableCount = 0;
+    for (const c of judged) {
+      const left = itemMap[c.leftItemId];
+      const right = itemMap[c.rightItemId];
+      if (!left || !right || !c.winnerId) continue;
+      if (Math.abs(left.mu - right.mu) < 10) continue;
+      comparableCount++;
+      const higherMuId = left.mu > right.mu ? c.leftItemId : c.rightItemId;
+      if (c.winnerId === higherMuId) agreesWithConsensus++;
+    }
+    const consensusRate = comparableCount > 0 ? agreesWithConsensus / comparableCount : null;
+
+    return {
+      email: s.participantEmail ?? "",
+      sessionId: s.id,
+      comparisonsCompleted: judged.length,
+      comparisonsExpected,
+      medianTimeMs: medianMs,
+      totalTimeMs: totalMs,
+      leftBiasPercent: Math.round(leftBias * 100),
+      consensusPercent: consensusRate !== null ? Math.round(consensusRate * 100) : null,
+      status: s.status,
+      verificationStatus: s.verificationStatus,
+      botScore: s.botScore,
+    };
+  });
+
   // Serialize judge data for client component
   const judgeData = sessions.map((s) => ({
     sessionId: s.id,
@@ -220,6 +280,15 @@ export default async function RankingsPage({
         </Card>
       )}
 
+      {/* Export buttons */}
+      <div className="flex justify-end">
+        <ExportDataButtons
+          rankings={rankingsExport}
+          judges={judgesExport}
+          hasCanvasItems={hasCanvasItems}
+        />
+      </div>
+
       {/* Rankings table */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Item Rankings</h2>
@@ -238,10 +307,7 @@ export default async function RankingsPage({
                   studentEmail?: string;
                 } | null,
               }))}
-              hasCanvasItems={items.some(
-                (item) =>
-                  (item.content as { sourceType?: string } | null)?.sourceType === "canvas",
-              )}
+              hasCanvasItems={hasCanvasItems}
             />
           </CardContent>
         </Card>

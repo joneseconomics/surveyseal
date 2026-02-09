@@ -24,7 +24,7 @@ export function ResponseSummary({ total, completed, active }: ResponseSummaryPro
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Verified Complete
+            Complete
           </CardTitle>
         </CardHeader>
         <CardContent>
