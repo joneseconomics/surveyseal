@@ -3,8 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { File, Download, ExternalLink, Info } from "lucide-react";
-import Link from "next/link";
 import { DocxViewer } from "@/components/survey/docx-viewer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import DOMPurify from "isomorphic-dompurify";
 
 interface CJItemDisplay {
@@ -31,6 +36,10 @@ interface ComparisonViewProps {
   prompt: string;
   currentComparison: number;
   totalComparisons: number;
+  judgeInstructions?: string | null;
+  cjSubtype?: string | null;
+  cjJobUrl?: string | null;
+  cjAssignmentInstructions?: string | null;
 }
 
 export function ComparisonView({
@@ -42,11 +51,16 @@ export function ComparisonView({
   prompt,
   currentComparison,
   totalComparisons,
+  judgeInstructions,
+  cjSubtype,
+  cjJobUrl,
+  cjAssignmentInstructions,
 }: ComparisonViewProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Reset state when a new comparison is loaded via server refresh
   useEffect(() => {
@@ -108,13 +122,14 @@ export function ComparisonView({
           {/* Instruction + link */}
           <div className="mt-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <span>Read both items below, then click the one you believe is better.</span>
-            <Link
-              href={`/s/${surveyId}/instructions`}
+            <button
+              type="button"
+              onClick={() => setShowInstructions(true)}
               className="inline-flex items-center gap-1 text-primary hover:underline"
             >
               <Info className="h-3 w-3" />
               Instructions
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -152,6 +167,75 @@ export function ComparisonView({
           {error}
         </div>
       )}
+
+      {/* Instructions popup */}
+      <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Instructions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm text-muted-foreground">
+            {judgeInstructions && (
+              <div className="whitespace-pre-wrap">{linkifyText(judgeInstructions)}</div>
+            )}
+            {!judgeInstructions && cjSubtype === "RESUMES" && (
+              <p>
+                You will be shown pairs of resumes side by side. For each pair,
+                carefully review both candidates and select the one you would be more
+                likely to advance to the next round of interviews.
+              </p>
+            )}
+            {!judgeInstructions && cjSubtype === "ASSIGNMENTS" && (
+              <p>
+                You will be comparing student submissions side by side. For each pair,
+                carefully review both submissions and select the one you believe
+                demonstrates higher quality.
+              </p>
+            )}
+            {!judgeInstructions && (!cjSubtype || cjSubtype === "GENERIC") && (
+              <p>
+                You will be shown pairs of items side by side. For each pair,
+                carefully review both items and select the one you believe is better.
+              </p>
+            )}
+
+            {/* Embedded job posting */}
+            {cjJobUrl && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Job Description
+                </p>
+                <iframe
+                  src={cjJobUrl}
+                  title="Job description"
+                  className="w-full rounded-lg border"
+                  style={{ minHeight: "400px" }}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+                <a
+                  href={cjJobUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  Open in new tab
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+
+            {/* Assignment prompt */}
+            {cjSubtype === "ASSIGNMENTS" && cjAssignmentInstructions && (
+              <div className="rounded-lg border bg-muted/50 p-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                  Assignment Prompt
+                </p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{cjAssignmentInstructions}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -309,4 +393,25 @@ const MIME_MAP: Record<string, string> = {
 function inferMimeType(filename: string): string | undefined {
   const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
   return MIME_MAP[ext];
+}
+
+/** Turn URLs in plain text into clickable links */
+function linkifyText(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) =>
+    urlRegex.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline break-all"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
 }

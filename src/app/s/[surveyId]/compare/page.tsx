@@ -192,6 +192,10 @@ export default async function ComparePage({
       prompt={survey.cjPrompt ?? "Which item is better?"}
       currentComparison={completedComparisons + 1}
       totalComparisons={totalComparisons}
+      judgeInstructions={survey.cjJudgeInstructions}
+      cjSubtype={survey.cjSubtype}
+      cjJobUrl={survey.cjJobUrl}
+      cjAssignmentInstructions={survey.cjAssignmentInstructions}
     />
   );
 }

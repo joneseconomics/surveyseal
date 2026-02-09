@@ -150,24 +150,31 @@ function InstructionContent({
         </p>
       )}
 
-      {/* Job posting link */}
+      {/* Embedded job posting */}
       {isCJ && cjJobUrl && (
-        <div className="rounded-lg border bg-muted/50 p-3">
+        <div className="space-y-2">
           {cjJobTitle && (
-            <>
+            <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                 Position
               </p>
               <p className="text-base font-semibold text-foreground">{cjJobTitle}</p>
-            </>
+            </div>
           )}
+          <iframe
+            src={cjJobUrl}
+            title="Job description"
+            className="w-full rounded-lg border"
+            style={{ minHeight: "400px" }}
+            sandbox="allow-scripts allow-same-origin"
+          />
           <a
             href={cjJobUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
           >
-            View job description
+            Open in new tab
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
