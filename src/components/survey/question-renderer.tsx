@@ -14,6 +14,7 @@ interface QuestionRendererProps {
   surveyId: string;
   question: Question;
   isAnswered: boolean;
+  existingAnswer?: unknown;
   nextPosition: number;
 }
 
@@ -34,10 +35,11 @@ export function QuestionRenderer({
   surveyId,
   question,
   isAnswered,
+  existingAnswer,
   nextPosition,
 }: QuestionRendererProps) {
   const content = question.content as unknown as QuestionContent;
-  const [answer, setAnswer] = useState<unknown>(null);
+  const [answer, setAnswer] = useState<unknown>(existingAnswer ?? null);
   const [loading, setLoading] = useState(false);
   const { getTelemetry } = useBotTelemetry(question.id);
 

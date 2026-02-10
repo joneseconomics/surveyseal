@@ -23,7 +23,7 @@ export default async function SurveyQuestionPage({
     where: { id: sessionId, status: "ACTIVE" },
     include: {
       verificationPoints: true,
-      responses: { select: { questionId: true } },
+      responses: { select: { questionId: true, answer: true } },
     },
   });
 
@@ -50,6 +50,7 @@ export default async function SurveyQuestionPage({
   );
 
   const answeredQuestions = new Set(session.responses.map((r) => r.questionId));
+  const answersByQuestion = new Map(session.responses.map((r) => [r.questionId, r.answer]));
 
   // ─── Server-side question gating ───────────────────────────────────────
   // Determine the range of questions the participant can currently see:
@@ -216,6 +217,7 @@ export default async function SurveyQuestionPage({
           surveyId={surveyId}
           question={currentQuestion}
           isAnswered={isAnswered}
+          existingAnswer={answersByQuestion.get(currentQuestion.id) ?? null}
           nextPosition={nextPosition}
         />
       </div>
