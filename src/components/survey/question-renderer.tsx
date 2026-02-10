@@ -41,7 +41,13 @@ export function QuestionRenderer({
   const content = question.content as unknown as QuestionContent;
   const [answer, setAnswer] = useState<unknown>(existingAnswer ?? null);
   const [loading, setLoading] = useState(false);
+  const [hasChanged, setHasChanged] = useState(false);
   const { getTelemetry } = useBotTelemetry(question.id);
+
+  function handleChange(value: unknown) {
+    setAnswer(value);
+    setHasChanged(true);
+  }
 
   async function handleSubmit() {
     if (answer === null || answer === undefined) return;
@@ -73,78 +79,78 @@ export function QuestionRenderer({
           <MultipleChoice
             options={content.options}
             value={answer as string | null}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "LIKERT" && content.scale && (
           <LikertScale
             scale={content.scale}
             value={answer as number | null}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "FREE_TEXT" && (
-          <FreeText value={(answer as string) ?? ""} onChange={setAnswer} />
+          <FreeText value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "MATRIX" && content.rows && content.columns && (
           <Matrix
             rows={content.rows}
             columns={content.columns}
             value={(answer as Record<string, string>) ?? {}}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "RANKING" && content.options && (
           <Ranking
             options={content.options}
             value={(answer as string[]) ?? [...content.options]}
-            onChange={setAnswer}
+            onChange={handleChange}
             onInit={() => { if (answer === null) setAnswer([...content.options!]); }}
           />
         )}
         {question.type === "SHORT_TEXT" && (
-          <ShortText value={(answer as string) ?? ""} onChange={setAnswer} />
+          <ShortText value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "URL" && (
-          <UrlInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <UrlInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "EMAIL" && (
-          <EmailInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <EmailInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "YES_NO" && (
-          <YesNo value={answer as string | null} onChange={setAnswer} />
+          <YesNo value={answer as string | null} onChange={handleChange} />
         )}
         {question.type === "CUSTOMER_SATISFACTION" && (
-          <CustomerSatisfaction value={answer as number | null} onChange={setAnswer} />
+          <CustomerSatisfaction value={answer as number | null} onChange={handleChange} />
         )}
         {question.type === "NPS" && (
-          <NpsScale value={answer as number | null} onChange={setAnswer} />
+          <NpsScale value={answer as number | null} onChange={handleChange} />
         )}
         {question.type === "CHECKBOX" && content.options && (
           <CheckboxInput
             options={content.options}
             value={(answer as string[]) ?? []}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "RATING" && (
           <StarRating
             maxStars={content.maxStars ?? 5}
             value={answer as number | null}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "DATE" && (
-          <DateInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <DateInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "DATE_TIME" && (
-          <DateTimeInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <DateTimeInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "NUMBER" && (
-          <NumberInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <NumberInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "PERCENTAGE" && (
-          <PercentageInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <PercentageInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
         {question.type === "SLIDER" && (
           <SliderInput
@@ -152,17 +158,17 @@ export function QuestionRenderer({
             max={content.max ?? 100}
             step={content.step ?? 1}
             value={answer as number | null}
-            onChange={setAnswer}
+            onChange={handleChange}
           />
         )}
         {question.type === "PHONE_NUMBER" && (
-          <PhoneInput value={(answer as string) ?? ""} onChange={setAnswer} />
+          <PhoneInput value={(answer as string) ?? ""} onChange={handleChange} />
         )}
 
         <div className="flex justify-end">
-          <Button onClick={handleSubmit} disabled={loading || answer === null || isAnswered}>
+          <Button onClick={handleSubmit} disabled={loading || answer === null || (isAnswered && !hasChanged)}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {isAnswered ? "Already answered" : "Next"}
+            {isAnswered && !hasChanged ? "Already answered" : isAnswered ? "Update answer" : "Next"}
           </Button>
         </div>
       </CardContent>
