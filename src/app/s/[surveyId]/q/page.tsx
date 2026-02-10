@@ -152,11 +152,8 @@ export default async function SurveyQuestionPage({
   const prevNonVP = questionDisplayIndex > 0 ? nonVPQuestions[questionDisplayIndex - 1] : null;
   const prevPosition = prevNonVP ? prevNonVP.position : null;
 
-  // "Go Forward" — only if the current question is answered and there's a next answered question
-  const nextNonVP = questionDisplayIndex < nonVPQuestions.length - 1
-    ? nonVPQuestions[questionDisplayIndex + 1]
-    : null;
-  const canGoForward = isAnswered && nextNonVP && answeredQuestions.has(nextNonVP.id);
+  // "Go Forward" — enabled if the current question is answered and there's a next question
+  const canGoForward = isAnswered && currentIdx < allQuestions.length - 1;
 
   // Progress: how many non-VP questions have been answered
   const answeredNonVPCount = nonVPQuestions.filter((q) => answeredQuestions.has(q.id)).length;
@@ -193,9 +190,9 @@ export default async function SurveyQuestionPage({
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
               {questionDisplayIndex >= 0 ? questionDisplayIndex + 1 : "?"} / {totalNonVPs}
             </span>
-            {canGoForward && nextNonVP ? (
+            {canGoForward ? (
               <a
-                href={`/s/${surveyId}/q?q=${nextNonVP.position}`}
+                href={`/s/${surveyId}/q?q=${nextPosition}`}
                 className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <span>Go Forward</span>
