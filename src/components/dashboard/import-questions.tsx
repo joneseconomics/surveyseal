@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { parseQuestionCSV, type ParsedQuestion, type ParseError } from "@/lib/csv";
 import { importQuestionsFromCSV } from "@/lib/actions/question";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
 
 interface ImportQuestionsProps {
   surveyId: string;
@@ -109,6 +109,8 @@ export function ImportQuestions({ surveyId, open, onOpenChange }: ImportQuestion
           </DialogDescription>
         </DialogHeader>
 
+        <CSVFormatHelp />
+
         <div className="space-y-4">
           <input
             ref={fileRef}
@@ -184,5 +186,75 @@ export function ImportQuestions({ surveyId, open, onOpenChange }: ImportQuestion
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CSVFormatHelp() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="rounded-md border bg-muted/30">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        CSV format guide
+      </button>
+      {open && (
+        <div className="border-t px-3 py-3 text-xs text-muted-foreground space-y-3">
+          <div>
+            <p className="font-medium text-foreground mb-1">Required columns (in order)</p>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b">
+                  <th className="pb-1 pr-3 font-medium">Column</th>
+                  <th className="pb-1 font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody className="space-y-1">
+                <tr><td className="pr-3 py-0.5">Section</td><td>Optional grouping label (can be empty)</td></tr>
+                <tr><td className="pr-3 py-0.5">Question Text</td><td>The question shown to respondents</td></tr>
+                <tr><td className="pr-3 py-0.5">Type</td><td>Question type (see below)</td></tr>
+                <tr><td className="pr-3 py-0.5">Choices</td><td>Options separated by <code className="bg-muted px-1 rounded">~</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <p className="font-medium text-foreground mb-1">Supported question types</p>
+            <div className="flex flex-wrap gap-1">
+              {[
+                "Multiple Choice", "Checkbox", "Yes/No", "Likert", "NPS",
+                "Rating", "Short Text", "Free Text", "Number", "Percentage",
+                "Slider", "Date", "Date & Time", "Email", "URL", "Phone",
+                "Ranking", "Customer Satisfaction",
+              ].map((t) => (
+                <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="font-medium text-foreground mb-1">Example</p>
+            <pre className="rounded bg-muted p-2 overflow-x-auto text-[11px] leading-relaxed">
+{`Section,Question Text,Type,Choices
+Demographics,What is your age?,Number,
+Demographics,What is your major?,Multiple Choice,CS~Math~Biology~Other
+Feedback,Rate your experience,Likert,Very Poor~Poor~Fair~Good~Excellent
+,Any additional comments?,Free Text,`}
+            </pre>
+          </div>
+
+          <p>
+            A header row is optional. The first row is auto-detected as a header if it contains
+            &ldquo;Section&rdquo;, &ldquo;Question&rdquo;, or &ldquo;Type&rdquo;.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
