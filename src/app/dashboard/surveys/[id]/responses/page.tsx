@@ -88,7 +88,7 @@ export default async function ResponsesPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Session</TableHead>
+                  <TableHead>Participant</TableHead>
                   <TableHead>Verification</TableHead>
                   <TableHead>Bot Risk</TableHead>
                   <TableHead>Status</TableHead>
@@ -105,8 +105,8 @@ export default async function ResponsesPage({
                   ).length;
                   return (
                     <TableRow key={s.id}>
-                      <TableCell className="font-mono text-xs">
-                        {s.id.slice(0, 8)}...
+                      <TableCell className="text-xs">
+                        {s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
                       </TableCell>
                       <TableCell>
                         <VerificationBadge status={s.verificationStatus} />
