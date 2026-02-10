@@ -137,6 +137,8 @@ async function exportQuestionnaire(surveyId: string) {
   }
 
   const nonVPQuestions = survey.questions.filter((q) => !q.isVerificationPoint);
+  const vpQuestions = survey.questions.filter((q) => q.isVerificationPoint);
+  const vpCount = vpQuestions.length;
 
   const headers = [
     "session_id",
@@ -146,17 +148,13 @@ async function exportQuestionnaire(surveyId: string) {
     "started_at",
     "completed_at",
     ...nonVPQuestions.map(
-      (q) => `q${q.position + 1}_${(q.content as { text?: string })?.text?.slice(0, 40) ?? "question"}`
+      (q, i) => `q${i + 1}_${(q.content as { text?: string })?.text?.slice(0, 40) ?? "question"}`
     ),
-    "verification_point_1_verified",
-    "verification_point_1_skipped",
-    "verification_point_1_email",
-    "verification_point_2_verified",
-    "verification_point_2_skipped",
-    "verification_point_2_email",
-    "verification_point_3_verified",
-    "verification_point_3_skipped",
-    "verification_point_3_email",
+    ...Array.from({ length: vpCount }, (_, i) => [
+      `verification_point_${i + 1}_verified`,
+      `verification_point_${i + 1}_skipped`,
+      `verification_point_${i + 1}_email`,
+    ]).flat(),
     "tapin_tap_count",
     "tapin_tap_timestamps",
     "bot_score",
@@ -183,7 +181,7 @@ async function exportQuestionnaire(surveyId: string) {
         if (answer === undefined || answer === null) return "";
         return typeof answer === "object" ? JSON.stringify(answer) : String(answer);
       }),
-      ...Array.from({ length: 3 }, (_, i) => {
+      ...Array.from({ length: vpCount }, (_, i) => {
         const cp = vpsByPosition[i];
         return [
           cp?.verified ? "true" : "false",
