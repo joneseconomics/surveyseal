@@ -35,7 +35,7 @@ export async function createSurvey(formData: FormData) {
         break;
       default:
         cjPrompt = "Which of these two do you prefer?";
-        cjJudgeInstructions = "You will be shown pairs of items side by side. For each pair, carefully review both items and select the one you believe is better.\n\nTake your time with each comparison — there are no right or wrong answers.";
+        cjJudgeInstructions = "You will be shown pairs of items side by side. For each pair, carefully review both items and select the one you believe is better.";
     }
   }
 
