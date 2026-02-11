@@ -191,6 +191,7 @@ model SurveySession {
 
   botScore           Float?  @map("bot_score")
   botSignals         Json?   @map("bot_signals")
+  judgeDemographics   Json?   @map("judge_demographics")
 
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   participant User?        @relation(fields: [participantId], references: [id])

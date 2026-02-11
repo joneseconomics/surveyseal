@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { DocxViewer } from "@/components/survey/docx-viewer";
+import { JudgeDemographicsForm } from "@/components/survey/judge-demographics-form";
 
 export default async function InstructionsPage({
   params,
@@ -43,7 +44,38 @@ export default async function InstructionsPage({
   if (!session) redirect(`/s/${surveyId}`);
 
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
+  const isResumes = isCJ && survey.cjSubtype === "RESUMES";
   const surveyRoute = isCJ ? `/s/${surveyId}/compare` : `/s/${surveyId}/q`;
+
+  async function saveDemographics(formData: FormData) {
+    "use server";
+
+    const sid = await getSurveySessionId(surveyId);
+    if (!sid) redirect(`/s/${surveyId}`);
+
+    const jobTitle = formData.get("jobTitle") as string;
+    const employer = formData.get("employer") as string;
+    const city = formData.get("city") as string;
+    const state = formData.get("state") as string;
+    const hasHiringExperience = formData.get("hasHiringExperience") === "yes";
+    const hiringRoles = formData.getAll("hiringRoles") as string[];
+
+    await db.surveySession.update({
+      where: { id: sid },
+      data: {
+        judgeDemographics: {
+          jobTitle,
+          employer,
+          city,
+          state,
+          hasHiringExperience,
+          hiringRoles: hasHiringExperience ? hiringRoles : [],
+        },
+      },
+    });
+
+    redirect(`/s/${surveyId}/compare`);
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -64,11 +96,15 @@ export default async function InstructionsPage({
             cjJudgeInstructions={survey.cjJudgeInstructions}
           />
 
-          <Link href={surveyRoute}>
-            <Button size="lg" className="w-full">
-              Continue to Survey
-            </Button>
-          </Link>
+          {isResumes ? (
+            <JudgeDemographicsForm action={saveDemographics} />
+          ) : (
+            <Link href={surveyRoute}>
+              <Button size="lg" className="w-full">
+                Continue to Survey
+              </Button>
+            </Link>
+          )}
         </CardContent>
       </Card>
     </div>
