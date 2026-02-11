@@ -84,6 +84,10 @@ export default async function InstructionsPage({
           <CardTitle className="text-2xl">Instructions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isResumes && (
+            <JudgeDemographicsForm action={saveDemographics} />
+          )}
+
           <InstructionContent
             type={survey.type}
             cjSubtype={survey.cjSubtype}
@@ -96,9 +100,7 @@ export default async function InstructionsPage({
             cjJudgeInstructions={survey.cjJudgeInstructions}
           />
 
-          {isResumes ? (
-            <JudgeDemographicsForm action={saveDemographics} />
-          ) : (
+          {!isResumes && (
             <Link href={surveyRoute}>
               <Button size="lg" className="w-full">
                 Continue to Survey
