@@ -15,6 +15,7 @@ import {
 import { Download, CheckCircle, Clock } from "lucide-react";
 import { ResponseSummary } from "@/components/dashboard/response-summary";
 import { ReconcileButton } from "@/components/dashboard/reconcile-button";
+import { DeleteResponseButton } from "@/components/dashboard/delete-response-button";
 
 export default async function ResponsesPage({
   params,
@@ -96,6 +97,7 @@ export default async function ResponsesPage({
                   <TableHead>{isCJ ? "Comparisons" : "Responses"}</TableHead>
                   {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,6 +141,9 @@ export default async function ResponsesPage({
                       )}
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(s.startedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <DeleteResponseButton surveyId={id} sessionId={s.id} />
                       </TableCell>
                     </TableRow>
                   );
