@@ -51,6 +51,8 @@ export default async function ResponsesPage({
           participantEmail: true,
           botScore: true,
           judgeDemographics: true,
+          isAiGenerated: true,
+          aiPersona: true,
           verificationPoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
           tapinTaps: { select: { id: true } },
@@ -104,6 +106,7 @@ export default async function ResponsesPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>{isResumes ? "Judge" : "Participant"}</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Verification</TableHead>
                   <TableHead>Bot Risk</TableHead>
                   <TableHead>Status</TableHead>
@@ -136,6 +139,15 @@ export default async function ResponsesPage({
                             <p className="text-xs text-muted-foreground">{subtitle}</p>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {s.isAiGenerated ? (
+                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+                            AI{s.aiPersona ? ` (${s.aiPersona})` : ""}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Human</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <VerificationBadge status={s.verificationStatus} />

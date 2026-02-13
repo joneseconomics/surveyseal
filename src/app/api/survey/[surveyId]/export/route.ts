@@ -79,6 +79,10 @@ async function exportCJComparisons(surveyId: string) {
           verificationStatus: true,
           botScore: true,
           judgeDemographics: true,
+          isAiGenerated: true,
+          aiPersona: true,
+          aiProvider: true,
+          aiModel: true,
         },
       },
       leftItem: { select: { label: true } },
@@ -103,6 +107,10 @@ async function exportCJComparisons(surveyId: string) {
     "judged_at",
     "verification_status",
     "bot_score",
+    "is_ai_generated",
+    "ai_persona",
+    "ai_provider",
+    "ai_model",
   ];
 
   const rows = comparisons.map((c) => {
@@ -122,6 +130,10 @@ async function exportCJComparisons(surveyId: string) {
       c.judgedAt?.toISOString() ?? "",
       c.session.verificationStatus,
       c.session.botScore !== null ? String(c.session.botScore) : "",
+      c.session.isAiGenerated ? "true" : "false",
+      c.session.aiPersona ?? "",
+      c.session.aiProvider ?? "",
+      c.session.aiModel ?? "",
     ];
     return values.map(escapeCsvField).join(",");
   });
@@ -179,6 +191,10 @@ async function exportQuestionnaire(surveyId: string) {
     "tapin_tap_timestamps",
     "bot_score",
     "bot_risk",
+    "is_ai_generated",
+    "ai_persona",
+    "ai_provider",
+    "ai_model",
   ];
 
   const rows = survey.sessions.map((s) => {
@@ -215,6 +231,10 @@ async function exportQuestionnaire(surveyId: string) {
       s.botScore !== null
         ? s.botScore < 0.3 ? "low" : s.botScore < 0.6 ? "medium" : "high"
         : "",
+      s.isAiGenerated ? "true" : "false",
+      s.aiPersona ?? "",
+      s.aiProvider ?? "",
+      s.aiModel ?? "",
     ];
 
     return values.map(escapeCsvField).join(",");

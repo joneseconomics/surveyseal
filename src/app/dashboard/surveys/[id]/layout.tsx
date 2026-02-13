@@ -46,6 +46,9 @@ export default async function SurveyLayout({
               <Link href={`/dashboard/surveys/${id}/rankings`}>Rankings</Link>
             </TabsTrigger>
           )}
+          <TabsTrigger value="ai-agent" asChild>
+            <Link href={`/dashboard/surveys/${id}/ai-agent`}>AI Agent</Link>
+          </TabsTrigger>
           <TabsTrigger value="settings" asChild>
             <Link href={`/dashboard/surveys/${id}/settings`}>Settings</Link>
           </TabsTrigger>

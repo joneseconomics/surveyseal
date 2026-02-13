@@ -123,6 +123,7 @@ model User {
   surveys        Survey[]
   surveySessions SurveySession[]
   collaborations SurveyCollaborator[]
+  aiAgentRuns    AiAgentRun[]
 
   @@map("users")
 }
@@ -160,11 +161,16 @@ model Survey {
 
   authProviders       String[] @default([]) @map("auth_providers")
 
+  aiApiKey    String? @map("ai_api_key")
+  aiProvider  String? @map("ai_provider")
+  aiModel     String? @map("ai_model")
+
   owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   questions     Question[]
   sessions      SurveySession[]
   cjItems       CJItem[]
   collaborators SurveyCollaborator[]
+  aiAgentRuns   AiAgentRun[]
 
   @@map("surveys")
 }
@@ -199,6 +205,12 @@ model SurveySession {
   botScore           Float?  @map("bot_score")
   botSignals         Json?   @map("bot_signals")
   judgeDemographics   Json?   @map("judge_demographics")
+
+  isAiGenerated  Boolean  @default(false)  @map("is_ai_generated")
+  aiPersona      String?  @map("ai_persona")
+  aiProvider     String?  @map("ai_provider")
+  aiModel        String?  @map("ai_model")
+  aiRunId        String?  @map("ai_run_id")
 
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   participant User?        @relation(fields: [participantId], references: [id])
@@ -314,4 +326,31 @@ model SurveyCollaborator {
 
   @@unique([surveyId, email])
   @@map("survey_collaborators")
+}
+
+enum AiAgentRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model AiAgentRun {
+  id             String           @id @default(cuid())
+  surveyId       String           @map("survey_id")
+  userId         String           @map("user_id")
+  provider       String
+  model          String
+  persona        String
+  sessionCount   Int              @map("session_count")
+  completedCount Int              @default(0) @map("completed_count")
+  failedCount    Int              @default(0) @map("failed_count")
+  status         AiAgentRunStatus @default(RUNNING)
+  startedAt      DateTime         @default(now()) @map("started_at")
+  completedAt    DateTime?        @map("completed_at")
+  errorLog       String?          @map("error_log") @db.Text
+
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_agent_runs")
 }
