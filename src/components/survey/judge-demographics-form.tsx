@@ -51,10 +51,6 @@ export function JudgeDemographicsForm({
       className="space-y-4"
     >
       <div className="rounded-lg border bg-muted/50 p-4 space-y-4">
-        <p className="text-sm font-medium text-foreground">
-          Before you begin, please tell us a little about yourself.
-        </p>
-
         {/* Job Title */}
         <div className="space-y-1.5">
           <Label htmlFor="jobTitle">Job Title</Label>

@@ -7,6 +7,7 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { DocxViewer } from "@/components/survey/docx-viewer";
 import { JudgeDemographicsForm } from "@/components/survey/judge-demographics-form";
+import { InstructionsFlow } from "@/components/survey/instructions-flow";
 
 export default async function InstructionsPage({
   params,
@@ -77,6 +78,31 @@ export default async function InstructionsPage({
     redirect(`/s/${surveyId}/compare`);
   }
 
+  const instructionContent = (
+    <InstructionContent
+      type={survey.type}
+      cjSubtype={survey.cjSubtype}
+      cjJobTitle={survey.cjJobTitle}
+      cjJobUrl={survey.cjJobUrl}
+      cjJobDescFileUrl={survey.cjJobDescFileUrl}
+      cjJobDescFileType={survey.cjJobDescFileType}
+      cjJobDescFileName={survey.cjJobDescFileName}
+      cjAssignmentInstructions={survey.cjAssignmentInstructions}
+      cjJudgeInstructions={survey.cjJudgeInstructions}
+    />
+  );
+
+  if (isResumes) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+        <InstructionsFlow
+          instructionContent={instructionContent}
+          demographicsForm={<JudgeDemographicsForm action={saveDemographics} />}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-lg">
@@ -84,29 +110,12 @@ export default async function InstructionsPage({
           <CardTitle className="text-2xl">Instructions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isResumes && (
-            <JudgeDemographicsForm action={saveDemographics} />
-          )}
-
-          <InstructionContent
-            type={survey.type}
-            cjSubtype={survey.cjSubtype}
-            cjJobTitle={survey.cjJobTitle}
-            cjJobUrl={survey.cjJobUrl}
-            cjJobDescFileUrl={survey.cjJobDescFileUrl}
-            cjJobDescFileType={survey.cjJobDescFileType}
-            cjJobDescFileName={survey.cjJobDescFileName}
-            cjAssignmentInstructions={survey.cjAssignmentInstructions}
-            cjJudgeInstructions={survey.cjJudgeInstructions}
-          />
-
-          {!isResumes && (
-            <Link href={surveyRoute}>
-              <Button size="lg" className="w-full">
-                Continue to Survey
-              </Button>
-            </Link>
-          )}
+          {instructionContent}
+          <Link href={surveyRoute}>
+            <Button size="lg" className="w-full">
+              Continue to Survey
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     </div>
