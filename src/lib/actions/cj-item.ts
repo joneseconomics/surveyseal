@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import {
   addCJItemSchema,
   updateCJItemSchema,
@@ -12,8 +13,9 @@ import { revalidatePath } from "next/cache";
 import { getServerSupabase, BUCKET } from "@/lib/supabase";
 
 async function verifyOwnership(surveyId: string, userId: string) {
+  await requireAccess(surveyId, userId, "editor");
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: userId },
+    where: { id: surveyId },
     select: { id: true, status: true },
   });
   if (!survey) throw new Error("Survey not found");
@@ -146,8 +148,10 @@ export async function updateCJSettings(data: {
 
   const parsed = updateCJSettingsSchema.parse(data);
 
+  await requireAccess(parsed.surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: parsed.surveyId, ownerId: session.user.id },
+    where: { id: parsed.surveyId },
     data: {
       cjPrompt: parsed.cjPrompt,
       comparisonsPerJudge: parsed.comparisonsPerJudge,

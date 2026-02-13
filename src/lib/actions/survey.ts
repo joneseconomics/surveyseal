@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { createSurveySchema, updateSurveySchema, updateSurveySettingsSchema, updateCanvasSettingsSchema } from "@/lib/validations/survey";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -85,8 +86,10 @@ export async function updateSurvey(formData: FormData) {
     description: formData.get("description") || undefined,
   });
 
+  await requireAccess(parsed.id, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: parsed.id, ownerId: session.user.id },
+    where: { id: parsed.id },
     data: { title: parsed.title, description: parsed.description },
   });
 
@@ -96,6 +99,8 @@ export async function updateSurvey(formData: FormData) {
 export async function deleteSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await requireAccess(surveyId, session.user.id, "owner");
 
   // Delete all files in the survey's storage prefix
   try {
@@ -112,7 +117,7 @@ export async function deleteSurvey(surveyId: string) {
   }
 
   await db.survey.delete({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
   });
 
   revalidatePath("/dashboard");
@@ -123,8 +128,10 @@ export async function publishSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     include: {
       questions: { orderBy: { position: "asc" } },
       cjItems: true,
@@ -228,8 +235,10 @@ export async function updateSurveySettings(formData: FormData) {
     tapinCampaignId: formData.get("tapinCampaignId") || undefined,
   });
 
+  await requireAccess(parsed.id, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: parsed.id, ownerId: session.user.id },
+    where: { id: parsed.id },
     data: {
       verificationPointTimerSeconds: parsed.verificationPointTimerSeconds,
       requireLogin: parsed.requireLogin,
@@ -245,8 +254,10 @@ export async function updateAuthProviders(surveyId: string, providers: string[])
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: { authProviders: providers },
   });
 
@@ -257,8 +268,10 @@ export async function updateSurveyTitle(surveyId: string, title: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: { title },
   });
 
@@ -269,8 +282,10 @@ export async function updateCJResumeConfig(surveyId: string, jobTitle: string, j
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: { cjJobTitle: jobTitle || null, cjJobUrl: jobUrl || null },
   });
 
@@ -281,8 +296,10 @@ export async function updateCJAssignmentInstructions(surveyId: string, instructi
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: { cjAssignmentInstructions: instructions || null },
   });
 
@@ -299,8 +316,10 @@ export async function updateCJJudgeInstructions(
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: {
       cjJudgeInstructions: instructions || null,
       cjJobUrl: jobUrl || null,
@@ -321,8 +340,10 @@ export async function updateRespondentAuth(surveyId: string, requireLogin: boole
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     data: { requireLogin, authProviders },
   });
 
@@ -333,8 +354,10 @@ export async function reconcileTapIn(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     select: {
       tapinApiKey: true,
       tapinCampaignId: true,
@@ -394,11 +417,7 @@ export async function importTapInCsv(surveyId: string, csvText: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
-    select: { id: true },
-  });
-  if (!survey) throw new Error("Survey not found");
+  await requireAccess(surveyId, session.user.id, "editor");
 
   const lines = csvText.trim().split("\n");
   if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
@@ -469,8 +488,10 @@ export async function updateCanvasSettings(data: {
 
   const parsed = updateCanvasSettingsSchema.parse(data);
 
+  await requireAccess(parsed.surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: parsed.surveyId, ownerId: session.user.id },
+    where: { id: parsed.surveyId },
     data: {
       canvasBaseUrl: parsed.canvasBaseUrl,
       canvasApiToken: parsed.canvasApiToken,
@@ -484,8 +505,10 @@ export async function closeSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id, status: "LIVE" },
+    where: { id: surveyId, status: "LIVE" },
     data: { status: "CLOSED" },
   });
 
@@ -497,8 +520,10 @@ export async function copySurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "viewer");
+
   const source = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     include: {
       questions: { orderBy: { position: "asc" } },
       cjItems: { orderBy: { position: "asc" } },
@@ -567,8 +592,10 @@ export async function reopenSurvey(surveyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   await db.survey.update({
-    where: { id: surveyId, ownerId: session.user.id, status: "CLOSED" },
+    where: { id: surveyId, status: "CLOSED" },
     data: { status: "LIVE" },
   });
 

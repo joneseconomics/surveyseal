@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import {
   addQuestionSchema,
   updateQuestionSchema,
@@ -12,8 +13,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 
 async function verifyOwnership(surveyId: string, userId: string) {
+  await requireAccess(surveyId, userId, "editor");
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: userId },
+    where: { id: surveyId },
     select: { id: true, status: true },
   });
   if (!survey) throw new Error("Survey not found");

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { SurveyBuilder } from "@/components/dashboard/survey-builder";
 
@@ -12,8 +13,10 @@ export default async function SurveyDetailPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
+  await requireAccess(id, session.user.id, "viewer");
+
   const survey = await db.survey.findUnique({
-    where: { id, ownerId: session.user.id },
+    where: { id },
     include: {
       questions: { orderBy: { position: "asc" } },
       cjItems: { orderBy: { position: "asc" } },

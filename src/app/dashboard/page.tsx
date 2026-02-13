@@ -19,14 +19,40 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
-  const surveys = await db.survey.findMany({
-    where: { ownerId: session.user.id },
-    include: {
-      _count: { select: { sessions: true, cjItems: true } },
-      questions: { select: { isVerificationPoint: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
+  const [ownedSurveys, collaborations] = await Promise.all([
+    db.survey.findMany({
+      where: { ownerId: session.user.id },
+      include: {
+        _count: { select: { sessions: true, cjItems: true } },
+        questions: { select: { isVerificationPoint: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    }),
+    db.surveyCollaborator.findMany({
+      where: { userId: session.user.id, acceptedAt: { not: null } },
+      include: {
+        survey: {
+          include: {
+            owner: { select: { name: true, email: true } },
+            _count: { select: { sessions: true, cjItems: true } },
+            questions: { select: { isVerificationPoint: true } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const sharedSurveys = collaborations.map((c) => ({
+    ...c.survey,
+    _isShared: true as const,
+    _collaboratorRole: c.role,
+    _ownerName: c.survey.owner.name ?? c.survey.owner.email ?? "Unknown",
+  }));
+
+  const allSurveys = [
+    ...ownedSurveys.map((s) => ({ ...s, _isShared: false as const, _collaboratorRole: null as string | null, _ownerName: null as string | null })),
+    ...sharedSurveys,
+  ].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
   return (
     <div>
@@ -43,7 +69,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {surveys.length === 0 ? (
+      {allSurveys.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="mb-4 text-muted-foreground">No surveys yet. Create your first one!</p>
@@ -57,22 +83,32 @@ export default async function DashboardPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {surveys.map((survey) => (
+          {allSurveys.map((survey) => (
             <Link key={survey.id} href={`/dashboard/surveys/${survey.id}`}>
               <Card className="transition-shadow hover:shadow-md">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{survey.title}</CardTitle>
                     <div className="flex items-center gap-2">
+                      {survey._isShared && (
+                        <Badge variant="outline" className="text-xs">Shared</Badge>
+                      )}
                       <Badge variant={statusColors[survey.status]}>{survey.status}</Badge>
-                      <CopySurveyButton surveyId={survey.id} />
-                      <DeleteSurveyButton surveyId={survey.id} />
+                      {!survey._isShared && (
+                        <>
+                          <CopySurveyButton surveyId={survey.id} />
+                          <DeleteSurveyButton surveyId={survey.id} />
+                        </>
+                      )}
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {survey.type === "COMPARATIVE_JUDGMENT"
                       ? `Comparative Judgment — ${survey.cjSubtype === "ASSIGNMENTS" ? "Assignments" : survey.cjSubtype === "RESUMES" ? "Resumes" : "General"}`
                       : "Questionnaire"}
+                    {survey._isShared && survey._ownerName && (
+                      <span> · Shared by {survey._ownerName}</span>
+                    )}
                   </p>
                 </CardHeader>
                 <CardContent>

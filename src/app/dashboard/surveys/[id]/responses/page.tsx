@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,8 +36,10 @@ export default async function ResponsesPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
+  const accessLevel = await requireAccess(id, session.user.id, "viewer");
+
   const survey = await db.survey.findUnique({
-    where: { id, ownerId: session.user.id },
+    where: { id },
     include: {
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
       sessions: {
@@ -63,6 +66,7 @@ export default async function ResponsesPage({
   const hasTapInKey = !!survey.tapinApiKey;
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
   const isResumes = isCJ && survey.cjSubtype === "RESUMES";
+  const canEdit = accessLevel === "owner" || accessLevel === "editor";
 
   return (
     <div className="space-y-6">
@@ -75,7 +79,7 @@ export default async function ResponsesPage({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Responses</h2>
         <div className="flex items-center gap-2">
-          {hasTapInKey && <ReconcileButton surveyId={id} />}
+          {hasTapInKey && canEdit && <ReconcileButton surveyId={id} />}
           {survey.sessions.length > 0 && (
             <a href={`/api/survey/${id}/export`} download>
               <Button variant="outline" size="sm">
@@ -107,7 +111,7 @@ export default async function ResponsesPage({
                   {isResumes && <TableHead>Hiring Exp.</TableHead>}
                   {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  {canEdit && <TableHead className="w-[50px]"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,9 +170,11 @@ export default async function ResponsesPage({
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(s.startedAt).toLocaleString()}
                       </TableCell>
-                      <TableCell>
-                        <DeleteResponseButton surveyId={id} sessionId={s.id} />
-                      </TableCell>
+                      {canEdit && (
+                        <TableCell>
+                          <DeleteResponseButton surveyId={id} sessionId={s.id} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

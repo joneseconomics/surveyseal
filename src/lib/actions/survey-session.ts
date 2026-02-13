@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { revalidatePath } from "next/cache";
 import { updateRatings } from "@/lib/cj/scoring";
 
@@ -9,8 +10,10 @@ export async function deleteSession(surveyId: string, sessionId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  await requireAccess(surveyId, session.user.id, "editor");
+
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     select: { id: true, type: true },
   });
 

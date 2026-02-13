@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
@@ -15,8 +16,14 @@ export default async function SurveyLayout({
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
+  try {
+    await requireAccess(id, session.user.id, "viewer");
+  } catch {
+    notFound();
+  }
+
   const survey = await db.survey.findUnique({
-    where: { id, ownerId: session.user.id },
+    where: { id },
     select: { id: true, title: true, status: true, type: true },
   });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getAccessLevel } from "@/lib/access";
 import { Prisma } from "@/generated/prisma/client";
 import { getServerSupabase, BUCKET } from "@/lib/supabase";
 
@@ -34,11 +35,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "surveyId required" }, { status: 400 });
     }
 
-    const survey = await db.survey.findUnique({
-      where: { id: surveyId, ownerId: session.user.id },
-      select: { id: true },
-    });
-    if (!survey) {
+    const access = await getAccessLevel(surveyId, session.user.id);
+    if (!access || access === "viewer") {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 

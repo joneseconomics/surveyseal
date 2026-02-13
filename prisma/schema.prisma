@@ -102,6 +102,11 @@ enum VerificationStatus {
   PARTIAL
 }
 
+enum CollaboratorRole {
+  VIEWER
+  EDITOR
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -117,6 +122,7 @@ model User {
   authSessions   AuthSession[]
   surveys        Survey[]
   surveySessions SurveySession[]
+  collaborations SurveyCollaborator[]
 
   @@map("users")
 }
@@ -154,10 +160,11 @@ model Survey {
 
   authProviders       String[] @default([]) @map("auth_providers")
 
-  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  questions Question[]
-  sessions  SurveySession[]
-  cjItems   CJItem[]
+  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  questions     Question[]
+  sessions      SurveySession[]
+  cjItems       CJItem[]
+  collaborators SurveyCollaborator[]
 
   @@map("surveys")
 }
@@ -291,4 +298,20 @@ model Comparison {
 
   @@unique([sessionId, position])
   @@map("comparisons")
+}
+
+model SurveyCollaborator {
+  id         String           @id @default(cuid())
+  surveyId   String           @map("survey_id")
+  userId     String?          @map("user_id")
+  email      String
+  role       CollaboratorRole @default(VIEWER)
+  invitedAt  DateTime         @default(now()) @map("invited_at")
+  acceptedAt DateTime?        @map("accepted_at")
+
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([surveyId, email])
+  @@map("survey_collaborators")
 }

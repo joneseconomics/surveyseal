@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getAccessLevel } from "@/lib/access";
 import { fetchCourses } from "@/lib/canvas";
 
 export async function GET(req: NextRequest) {
@@ -15,8 +16,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "surveyId is required" }, { status: 400 });
     }
 
+    const access = await getAccessLevel(surveyId, session.user.id);
+    if (!access || access === "viewer") {
+      return NextResponse.json({ error: "Survey not found" }, { status: 404 });
+    }
+
     const survey = await db.survey.findUnique({
-      where: { id: surveyId, ownerId: session.user.id },
+      where: { id: surveyId },
       select: { canvasBaseUrl: true, canvasApiToken: true },
     });
 

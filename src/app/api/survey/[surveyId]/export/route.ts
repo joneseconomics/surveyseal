@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getAccessLevel } from "@/lib/access";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -12,8 +13,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const access = await getAccessLevel(surveyId, session.user.id);
+  if (!access) {
+    return NextResponse.json({ error: "Survey not found" }, { status: 404 });
+  }
+
   const survey = await db.survey.findUnique({
-    where: { id: surveyId, ownerId: session.user.id },
+    where: { id: surveyId },
     select: { id: true, type: true },
   });
 

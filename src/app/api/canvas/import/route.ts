@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getAccessLevel } from "@/lib/access";
 import { Prisma } from "@/generated/prisma/client";
 import { fetchSubmissions, downloadFile } from "@/lib/canvas";
 import { getServerSupabase, BUCKET, getCJFilePath, getPublicUrl } from "@/lib/supabase";
@@ -22,8 +23,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { surveyId, courseId, assignmentId } = requestSchema.parse(body);
 
+    const access = await getAccessLevel(surveyId, session.user.id);
+    if (!access || access === "viewer") {
+      return NextResponse.json({ error: "Survey not found" }, { status: 404 });
+    }
+
     const survey = await db.survey.findUnique({
-      where: { id: surveyId, ownerId: session.user.id },
+      where: { id: surveyId },
       select: { canvasBaseUrl: true, canvasApiToken: true },
     });
 

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +18,10 @@ export default async function RankingsPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
+  await requireAccess(id, session.user.id, "viewer");
+
   const survey = await db.survey.findUnique({
-    where: { id, ownerId: session.user.id },
+    where: { id },
     select: { type: true, comparisonsPerJudge: true },
   });
 

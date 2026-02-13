@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { ExternalLink, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { TapInCard } from "@/components/dashboard/tapin-card";
 import { AuthSettingsCard } from "@/components/dashboard/auth-settings-card";
 import { CanvasSettings } from "@/components/dashboard/canvas-settings";
 import { CJComparisonSettingsCard } from "@/components/dashboard/cj-comparison-settings-card";
+import { SharingCard } from "@/components/dashboard/sharing-card";
 
 export default async function SurveySettingsPage({
   params,
@@ -17,8 +19,10 @@ export default async function SurveySettingsPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
+  const accessLevel = await requireAccess(id, session.user.id, "viewer");
+
   const survey = await db.survey.findUnique({
-    where: { id, ownerId: session.user.id },
+    where: { id },
     select: {
       id: true,
       type: true,
@@ -35,12 +39,22 @@ export default async function SurveySettingsPage({
       cjSubtype: true,
       questions: { where: { isVerificationPoint: true }, select: { id: true } },
       _count: { select: { cjItems: true } },
+      collaborators: {
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          acceptedAt: true,
+        },
+        orderBy: { invitedAt: "asc" },
+      },
     },
   });
 
   if (!survey) notFound();
 
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
+  const isOwner = accessLevel === "owner";
 
   return (
     <div className="space-y-6">
@@ -50,6 +64,16 @@ export default async function SurveySettingsPage({
           Configure verification and respondent settings for this survey.
         </p>
       </div>
+
+      {isOwner && (
+        <SharingCard
+          surveyId={survey.id}
+          collaborators={survey.collaborators.map((c) => ({
+            ...c,
+            acceptedAt: c.acceptedAt?.toISOString() ?? null,
+          }))}
+        />
+      )}
 
       <AuthSettingsCard
         surveyId={survey.id}

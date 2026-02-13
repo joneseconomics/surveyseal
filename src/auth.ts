@@ -34,5 +34,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Default role is set in Prisma schema, but we can log here
       console.log(`[Auth] New user created: ${user.email}`);
     },
+    async signIn({ user }) {
+      // Auto-link pending collaborator invitations to the signing-in user
+      if (user.id && user.email) {
+        try {
+          await db.surveyCollaborator.updateMany({
+            where: {
+              email: user.email.toLowerCase(),
+              userId: null,
+            },
+            data: {
+              userId: user.id,
+              acceptedAt: new Date(),
+            },
+          });
+        } catch (err) {
+          console.error("[Auth] Failed to auto-link collaborator invitations:", err);
+        }
+      }
+    },
   },
 });
