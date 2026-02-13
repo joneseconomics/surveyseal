@@ -72,6 +72,7 @@ async function exportCJComparisons(surveyId: string) {
           participantEmail: true,
           verificationStatus: true,
           botScore: true,
+          judgeDemographics: true,
         },
       },
       leftItem: { select: { label: true } },
@@ -84,6 +85,12 @@ async function exportCJComparisons(surveyId: string) {
   const headers = [
     "session_id",
     "participant_email",
+    "judge_title",
+    "judge_employer",
+    "judge_city",
+    "judge_state",
+    "has_hiring_experience",
+    "hiring_roles",
     "left_item",
     "right_item",
     "winner",
@@ -93,9 +100,16 @@ async function exportCJComparisons(surveyId: string) {
   ];
 
   const rows = comparisons.map((c) => {
+    const demo = (c.session.judgeDemographics as Record<string, unknown>) ?? {};
     const values = [
       c.session.id,
       c.session.participantEmail ?? "",
+      (demo.jobTitle as string) ?? "",
+      (demo.employer as string) ?? "",
+      (demo.city as string) ?? "",
+      (demo.state as string) ?? "",
+      demo.hasHiringExperience === true ? "true" : demo.hasHiringExperience === false ? "false" : "",
+      Array.isArray(demo.hiringRoles) ? (demo.hiringRoles as string[]).join(";") : "",
       c.leftItem.label,
       c.rightItem.label,
       c.winner?.label ?? "",

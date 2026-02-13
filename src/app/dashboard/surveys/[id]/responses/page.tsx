@@ -12,10 +12,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, CheckCircle, Clock } from "lucide-react";
+import { Download } from "lucide-react";
 import { ResponseSummary } from "@/components/dashboard/response-summary";
 import { ReconcileButton } from "@/components/dashboard/reconcile-button";
 import { DeleteResponseButton } from "@/components/dashboard/delete-response-button";
+
+interface JudgeDemographics {
+  jobTitle?: string;
+  employer?: string;
+  city?: string;
+  state?: string;
+  hasHiringExperience?: boolean;
+  hiringRoles?: string[];
+}
 
 export default async function ResponsesPage({
   params,
@@ -38,6 +47,7 @@ export default async function ResponsesPage({
           startedAt: true,
           participantEmail: true,
           botScore: true,
+          judgeDemographics: true,
           verificationPoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
           tapinTaps: { select: { id: true } },
@@ -50,9 +60,9 @@ export default async function ResponsesPage({
 
   if (!survey) notFound();
 
-  const totalVerificationPoints = survey.questions.length;
   const hasTapInKey = !!survey.tapinApiKey;
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
+  const isResumes = isCJ && survey.cjSubtype === "RESUMES";
 
   return (
     <div className="space-y-6">
@@ -89,12 +99,12 @@ export default async function ResponsesPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Participant</TableHead>
+                  <TableHead>{isResumes ? "Judge" : "Participant"}</TableHead>
                   <TableHead>Verification</TableHead>
                   <TableHead>Bot Risk</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Verification Points</TableHead>
                   <TableHead>{isCJ ? "Comparisons" : "Responses"}</TableHead>
+                  {isResumes && <TableHead>Hiring Exp.</TableHead>}
                   {hasTapInKey && <TableHead>TapIn Taps</TableHead>}
                   <TableHead>Started</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -102,13 +112,26 @@ export default async function ResponsesPage({
               </TableHeader>
               <TableBody>
                 {survey.sessions.map((s) => {
-                  const validatedCount = s.verificationPoints.filter(
-                    (cp) => cp.validatedAt !== null
-                  ).length;
+                  const demo = (s.judgeDemographics as JudgeDemographics) ?? {};
+                  const locationParts = [demo.city, demo.state].filter(Boolean);
+                  const subtitle = [
+                    demo.jobTitle && demo.employer
+                      ? `${demo.jobTitle} at ${demo.employer}`
+                      : demo.jobTitle || demo.employer || null,
+                    locationParts.length > 0 ? locationParts.join(", ") : null,
+                  ].filter(Boolean).join(" · ");
+
                   return (
                     <TableRow key={s.id}>
-                      <TableCell className="text-xs">
-                        {s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
+                      <TableCell>
+                        <div>
+                          <p className="text-xs">
+                            {s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
+                          </p>
+                          {isResumes && subtitle && (
+                            <p className="text-xs text-muted-foreground">{subtitle}</p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <VerificationBadge status={s.verificationStatus} />
@@ -120,18 +143,19 @@ export default async function ResponsesPage({
                         <StatusBadge status={s.status} />
                       </TableCell>
                       <TableCell>
-                        <span className="flex items-center gap-1">
-                          {validatedCount === totalVerificationPoints ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          {validatedCount}/{totalVerificationPoints}
-                        </span>
-                      </TableCell>
-                      <TableCell>
                         {isCJ ? s._count.comparisons : s.responses.length}
                       </TableCell>
+                      {isResumes && (
+                        <TableCell>
+                          {demo.hasHiringExperience === true ? (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Yes</Badge>
+                          ) : demo.hasHiringExperience === false ? (
+                            <Badge variant="outline">No</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                          )}
+                        </TableCell>
+                      )}
                       {hasTapInKey && (
                         <TableCell>
                           {s.tapinTaps.length > 0
