@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getSurveySessionId } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ExitSurveyButtons } from "@/components/survey/exit-survey-buttons";
 import { VerificationGate } from "@/components/survey/verification-gate";
 import { QuestionRenderer } from "@/components/survey/question-renderer";
 import { SubmitSurvey } from "@/components/survey/submit-survey";
@@ -204,6 +205,7 @@ export default async function SurveyQuestionPage({
                 <ChevronRight className="h-4 w-4" />
               </span>
             )}
+            <ExitSurveyButtons surveyId={surveyId} />
           </div>
         </div>
       </div>

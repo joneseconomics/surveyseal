@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { File, Download, ExternalLink, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExitSurveyButtons } from "@/components/survey/exit-survey-buttons";
 import { DocxViewer } from "@/components/survey/docx-viewer";
 import {
   Dialog,
@@ -174,6 +175,7 @@ export function ComparisonView({
               <span>Go Forward</span>
               <ChevronRight className="h-4 w-4" />
             </button>
+            <ExitSurveyButtons surveyId={surveyId} />
           </div>
 
           {/* Prompt */}

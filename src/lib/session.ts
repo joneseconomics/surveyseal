@@ -18,3 +18,11 @@ export async function setSurveySessionId(surveyId: string, sessionId: string) {
     maxAge: 60 * 60 * 4, // 4 hours
   });
 }
+
+export async function clearSurveySessionId(surveyId: string) {
+  const cookieStore = await cookies();
+  cookieStore.delete({
+    name: `${COOKIE_NAME}_${surveyId}`,
+    path: `/s/${surveyId}`,
+  });
+}
