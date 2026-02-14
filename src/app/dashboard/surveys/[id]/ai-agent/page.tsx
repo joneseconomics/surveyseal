@@ -31,24 +31,38 @@ export default async function AiAgentPage({
 
   if (!survey) notFound();
 
-  const runs = await db.aiAgentRun.findMany({
-    where: { surveyId: id },
-    orderBy: { startedAt: "desc" },
-    take: 20,
-    select: {
-      id: true,
-      provider: true,
-      model: true,
-      persona: true,
-      sessionCount: true,
-      completedCount: true,
-      failedCount: true,
-      status: true,
-      startedAt: true,
-      completedAt: true,
-      errorLog: true,
-    },
-  });
+  const [runs, judgePersonas] = await Promise.all([
+    db.aiAgentRun.findMany({
+      where: { surveyId: id },
+      orderBy: { startedAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        provider: true,
+        model: true,
+        persona: true,
+        sessionCount: true,
+        completedCount: true,
+        failedCount: true,
+        status: true,
+        startedAt: true,
+        completedAt: true,
+        errorLog: true,
+      },
+    }),
+    db.judgePersona.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        description: true,
+        cvFileName: true,
+        createdAt: true,
+        createdBy: { select: { name: true, email: true } },
+      },
+    }),
+  ]);
 
   return (
     <AiAgentPanel
@@ -61,6 +75,10 @@ export default async function AiAgentPage({
       savedModel={survey.aiModel}
       canEdit={canEdit}
       initialRuns={runs}
+      initialJudgePersonas={judgePersonas.map((j) => ({
+        ...j,
+        createdAt: j.createdAt.toISOString(),
+      }))}
     />
   );
 }

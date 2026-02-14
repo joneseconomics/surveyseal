@@ -124,6 +124,7 @@ model User {
   surveySessions SurveySession[]
   collaborations SurveyCollaborator[]
   aiAgentRuns    AiAgentRun[]
+  judgePersonas  JudgePersona[]
 
   @@map("users")
 }
@@ -353,4 +354,20 @@ model AiAgentRun {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ai_agent_runs")
+}
+
+model JudgePersona {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  description String   @db.Text
+  cvText      String   @map("cv_text") @db.Text
+  cvFileName  String   @map("cv_file_name")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("judge_personas")
 }

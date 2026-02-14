@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,9 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2 } from "lucide-react";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
-import { AI_PERSONAS } from "@/lib/ai/personas";
+import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
+import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
 import {
   updateAiSettings,
   createAiAgentRun,
@@ -41,6 +44,16 @@ interface AiAgentRun {
   errorLog: string | null;
 }
 
+export interface JudgePersona {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  cvFileName: string;
+  createdAt: string;
+  createdBy?: { name: string | null; email: string | null };
+}
+
 interface AiAgentPanelProps {
   surveyId: string;
   surveyTitle: string;
@@ -51,6 +64,7 @@ interface AiAgentPanelProps {
   savedModel: string | null;
   canEdit: boolean;
   initialRuns: AiAgentRun[];
+  initialJudgePersonas?: JudgePersona[];
 }
 
 interface ProgressState {
@@ -72,6 +86,7 @@ export function AiAgentPanel({
   savedModel,
   canEdit,
   initialRuns,
+  initialJudgePersonas = [],
 }: AiAgentPanelProps) {
   // Config state
   const [provider, setProvider] = useState(savedProvider ?? "openai");
@@ -82,9 +97,34 @@ export function AiAgentPanel({
   const [saveMessage, setSaveMessage] = useState("");
 
   // Run state
-  const [persona, setPersona] = useState(AI_PERSONAS[0].id);
+  const [personaMode, setPersonaMode] = useState<"preset" | "personahub" | "custom" | "judge">("preset");
+  const [presetPersona, setPresetPersona] = useState(AI_PERSONAS[0].id);
+  const [phQuery, setPhQuery] = useState("");
+  const [phResults, setPhResults] = useState<{ index: number; persona: string }[]>([]);
+  const [phSelected, setPhSelected] = useState<string | null>(null);
+  const [phSearching, setPhSearching] = useState(false);
+  const [customPersona, setCustomPersona] = useState("");
   const [sessionCount, setSessionCount] = useState(1);
   const [runs, setRuns] = useState<AiAgentRun[]>(initialRuns);
+
+  // Judge state
+  const [judgePersonas, setJudgePersonas] = useState<JudgePersona[]>(initialJudgePersonas);
+  const [selectedJudge, setSelectedJudge] = useState<string | null>(
+    initialJudgePersonas.length > 0 ? initialJudgePersonas[0].id : null,
+  );
+  const [addJudgeOpen, setAddJudgeOpen] = useState(false);
+
+  // Compute the effective persona value based on the selected mode
+  const persona =
+    personaMode === "preset"
+      ? presetPersona
+      : personaMode === "personahub"
+        ? phSelected ? `personahub:${phSelected}` : ""
+        : personaMode === "judge"
+          ? selectedJudge ? `judge:${selectedJudge}` : ""
+          : customPersona.trim() ? `custom:${customPersona.trim()}` : "";
+
+  const personaValid = persona.length > 0;
 
   // Progress state
   const [progress, setProgress] = useState<ProgressState>({
@@ -123,8 +163,48 @@ export function AiAgentPanel({
     }
   }, [apiKey, hasApiKey, surveyId, provider, effectiveModel]);
 
+  const handlePersonaHubSearch = useCallback(async () => {
+    if (!phQuery.trim() || phSearching) return;
+    setPhSearching(true);
+    setPhResults([]);
+    setPhSelected(null);
+    try {
+      const res = await fetch(`/api/ai/persona-search?q=${encodeURIComponent(phQuery.trim())}&limit=20`);
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      setPhResults(data.results ?? []);
+    } catch {
+      setPhResults([]);
+    } finally {
+      setPhSearching(false);
+    }
+  }, [phQuery, phSearching]);
+
+  const handleCreateJudge = useCallback((newPersona: JudgePersona) => {
+    setJudgePersonas((prev) => [newPersona, ...prev]);
+    setSelectedJudge(newPersona.id);
+  }, []);
+
+  const handleDeleteJudge = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/ai/judge-personas/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to delete");
+        return;
+      }
+      setJudgePersonas((prev) => prev.filter((p) => p.id !== id));
+      if (selectedJudge === id) {
+        const remaining = judgePersonas.filter((p) => p.id !== id);
+        setSelectedJudge(remaining.length > 0 ? remaining[0].id : null);
+      }
+    } catch {
+      alert("Failed to delete judge persona");
+    }
+  }, [selectedJudge, judgePersonas]);
+
   const handleRun = useCallback(async () => {
-    if (!hasApiKey || progress.running) return;
+    if (!hasApiKey || progress.running || !personaValid) return;
     if (surveyStatus !== "LIVE") return;
 
     // Save provider/model before running
@@ -138,6 +218,11 @@ export function AiAgentPanel({
     } catch {
       // Continue anyway
     }
+
+    // Resolve display name for run history
+    const displayName = personaMode === "judge"
+      ? judgePersonas.find((j) => j.id === selectedJudge)?.name ?? "Judge Persona"
+      : resolvePersonaName(persona);
 
     setProgress({
       running: true,
@@ -258,13 +343,12 @@ export function AiAgentPanel({
       await completeAiAgentRun({ runId, surveyId });
 
       // Refresh runs list
-      const personaObj = AI_PERSONAS.find((p) => p.id === persona);
       setRuns((prev) => [
         {
           id: runId,
           provider,
           model: effectiveModel,
-          persona: personaObj?.name ?? persona,
+          persona: displayName,
           sessionCount,
           completedCount: sessionCount,
           failedCount: 0,
@@ -284,7 +368,7 @@ export function AiAgentPanel({
         status: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
       }));
     }
-  }, [hasApiKey, progress.running, surveyStatus, surveyId, provider, effectiveModel, persona, sessionCount, surveyTitle, surveyType]);
+  }, [hasApiKey, progress.running, personaValid, surveyStatus, surveyId, provider, effectiveModel, persona, sessionCount, surveyTitle, surveyType, personaMode, judgePersonas, selectedJudge]);
 
   const isLive = surveyStatus === "LIVE";
 
@@ -388,19 +472,149 @@ export function AiAgentPanel({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Persona</Label>
-            <Select value={persona} onValueChange={setPersona} disabled={!canEdit || progress.running}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {AI_PERSONAS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    <span>{p.name}</span>
-                    <span className="text-muted-foreground ml-2 text-xs">— {p.description}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Tabs value={personaMode} onValueChange={(v) => setPersonaMode(v as typeof personaMode)}>
+              <TabsList className="w-full">
+                <TabsTrigger value="preset" disabled={progress.running}>Preset</TabsTrigger>
+                <TabsTrigger value="personahub" disabled={progress.running} className="gap-1">
+                  <Search className="h-3 w-3" />
+                  PersonaHub
+                </TabsTrigger>
+                <TabsTrigger value="custom" disabled={progress.running} className="gap-1">
+                  <PenLine className="h-3 w-3" />
+                  Custom
+                </TabsTrigger>
+                <TabsTrigger value="judge" disabled={progress.running} className="gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Judges
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="preset">
+                <Select value={presetPersona} onValueChange={setPresetPersona} disabled={!canEdit || progress.running}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AI_PERSONAS.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <span>{p.name}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">{p.description}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+
+              <TabsContent value="personahub" className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search PersonaHub (e.g. &quot;college student&quot;)..."
+                    value={phQuery}
+                    onChange={(e) => setPhQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handlePersonaHubSearch()}
+                    disabled={phSearching || progress.running}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handlePersonaHubSearch}
+                    disabled={!phQuery.trim() || phSearching || progress.running}
+                  >
+                    {phSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {phResults.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                    {phResults.map((r) => (
+                      <label
+                        key={r.index}
+                        className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                          phSelected === r.persona ? "bg-muted" : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="ph-persona"
+                          className="mt-1 shrink-0"
+                          checked={phSelected === r.persona}
+                          onChange={() => setPhSelected(r.persona)}
+                        />
+                        <span className="line-clamp-2">{r.persona}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {phResults.length === 0 && phQuery && !phSearching && (
+                  <p className="text-xs text-muted-foreground">No results. Try a different search term.</p>
+                )}
+              </TabsContent>
+
+              <TabsContent value="custom">
+                <Textarea
+                  placeholder="Describe your persona (e.g. &quot;A first-year medical student who is skeptical of surveys but answers thoughtfully...&quot;)"
+                  value={customPersona}
+                  onChange={(e) => setCustomPersona(e.target.value)}
+                  disabled={progress.running}
+                  rows={3}
+                />
+              </TabsContent>
+
+              <TabsContent value="judge" className="space-y-3">
+                {judgePersonas.length > 0 ? (
+                  <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
+                    {judgePersonas.map((j) => (
+                      <label
+                        key={j.id}
+                        className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                          selectedJudge === j.id ? "bg-muted" : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="judge-persona"
+                          className="mt-1 shrink-0"
+                          checked={selectedJudge === j.id}
+                          onChange={() => setSelectedJudge(j.id)}
+                          disabled={progress.running}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{j.name}</div>
+                          <div className="text-xs text-muted-foreground">{j.title}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">{j.description}</div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-red-600"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteJudge(j.id);
+                          }}
+                          disabled={progress.running}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No judge personas yet. Upload a CV to create one.
+                  </p>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1"
+                  onClick={() => setAddJudgeOpen(true)}
+                  disabled={progress.running}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Judge
+                </Button>
+              </TabsContent>
+            </Tabs>
           </div>
           <div className="space-y-2">
             <Label>Number of Sessions</Label>
@@ -429,7 +643,7 @@ export function AiAgentPanel({
           </div>
           <Button
             onClick={handleRun}
-            disabled={!canEdit || !hasApiKey || !isLive || progress.running}
+            disabled={!canEdit || !hasApiKey || !isLive || progress.running || !personaValid}
             className="w-full"
           >
             {progress.running ? (
@@ -522,6 +736,13 @@ export function AiAgentPanel({
           </CardContent>
         </Card>
       )}
+
+      {/* Add Judge Dialog */}
+      <AddJudgeDialog
+        open={addJudgeOpen}
+        onOpenChange={setAddJudgeOpen}
+        onCreate={handleCreateJudge}
+      />
     </div>
   );
 }

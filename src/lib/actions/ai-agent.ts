@@ -7,7 +7,8 @@ import { callLLM } from "@/lib/ai/llm-client";
 import { buildQuestionPrompt } from "@/lib/ai/prompt-builder";
 import { parseAndValidate } from "@/lib/ai/answer-validator";
 import { buildCJComparisonPrompt, parseCJResponse } from "@/lib/ai/cj-prompter";
-import { getPersona } from "@/lib/ai/personas";
+import { resolvePersonaPrompt } from "@/lib/ai/resolve-persona";
+import { resolvePersonaName } from "@/lib/ai/personas";
 import { selectNextPair, buildComparedPairKeys } from "@/lib/cj/adaptive-pairing";
 import { updateRatings } from "@/lib/cj/scoring";
 import { revalidatePath } from "next/cache";
@@ -106,7 +107,17 @@ export async function createAiSession(data: {
 
   if (!survey) throw new Error("Survey not found");
 
-  const personaName = getPersona(data.persona)?.name ?? data.persona;
+  let personaName = resolvePersonaName(data.persona);
+
+  // For judge personas, resolve the actual name from DB
+  if (data.persona.startsWith("judge:")) {
+    const judgeId = data.persona.slice("judge:".length);
+    const judge = await db.judgePersona.findUnique({
+      where: { id: judgeId },
+      select: { name: true },
+    });
+    if (judge) personaName = judge.name;
+  }
 
   const surveySession = await db.surveySession.create({
     data: {
@@ -186,8 +197,7 @@ export async function executeAiQuestion(data: {
   });
   if (!survey?.aiApiKey) throw new Error("AI API key not configured");
 
-  const persona = getPersona(data.persona);
-  const systemPrompt = persona?.systemPrompt ?? "You are a survey respondent.";
+  const systemPrompt = await resolvePersonaPrompt(data.persona);
 
   const questionType = data.questionType as import("@/generated/prisma/client").QuestionType;
   const content = data.questionContent as { text?: string; options?: string[]; scale?: { min: number; max: number; minLabel?: string; maxLabel?: string }; rows?: string[]; columns?: string[]; min?: number; max?: number; step?: number };
@@ -330,8 +340,7 @@ export async function executeAiComparison(data: {
   const leftItem = survey.cjItems.find((i) => i.id === pair.left.id)!;
   const rightItem = survey.cjItems.find((i) => i.id === pair.right.id)!;
 
-  const persona = getPersona(data.persona);
-  const systemPrompt = persona?.systemPrompt ?? "You are a judge in a comparative study.";
+  const systemPrompt = await resolvePersonaPrompt(data.persona);
 
   const messages = buildCJComparisonPrompt(
     systemPrompt,
