@@ -474,7 +474,7 @@ export function AiAgentPanel({
             <Label>Persona</Label>
             <Tabs value={personaMode} onValueChange={(v) => setPersonaMode(v as typeof personaMode)}>
               <TabsList className="w-full">
-                <TabsTrigger value="preset" disabled={progress.running}>Preset</TabsTrigger>
+                <TabsTrigger value="preset" disabled={progress.running}>SurveySeal Catalog</TabsTrigger>
                 <TabsTrigger value="personahub" disabled={progress.running} className="gap-1">
                   <Search className="h-3 w-3" />
                   PersonaHub
