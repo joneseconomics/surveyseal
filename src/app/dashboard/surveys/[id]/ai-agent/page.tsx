@@ -16,18 +16,23 @@ export default async function AiAgentPage({
   const accessLevel = await requireAccess(id, session.user.id, "viewer");
   const canEdit = accessLevel === "owner" || accessLevel === "editor";
 
-  const survey = await db.survey.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      status: true,
-      aiApiKey: true,
-      aiProvider: true,
-      aiModel: true,
-    },
-  });
+  const [survey, user] = await Promise.all([
+    db.survey.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        status: true,
+        aiProvider: true,
+        aiModel: true,
+      },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { aiApiKey: true },
+    }),
+  ]);
 
   if (!survey) notFound();
 
@@ -70,7 +75,7 @@ export default async function AiAgentPage({
       surveyTitle={survey.title}
       surveyType={survey.type}
       surveyStatus={survey.status}
-      hasApiKey={!!survey.aiApiKey}
+      hasApiKey={!!user?.aiApiKey}
       savedProvider={survey.aiProvider}
       savedModel={survey.aiModel}
       canEdit={canEdit}

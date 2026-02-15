@@ -27,10 +27,17 @@ export async function updateAiSettings(data: {
 
   await requireAccess(data.surveyId, session.user.id, "editor");
 
+  // Save API key to user (private per-user), provider/model to survey (shared)
+  if (data.aiApiKey !== "__KEEP__") {
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { aiApiKey: data.aiApiKey },
+    });
+  }
+
   await db.survey.update({
     where: { id: data.surveyId },
     data: {
-      ...(data.aiApiKey !== "__KEEP__" && { aiApiKey: data.aiApiKey }),
       aiProvider: data.aiProvider,
       aiModel: data.aiModel,
     },
@@ -53,13 +60,19 @@ export async function createAiAgentRun(data: {
 
   await requireAccess(data.surveyId, session.user.id, "editor");
 
-  const survey = await db.survey.findUnique({
-    where: { id: data.surveyId },
-    select: { aiApiKey: true, status: true },
-  });
+  const [user, survey] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { aiApiKey: true },
+    }),
+    db.survey.findUnique({
+      where: { id: data.surveyId },
+      select: { status: true },
+    }),
+  ]);
 
   if (!survey) throw new Error("Survey not found");
-  if (!survey.aiApiKey) throw new Error("AI API key not configured");
+  if (!user?.aiApiKey) throw new Error("AI API key not configured");
   if (survey.status !== "LIVE") throw new Error("Survey must be live to run AI agent");
 
   const run = await db.aiAgentRun.create({
@@ -191,11 +204,11 @@ export async function executeAiQuestion(data: {
     return { success: true, skipped: true };
   }
 
-  const survey = await db.survey.findUnique({
-    where: { id: data.surveyId },
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
     select: { aiApiKey: true },
   });
-  if (!survey?.aiApiKey) throw new Error("AI API key not configured");
+  if (!user?.aiApiKey) throw new Error("AI API key not configured");
 
   const systemPrompt = await resolvePersonaPrompt(data.persona);
 
@@ -210,7 +223,7 @@ export async function executeAiQuestion(data: {
     content,
   );
 
-  let llmResponse = await callLLM(data.provider, data.model, survey.aiApiKey, messages);
+  let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
   let validation = parseAndValidate(llmResponse.content, questionType, content);
 
   // Retry once on validation failure
@@ -222,7 +235,7 @@ export async function executeAiQuestion(data: {
       content,
       validation.error,
     );
-    llmResponse = await callLLM(data.provider, data.model, survey.aiApiKey, retryMessages);
+    llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
     validation = parseAndValidate(llmResponse.content, questionType, content);
 
     if (!validation.valid) {
@@ -267,21 +280,27 @@ export async function executeAiComparison(data: {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const survey = await db.survey.findUnique({
-    where: { id: data.surveyId },
-    select: {
-      aiApiKey: true,
-      cjItems: {
-        select: { id: true, mu: true, sigmaSq: true, comparisonCount: true, label: true, content: true },
+  const [user, survey] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { aiApiKey: true },
+    }),
+    db.survey.findUnique({
+      where: { id: data.surveyId },
+      select: {
+        cjItems: {
+          select: { id: true, mu: true, sigmaSq: true, comparisonCount: true, label: true, content: true },
+        },
+        questions: {
+          where: { isVerificationPoint: true },
+          select: { id: true, position: true },
+          orderBy: { position: "asc" },
+        },
       },
-      questions: {
-        where: { isVerificationPoint: true },
-        select: { id: true, position: true },
-        orderBy: { position: "asc" },
-      },
-    },
-  });
-  if (!survey?.aiApiKey) throw new Error("AI API key not configured");
+    }),
+  ]);
+  if (!user?.aiApiKey) throw new Error("AI API key not configured");
+  if (!survey) throw new Error("Survey not found");
 
   // Check if this index hits a verification point
   const vpPositions = getVPPositions(survey.questions.length, data.comparisonIndex);
@@ -351,7 +370,7 @@ export async function executeAiComparison(data: {
     { label: rightItem.label, content: rightItem.content as Record<string, string> },
   );
 
-  let llmResponse = await callLLM(data.provider, data.model, survey.aiApiKey, messages);
+  let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
   let result = parseCJResponse(llmResponse.content);
 
   // Retry once
@@ -365,7 +384,7 @@ export async function executeAiComparison(data: {
       { label: rightItem.label, content: rightItem.content as Record<string, string> },
       "Response must be exactly {\"winner\": \"A\"} or {\"winner\": \"B\"}",
     );
-    llmResponse = await callLLM(data.provider, data.model, survey.aiApiKey, retryMessages);
+    llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
     result = parseCJResponse(llmResponse.content);
 
     if (!result) {
@@ -550,22 +569,27 @@ export async function getAiSettings(surveyId: string) {
 
   await requireAccess(surveyId, session.user.id, "viewer");
 
-  const survey = await db.survey.findUnique({
-    where: { id: surveyId },
-    select: {
-      aiApiKey: true,
-      aiProvider: true,
-      aiModel: true,
-      title: true,
-      type: true,
-      status: true,
-    },
-  });
+  const [user, survey] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { aiApiKey: true },
+    }),
+    db.survey.findUnique({
+      where: { id: surveyId },
+      select: {
+        aiProvider: true,
+        aiModel: true,
+        title: true,
+        type: true,
+        status: true,
+      },
+    }),
+  ]);
 
   if (!survey) throw new Error("Survey not found");
 
   return {
-    hasApiKey: !!survey.aiApiKey,
+    hasApiKey: !!user?.aiApiKey,
     aiProvider: survey.aiProvider,
     aiModel: survey.aiModel,
     title: survey.title,

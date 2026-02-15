@@ -115,6 +115,7 @@ model User {
   image         String?
   role          Role      @default(RESEARCHER)
   institution   String?
+  aiApiKey      String?   @map("ai_api_key")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -162,7 +163,6 @@ model Survey {
 
   authProviders       String[] @default([]) @map("auth_providers")
 
-  aiApiKey    String? @map("ai_api_key")
   aiProvider  String? @map("ai_provider")
   aiModel     String? @map("ai_model")
 

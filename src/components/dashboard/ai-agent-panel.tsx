@@ -452,7 +452,7 @@ export function AiAgentPanel({
               </p>
             )}
             {hasApiKey && !apiKey && (
-              <p className="text-xs text-muted-foreground">API key is configured. Enter a new key to update.</p>
+              <p className="text-xs text-muted-foreground">Your API key is configured. Enter a new key to update.</p>
             )}
           </div>
         </CardContent>
@@ -662,7 +662,7 @@ export function AiAgentPanel({
             <p className="text-xs text-muted-foreground">Survey must be live to run the AI agent.</p>
           )}
           {!hasApiKey && isLive && (
-            <p className="text-xs text-muted-foreground">Configure an API key above first.</p>
+            <p className="text-xs text-muted-foreground">Configure your API key above first.</p>
           )}
         </CardContent>
       </Card>
