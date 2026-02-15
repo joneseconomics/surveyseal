@@ -15,10 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2 } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2, FileText } from "lucide-react";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
 import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
 import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
+import { CatalogPersonaDialog } from "@/components/dashboard/catalog-persona-dialog";
 import {
   updateAiSettings,
   createAiAgentRun,
@@ -113,6 +114,10 @@ export function AiAgentPanel({
     initialJudgePersonas.length > 0 ? initialJudgePersonas[0].id : null,
   );
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
+
+  // Catalog detail dialog state
+  const [catalogDetailSlug, setCatalogDetailSlug] = useState<string | null>(null);
+  const [catalogDetailOpen, setCatalogDetailOpen] = useState(false);
 
   // Compute the effective persona value based on the selected mode
   const persona =
@@ -490,19 +495,49 @@ export function AiAgentPanel({
               </TabsList>
 
               <TabsContent value="preset">
-                <Select value={presetPersona} onValueChange={setPresetPersona} disabled={!canEdit || progress.running}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AI_PERSONAS.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span>{p.name}</span>
-                        <span className="text-muted-foreground ml-2 text-xs">{p.description}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
+                  {AI_PERSONAS.map((p) => (
+                    <label
+                      key={p.id}
+                      className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                        presetPersona === p.id ? "bg-muted" : ""
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="preset-persona"
+                        className="mt-1 shrink-0"
+                        checked={presetPersona === p.id}
+                        onChange={() => setPresetPersona(p.id)}
+                        disabled={!canEdit || progress.running}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{p.name}</div>
+                        {p.title && (
+                          <div className="text-xs text-muted-foreground">
+                            {p.title}{p.employer ? ` · ${p.employer}` : ""}{p.location ? ` · ${p.location}` : ""}
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground line-clamp-1">{p.description}</div>
+                      </div>
+                      {p.catalogSlug && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setCatalogDetailSlug(p.catalogSlug!);
+                            setCatalogDetailOpen(true);
+                          }}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </label>
+                  ))}
+                </div>
               </TabsContent>
 
               <TabsContent value="personahub" className="space-y-3">
@@ -743,6 +778,15 @@ export function AiAgentPanel({
         onOpenChange={setAddJudgeOpen}
         onCreate={handleCreateJudge}
       />
+
+      {/* Catalog Persona Detail Dialog */}
+      {catalogDetailSlug && (
+        <CatalogPersonaDialog
+          open={catalogDetailOpen}
+          onOpenChange={setCatalogDetailOpen}
+          slug={catalogDetailSlug}
+        />
+      )}
     </div>
   );
 }
