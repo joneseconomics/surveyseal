@@ -47,7 +47,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   {
     id: "linkedin",
     name: "LinkedIn",
-    enabled: false,
+    enabled: true,
     icon: (
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path
