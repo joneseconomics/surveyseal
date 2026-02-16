@@ -42,7 +42,7 @@ import {
   failAiSession,
   completeAiAgentRun,
 } from "@/lib/actions/ai-agent";
-import { generatePersonaFromSession } from "@/lib/actions/generate-judge-persona";
+import { generatePersonaFromSession, combineSessionsIntoPersona } from "@/lib/actions/generate-judge-persona";
 
 interface AiAgentRun {
   id: string;
@@ -184,6 +184,8 @@ export function AiAgentPanel({
   // Survey judges state
   const [surveyJudges, setSurveyJudges] = useState<SurveyJudge[]>(initialSurveyJudges);
   const [generatingPersonaFor, setGeneratingPersonaFor] = useState<string | null>(null);
+  const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+  const [combining, setCombining] = useState(false);
 
   // Catalog detail dialog state
   const [catalogDetailSlug, setCatalogDetailSlug] = useState<string | null>(null);
@@ -325,7 +327,43 @@ export function AiAgentPanel({
     } finally {
       setGeneratingPersonaFor(null);
     }
-  }, [surveyId]);
+  }, [surveyId, surveyJudges]);
+
+  const handleCombineSessions = useCallback(async () => {
+    if (selectedSessions.length < 2 || combining) return;
+    setCombining(true);
+    try {
+      const result = await combineSessionsIntoPersona({ surveyId, sessionIds: selectedSessions });
+      if (!result.success) {
+        alert(result.error);
+        return;
+      }
+      const newPersona: JudgePersona = {
+        id: result.persona.id,
+        name: result.persona.name,
+        title: result.persona.title,
+        description: result.persona.description,
+        cvText: result.persona.cvText,
+        cvFileName: result.persona.cvFileName,
+        createdAt: result.persona.createdAt,
+      };
+      setJudgePersonas((prev) => [newPersona, ...prev]);
+      setSelectedJudge(newPersona.id);
+      // Mark all selected sessions as generated
+      setSurveyJudges((prev) =>
+        prev.map((j) =>
+          selectedSessions.includes(j.sessionId)
+            ? { ...j, generatedPersonaId: result.persona.id }
+            : j,
+        ),
+      );
+      setSelectedSessions([]);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to combine sessions");
+    } finally {
+      setCombining(false);
+    }
+  }, [surveyId, selectedSessions, combining]);
 
   const handleRun = useCallback(async () => {
     if (!hasApiKey || progress.running || !personaValid) return;
@@ -918,42 +956,47 @@ export function AiAgentPanel({
                       Generated Personas
                     </div>
                     <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
-                      {judgePersonas.map((jp) => (
-                        <label
-                          key={jp.id}
-                          className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
-                            selectedJudge === jp.id ? "bg-muted" : ""
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="judge-persona"
-                            className="mt-1 shrink-0"
-                            checked={selectedJudge === jp.id}
-                            onChange={() => setSelectedJudge(jp.id)}
-                            disabled={!canEdit || progress.running}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium">{jp.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {jp.title}
-                              {jp.cvFileName && ` · ${jp.cvFileName}`}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setJudgeDetailPersona(jp);
-                            }}
+                      {judgePersonas.map((jp) => {
+                        const countMatch = jp.description.match(/Comparison history \((\d+) judgments?\)/);
+                        const compCount = countMatch ? parseInt(countMatch[1]) : 0;
+                        return (
+                          <label
+                            key={jp.id}
+                            className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                              selectedJudge === jp.id ? "bg-muted" : ""
+                            }`}
                           >
-                            <FileText className="h-3.5 w-3.5" />
-                          </Button>
-                        </label>
-                      ))}
+                            <input
+                              type="radio"
+                              name="judge-persona"
+                              className="mt-1 shrink-0"
+                              checked={selectedJudge === jp.id}
+                              onChange={() => setSelectedJudge(jp.id)}
+                              disabled={!canEdit || progress.running}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium">{jp.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {jp.title}
+                                {compCount > 0 && ` · ${compCount} comparison${compCount !== 1 ? "s" : ""}`}
+                                {jp.cvFileName && ` · ${jp.cvFileName}`}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setJudgeDetailPersona(jp);
+                              }}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -961,63 +1004,98 @@ export function AiAgentPanel({
                 {/* Survey Judges — completed human judges with CVs */}
                 {surveyJudges.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Survey Judges
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Survey Judges
+                      </div>
+                      {selectedSessions.length >= 2 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 text-xs"
+                          onClick={handleCombineSessions}
+                          disabled={combining || progress.running}
+                        >
+                          {combining ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Bot className="h-3 w-3" />
+                          )}
+                          Combine {selectedSessions.length} into Persona
+                        </Button>
+                      )}
                     </div>
                     <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
-                      {surveyJudges.map((sj) => (
-                        <div
-                          key={sj.sessionId}
-                          className="flex items-center gap-2 px-3 py-2 text-sm"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium">
-                              {sj.jobTitle && sj.employer
-                                ? `${sj.jobTitle} at ${sj.employer}`
-                                : sj.jobTitle || sj.employer || sj.participantEmail || "Anonymous Judge"}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {sj.comparisonCount} comparison{sj.comparisonCount !== 1 ? "s" : ""}
-                              {sj.cvFileName && ` · ${sj.cvFileName}`}
-                            </div>
-                            {sj.completedAt && (
-                              <div className="text-xs text-muted-foreground">
-                                Completed {new Date(sj.completedAt).toLocaleString()}
-                              </div>
+                      {surveyJudges.map((sj) => {
+                        const isSelected = selectedSessions.includes(sj.sessionId);
+                        return (
+                          <div
+                            key={sj.sessionId}
+                            className="flex items-center gap-2 px-3 py-2 text-sm"
+                          >
+                            {!sj.generatedPersonaId && (
+                              <input
+                                type="checkbox"
+                                className="shrink-0"
+                                checked={isSelected}
+                                onChange={() =>
+                                  setSelectedSessions((prev) =>
+                                    isSelected
+                                      ? prev.filter((id) => id !== sj.sessionId)
+                                      : [...prev, sj.sessionId],
+                                  )
+                                }
+                                disabled={combining || progress.running}
+                              />
                             )}
-                          </div>
-                          {sj.generatedPersonaId ? (
-                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
-                              <CheckCircle className="mr-1 h-3 w-3" />
-                              Generated
-                            </Badge>
-                          ) : (() => {
-                            // Check if another session with the same email already has a persona
-                            const emailHasPersona = sj.participantEmail &&
-                              surveyJudges.some((other) =>
-                                other.sessionId !== sj.sessionId &&
-                                other.participantEmail === sj.participantEmail &&
-                                other.generatedPersonaId,
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium">
+                                {sj.jobTitle && sj.employer
+                                  ? `${sj.jobTitle} at ${sj.employer}`
+                                  : sj.jobTitle || sj.employer || sj.participantEmail || "Anonymous Judge"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {sj.comparisonCount} comparison{sj.comparisonCount !== 1 ? "s" : ""}
+                                {sj.cvFileName && ` · ${sj.cvFileName}`}
+                              </div>
+                              {sj.completedAt && (
+                                <div className="text-xs text-muted-foreground">
+                                  Completed {new Date(sj.completedAt).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                            {sj.generatedPersonaId ? (
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
+                                <CheckCircle className="mr-1 h-3 w-3" />
+                                Generated
+                              </Badge>
+                            ) : (() => {
+                              const emailHasPersona = sj.participantEmail &&
+                                surveyJudges.some((other) =>
+                                  other.sessionId !== sj.sessionId &&
+                                  other.participantEmail === sj.participantEmail &&
+                                  other.generatedPersonaId,
+                                );
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="shrink-0 gap-1"
+                                  onClick={() => handleGenerateFromSession(sj.sessionId)}
+                                  disabled={generatingPersonaFor !== null || progress.running}
+                                >
+                                  {generatingPersonaFor === sj.sessionId ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Bot className="h-3.5 w-3.5" />
+                                  )}
+                                  {emailHasPersona ? "Update Persona" : "Generate Persona"}
+                                </Button>
                               );
-                            return (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="shrink-0 gap-1"
-                                onClick={() => handleGenerateFromSession(sj.sessionId)}
-                                disabled={generatingPersonaFor !== null || progress.running}
-                              >
-                                {generatingPersonaFor === sj.sessionId ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Bot className="h-3.5 w-3.5" />
-                                )}
-                                {emailHasPersona ? "Update Persona" : "Generate Persona"}
-                              </Button>
-                            );
-                          })()}
-                        </div>
-                      ))}
+                            })()}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
