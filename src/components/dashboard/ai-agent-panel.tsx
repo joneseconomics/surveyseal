@@ -1088,6 +1088,9 @@ export function AiAgentPanel({
                       {" · "}
                       {new Date(run.startedAt).toLocaleString()}
                     </p>
+                    {run.errorLog && (
+                      <p className="text-xs text-red-600 mt-0.5">{run.errorLog}</p>
+                    )}
                   </div>
                   <RunStatusBadge status={run.status} />
                 </div>
