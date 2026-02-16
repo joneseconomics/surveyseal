@@ -26,6 +26,7 @@ interface ComparisonData {
 interface JudgeData {
   sessionId: string;
   email: string | null;
+  isAiGenerated: boolean;
   status: string;
   verificationStatus: string;
   botScore: number | null;
@@ -310,7 +311,7 @@ export function JudgesTable({ judges, items }: JudgesTableProps) {
                   <TableCell>
                     <div>
                       <p className="text-sm font-medium">
-                        {judge.email || "Anonymous"}
+                        {judge.email || (judge.isAiGenerated ? "AI" : "Anonymous")}
                       </p>
                       <p className="text-xs text-muted-foreground font-mono">
                         {judge.sessionId.slice(0, 8)}…

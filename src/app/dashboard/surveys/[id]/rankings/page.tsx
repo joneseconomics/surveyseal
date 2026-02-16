@@ -50,6 +50,7 @@ export default async function RankingsPage({
     select: {
       id: true,
       participantEmail: true,
+      isAiGenerated: true,
       status: true,
       verificationStatus: true,
       botScore: true,
@@ -184,6 +185,7 @@ export default async function RankingsPage({
   const judgeData = sessions.map((s) => ({
     sessionId: s.id,
     email: s.participantEmail,
+    isAiGenerated: s.isAiGenerated,
     status: s.status,
     verificationStatus: s.verificationStatus,
     botScore: s.botScore,
