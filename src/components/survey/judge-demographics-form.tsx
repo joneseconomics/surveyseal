@@ -153,6 +153,21 @@ export function JudgeDemographicsForm({
             </div>
           </div>
         )}
+
+        {/* CV Upload (optional) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cvFile">Upload CV / Resume (optional)</Label>
+          <Input
+            id="cvFile"
+            name="cvFile"
+            type="file"
+            accept=".pdf,.docx"
+            className="cursor-pointer"
+          />
+          <p className="text-xs text-muted-foreground">
+            PDF or DOCX. Your CV may be shared with the researcher.
+          </p>
+        </div>
       </div>
 
       <Button type="submit" size="lg" className="w-full" disabled={submitting}>

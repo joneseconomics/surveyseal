@@ -8,7 +8,7 @@ import { buildQuestionPrompt } from "@/lib/ai/prompt-builder";
 import { parseAndValidate } from "@/lib/ai/answer-validator";
 import { buildCJComparisonPrompt, parseCJResponse } from "@/lib/ai/cj-prompter";
 import { resolvePersonaPrompt } from "@/lib/ai/resolve-persona";
-import { resolvePersonaName } from "@/lib/ai/personas";
+import { resolvePersonaName, getPersona } from "@/lib/ai/personas";
 import { selectNextPair, buildComparedPairKeys } from "@/lib/cj/adaptive-pairing";
 import { updateRatings } from "@/lib/cj/scoring";
 import { revalidatePath } from "next/cache";
@@ -107,6 +107,7 @@ export async function createAiSession(data: {
     where: { id: data.surveyId },
     select: {
       type: true,
+      cjSubtype: true,
       comparisonsPerJudge: true,
       cjPrompt: true,
       cjJudgeInstructions: true,
@@ -121,15 +122,41 @@ export async function createAiSession(data: {
   if (!survey) throw new Error("Survey not found");
 
   let personaName = resolvePersonaName(data.persona);
+  let judgeDemographics: Prisma.InputJsonValue | undefined;
 
-  // For judge personas, resolve the actual name from DB
+  // For judge personas, resolve the actual name and demographics from DB
   if (data.persona.startsWith("judge:")) {
     const judgeId = data.persona.slice("judge:".length);
     const judge = await db.judgePersona.findUnique({
       where: { id: judgeId },
-      select: { name: true },
+      select: { name: true, title: true, cvText: true, cvFileName: true },
     });
-    if (judge) personaName = judge.name;
+    if (judge) {
+      personaName = judge.name;
+      if (survey.type === "COMPARATIVE_JUDGMENT" && survey.cjSubtype === "RESUMES") {
+        judgeDemographics = {
+          jobTitle: judge.title,
+          hasHiringExperience: true,
+          hiringRoles: ["hiringCommittee"],
+          cvFileName: judge.cvFileName,
+        };
+      }
+    }
+  } else {
+    // Catalog or generic persona — extract demographics from Persona data
+    const catalogPersona = getPersona(data.persona);
+    if (catalogPersona && survey.type === "COMPARATIVE_JUDGMENT" && survey.cjSubtype === "RESUMES") {
+      const locationParts = catalogPersona.location?.split(", ") ?? [];
+      judgeDemographics = {
+        jobTitle: catalogPersona.title,
+        employer: catalogPersona.employer,
+        city: locationParts[0] || undefined,
+        state: locationParts[1] || undefined,
+        hasHiringExperience: true,
+        hiringRoles: ["hiringCommittee"],
+        ...(catalogPersona.catalogSlug ? { cvSlug: catalogPersona.catalogSlug } : {}),
+      };
+    }
   }
 
   const surveySession = await db.surveySession.create({
@@ -142,6 +169,7 @@ export async function createAiSession(data: {
       aiProvider: data.provider,
       aiModel: data.model,
       aiRunId: data.runId,
+      ...(judgeDemographics ? { judgeDemographics } : {}),
     },
   });
 

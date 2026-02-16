@@ -133,7 +133,9 @@ export default async function ResponsesPage({
                       <TableCell>
                         <div>
                           <p className="text-xs">
-                            {s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
+                            {s.isAiGenerated
+                              ? s.aiPersona || <span className="text-muted-foreground">AI Agent</span>
+                              : s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
                           </p>
                           {isResumes && subtitle && (
                             <p className="text-xs text-muted-foreground">{subtitle}</p>
@@ -143,14 +145,18 @@ export default async function ResponsesPage({
                       <TableCell>
                         {s.isAiGenerated ? (
                           <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
-                            AI{s.aiPersona ? ` (${s.aiPersona})` : ""}
+                            AI
                           </Badge>
                         ) : (
                           <Badge variant="outline">Human</Badge>
                         )}
                       </TableCell>
                       <TableCell>
-                        <VerificationBadge status={s.verificationStatus} />
+                        {s.isAiGenerated ? (
+                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">AI</Badge>
+                        ) : (
+                          <VerificationBadge status={s.verificationStatus} />
+                        )}
                       </TableCell>
                       <TableCell>
                         <BotRiskBadge score={s.botScore} />

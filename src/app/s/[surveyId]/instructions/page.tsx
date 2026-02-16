@@ -8,6 +8,7 @@ import Link from "next/link";
 import { DocxViewer } from "@/components/survey/docx-viewer";
 import { JudgeDemographicsForm } from "@/components/survey/judge-demographics-form";
 import { InstructionsFlow } from "@/components/survey/instructions-flow";
+import { getServerSupabase, BUCKET } from "@/lib/supabase";
 
 export default async function InstructionsPage({
   params,
@@ -61,6 +62,24 @@ export default async function InstructionsPage({
     const hasHiringExperience = formData.get("hasHiringExperience") === "yes";
     const hiringRoles = formData.getAll("hiringRoles") as string[];
 
+    // Handle optional CV upload
+    let cvFileUrl: string | undefined;
+    let cvFileName: string | undefined;
+    const cvFile = formData.get("cvFile") as File | null;
+    if (cvFile && cvFile.size > 0) {
+      const supabase = getServerSupabase();
+      const sanitized = cvFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `judge-cvs/${sid}-${sanitized}`;
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, cvFile, { contentType: cvFile.type, upsert: true });
+      if (!error) {
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        cvFileUrl = urlData.publicUrl;
+        cvFileName = cvFile.name;
+      }
+    }
+
     await db.surveySession.update({
       where: { id: sid },
       data: {
@@ -71,6 +90,7 @@ export default async function InstructionsPage({
           state,
           hasHiringExperience,
           hiringRoles: hasHiringExperience ? hiringRoles : [],
+          ...(cvFileUrl ? { cvFileUrl, cvFileName } : {}),
         },
       },
     });
