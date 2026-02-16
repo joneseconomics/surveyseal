@@ -15,7 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText, ChevronDown, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
 import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
 import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
@@ -143,10 +149,10 @@ export function AiAgentPanel({
     sex: string;
     ageMin: string;
     ageMax: string;
-    educationLevel: string;
-    state: string;
+    minEducation: string;
+    states: string[];
     city: string;
-  }>({ sex: "", ageMin: "", ageMax: "", educationLevel: "", state: "", city: "" });
+  }>({ sex: "", ageMin: "", ageMax: "", minEducation: "", states: [], city: "" });
   const [customPersona, setCustomPersona] = useState("");
   const [sessionCount, setSessionCount] = useState(1);
   const [runs, setRuns] = useState<AiAgentRun[]>(initialRuns);
@@ -218,7 +224,7 @@ export function AiAgentPanel({
   const handleNemotronSearch = useCallback(async () => {
     const hasQuery = nemQuery.trim();
     const hasFilters = nemFilters.sex || nemFilters.ageMin || nemFilters.ageMax ||
-      nemFilters.educationLevel || nemFilters.state || nemFilters.city;
+      nemFilters.minEducation || nemFilters.states.length > 0 || nemFilters.city;
     if ((!hasQuery && !hasFilters) || nemSearching) return;
     setNemSearching(true);
     setNemResults([]);
@@ -230,8 +236,8 @@ export function AiAgentPanel({
       if (nemFilters.sex) p.set("sex", nemFilters.sex);
       if (nemFilters.ageMin) p.set("ageMin", nemFilters.ageMin);
       if (nemFilters.ageMax) p.set("ageMax", nemFilters.ageMax);
-      if (nemFilters.educationLevel) p.set("educationLevel", nemFilters.educationLevel);
-      if (nemFilters.state) p.set("state", nemFilters.state);
+      if (nemFilters.minEducation) p.set("minEducation", nemFilters.minEducation);
+      if (nemFilters.states.length > 0) p.set("state", nemFilters.states.join(","));
       if (nemFilters.city) p.set("city", nemFilters.city);
       const res = await fetch(`/api/ai/persona-search?${p.toString()}`);
       if (!res.ok) throw new Error("Search failed");
@@ -687,10 +693,10 @@ export function AiAgentPanel({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Education</Label>
+                    <Label className="text-xs">Min. Education</Label>
                     <Select
-                      value={nemFilters.educationLevel || "__any"}
-                      onValueChange={(v) => setNemFilters((f) => ({ ...f, educationLevel: v === "__any" ? "" : v }))}
+                      value={nemFilters.minEducation || "__any"}
+                      onValueChange={(v) => setNemFilters((f) => ({ ...f, minEducation: v === "__any" ? "" : v }))}
                       disabled={progress.running}
                     >
                       <SelectTrigger className="h-8 text-xs">
@@ -709,22 +715,46 @@ export function AiAgentPanel({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">State</Label>
-                    <Select
-                      value={nemFilters.state || "__any"}
-                      onValueChange={(v) => setNemFilters((f) => ({ ...f, state: v === "__any" ? "" : v }))}
-                      disabled={progress.running}
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__any">Any</SelectItem>
+                    <Label className="text-xs">States</Label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={progress.running}>
+                        <Button variant="outline" className="h-8 w-full justify-between text-xs font-normal">
+                          {nemFilters.states.length === 0
+                            ? "Any"
+                            : nemFilters.states.length <= 3
+                              ? nemFilters.states.join(", ")
+                              : `${nemFilters.states.length} selected`}
+                          <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="max-h-56 overflow-y-auto w-24">
                         {US_STATES.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                          <DropdownMenuCheckboxItem
+                            key={s}
+                            checked={nemFilters.states.includes(s)}
+                            onCheckedChange={(checked) =>
+                              setNemFilters((f) => ({
+                                ...f,
+                                states: checked
+                                  ? [...f.states, s]
+                                  : f.states.filter((st) => st !== s),
+                              }))
+                            }
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            {s}
+                          </DropdownMenuCheckboxItem>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    {nemFilters.states.length > 0 && (
+                      <button
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5"
+                        onClick={() => setNemFilters((f) => ({ ...f, states: [] }))}
+                      >
+                        <X className="h-3 w-3" /> Clear
+                      </button>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">City</Label>
@@ -770,7 +800,7 @@ export function AiAgentPanel({
                     ))}
                   </div>
                 )}
-                {nemResults.length === 0 && !nemSearching && (nemQuery || nemFilters.sex || nemFilters.state || nemFilters.educationLevel || nemFilters.city || nemFilters.ageMin || nemFilters.ageMax) && (
+                {nemResults.length === 0 && !nemSearching && (nemQuery || nemFilters.sex || nemFilters.states.length > 0 || nemFilters.minEducation || nemFilters.city || nemFilters.ageMin || nemFilters.ageMax) && (
                   <p className="text-xs text-muted-foreground">No results. Try different search terms or filters.</p>
                 )}
               </TabsContent>

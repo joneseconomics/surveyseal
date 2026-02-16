@@ -38,6 +38,17 @@ export interface NemotronResult {
   state: string;
 }
 
+// Education levels ordered from lowest to highest
+const EDUCATION_ORDER = [
+  "Less than High School",
+  "High School Diploma/GED",
+  "Some College",
+  "Associate Degree",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate/Professional Degree",
+];
+
 const cache = new Map<string, { data: NemotronResult[]; ts: number }>();
 const CACHE_TTL = 15_000;
 
@@ -65,19 +76,20 @@ export async function GET(request: NextRequest) {
   const sex = params.get("sex")?.trim();
   const ageMin = params.get("ageMin")?.trim();
   const ageMax = params.get("ageMax")?.trim();
-  const educationLevel = params.get("educationLevel")?.trim();
-  const occupation = params.get("occupation")?.trim();
+  const minEducation = params.get("minEducation")?.trim();
   const city = params.get("city")?.trim();
-  const state = params.get("state")?.trim();
+  // state can be comma-separated for multi-select
+  const stateParam = params.get("state")?.trim();
+  const states = stateParam ? stateParam.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
-  const hasFilters = sex || ageMin || ageMax || educationLevel || occupation || city || state;
+  const hasFilters = sex || ageMin || ageMax || minEducation || city || states.length > 0;
 
   if (!q && !hasFilters) {
     return NextResponse.json({ results: [] });
   }
 
   // Build cache key from all params
-  const cacheKey = JSON.stringify({ q, limit, sex, ageMin, ageMax, educationLevel, occupation, city, state });
+  const cacheKey = JSON.stringify({ q, limit, sex, ageMin, ageMax, minEducation, city, states });
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return NextResponse.json({ results: cached.data });
@@ -87,23 +99,13 @@ export async function GET(request: NextRequest) {
     let url: string;
 
     if (q && !hasFilters) {
-      // Free-text search only
+      // Free-text search only — use /search endpoint
       url = `${HF_BASE}/search?dataset=${encodeURIComponent(DATASET)}&config=${CONFIG}&split=${SPLIT}&query=${encodeURIComponent(q)}&length=${limit}`;
-    } else if (hasFilters && !q) {
-      // Structured filter only
-      const where = buildWhereClause({ sex, ageMin, ageMax, educationLevel, occupation, city, state });
-      url = `${HF_BASE}/filter?dataset=${encodeURIComponent(DATASET)}&config=${CONFIG}&split=${SPLIT}&where=${encodeURIComponent(where)}&length=${limit}`;
     } else {
-      // Both: use search with query (filters aren't supported on /search endpoint)
-      // Build a combined query string that includes filter terms
-      const filterTerms: string[] = [q!];
-      if (sex) filterTerms.push(sex);
-      if (educationLevel) filterTerms.push(educationLevel.replace(/_/g, " "));
-      if (occupation) filterTerms.push(occupation.replace(/_/g, " "));
-      if (city) filterTerms.push(city);
-      if (state) filterTerms.push(state);
-      const combinedQuery = filterTerms.join(" ");
-      url = `${HF_BASE}/search?dataset=${encodeURIComponent(DATASET)}&config=${CONFIG}&split=${SPLIT}&query=${encodeURIComponent(combinedQuery)}&length=${limit}`;
+      // Filters present (with or without q) — always use /filter endpoint
+      // This ensures structured filters are enforced, not just appended to a text query
+      const where = buildWhereClause({ q, sex, ageMin, ageMax, minEducation, city, states });
+      url = `${HF_BASE}/filter?dataset=${encodeURIComponent(DATASET)}&config=${CONFIG}&split=${SPLIT}&where=${encodeURIComponent(where)}&length=${limit}`;
     }
 
     const res = await fetch(url, {
@@ -133,15 +135,21 @@ export async function GET(request: NextRequest) {
 }
 
 function buildWhereClause(filters: {
+  q?: string;
   sex?: string;
   ageMin?: string;
   ageMax?: string;
-  educationLevel?: string;
-  occupation?: string;
+  minEducation?: string;
   city?: string;
-  state?: string;
+  states?: string[];
 }): string {
   const conditions: string[] = [];
+
+  // Free-text query: LIKE on professional_persona
+  if (filters.q) {
+    const escaped = filters.q.replace(/'/g, "''");
+    conditions.push(`"professional_persona" LIKE '%${escaped}%'`);
+  }
 
   if (filters.sex) {
     conditions.push(`"sex"='${filters.sex}'`);
@@ -152,17 +160,26 @@ function buildWhereClause(filters: {
   if (filters.ageMax) {
     conditions.push(`"age"<=${filters.ageMax}`);
   }
-  if (filters.educationLevel) {
-    conditions.push(`"education_level"='${filters.educationLevel}'`);
+
+  // Minimum education: include all levels at or above the minimum
+  if (filters.minEducation) {
+    const minIdx = EDUCATION_ORDER.indexOf(filters.minEducation);
+    if (minIdx >= 0) {
+      const qualifying = EDUCATION_ORDER.slice(minIdx);
+      const inList = qualifying.map((e) => `'${e}'`).join(",");
+      conditions.push(`"education_level" IN (${inList})`);
+    }
   }
-  if (filters.occupation) {
-    conditions.push(`"occupation"='${filters.occupation}'`);
-  }
+
   if (filters.city) {
-    conditions.push(`"city"='${filters.city}'`);
+    const escaped = filters.city.replace(/'/g, "''");
+    conditions.push(`"city" LIKE '%${escaped}%'`);
   }
-  if (filters.state) {
-    conditions.push(`"state"='${filters.state}'`);
+
+  // Multi-state: IN clause
+  if (filters.states && filters.states.length > 0) {
+    const inList = filters.states.map((s) => `'${s}'`).join(",");
+    conditions.push(`"state" IN (${inList})`);
   }
 
   return conditions.join(" AND ");
