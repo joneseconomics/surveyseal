@@ -442,7 +442,7 @@ export default function LandingPage() {
                   icon: FileText,
                   title: "Resume Screening",
                   description:
-                    "Upload r\u00e9sum\u00e9s and a job description (URL, PDF, or Word file). Judges act as hiring managers and pick the stronger candidate.",
+                    "Upload resumes and a job description (URL, PDF, or Word file). Judges act as hiring managers and pick the stronger candidate.",
                 },
                 {
                   icon: GraduationCap,

@@ -32,7 +32,7 @@ export async function createSurvey(formData: FormData) {
         break;
       case "RESUMES":
         cjPrompt = "Which candidate would you advance to the next round of interviews?";
-        cjJudgeInstructions = "You are a hiring manager for the position described below, and you will be shown two potential candidate r\u00e9sum\u00e9s to review. Please select the r\u00e9sum\u00e9 of the candidate whom you would advance to the next round of interviews. Please note that you can only select one of the r\u00e9sum\u00e9s.";
+        cjJudgeInstructions = "You are a hiring manager for the position described below, and you will be shown two potential candidate resumes to review. Please select the resume of the candidate whom you would advance to the next round of interviews. Please note that you can only select one of the resumes.";
         break;
       default:
         cjPrompt = "Which of these two do you prefer?";

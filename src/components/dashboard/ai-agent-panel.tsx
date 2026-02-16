@@ -257,20 +257,24 @@ export function AiAgentPanel({
   const handleGenerateFromSession = useCallback(async (sessionId: string) => {
     setGeneratingPersonaFor(sessionId);
     try {
-      const { persona } = await generatePersonaFromSession({ surveyId, sessionId });
+      const result = await generatePersonaFromSession({ surveyId, sessionId });
+      if (!result.success) {
+        alert(result.error);
+        return;
+      }
       const newPersona: JudgePersona = {
-        id: persona.id,
-        name: persona.name,
-        title: persona.title,
-        description: persona.description,
-        cvFileName: persona.cvFileName,
-        createdAt: persona.createdAt,
+        id: result.persona.id,
+        name: result.persona.name,
+        title: result.persona.title,
+        description: result.persona.description,
+        cvFileName: result.persona.cvFileName,
+        createdAt: result.persona.createdAt,
       };
       setJudgePersonas((prev) => [newPersona, ...prev]);
       setSelectedJudge(newPersona.id);
       setSurveyJudges((prev) =>
         prev.map((j) =>
-          j.sessionId === sessionId ? { ...j, generatedPersonaId: persona.id } : j,
+          j.sessionId === sessionId ? { ...j, generatedPersonaId: result.persona.id } : j,
         ),
       );
     } catch (e) {

@@ -185,9 +185,9 @@ function InstructionContent({
       {isCJ && !cjJudgeInstructions && cjSubtype === "RESUMES" && (
         <p>
           You are a hiring manager for the position described below, and you will
-          be shown two potential candidate r&#233;sum&#233;s to review. Please select the
-          r&#233;sum&#233; of the candidate whom you would advance to the next round of
-          interviews. Please note that you can only select one of the r&#233;sum&#233;s.
+          be shown two potential candidate resumes to review. Please select the
+          resume of the candidate whom you would advance to the next round of
+          interviews. Please note that you can only select one of the resumes.
         </p>
       )}
 
