@@ -76,6 +76,7 @@ export interface SurveyJudge {
   jobTitle: string | null;
   employer: string | null;
   cvFileName: string | null;
+  cvFileUrl: string | null;
   completedAt: string | null;
   comparisonCount: number;
   generatedPersonaId: string | null;
@@ -183,7 +184,7 @@ export function AiAgentPanel({
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
 
   // Survey judges state
-  const [surveyJudges, setSurveyJudges] = useState<SurveyJudge[]>(initialSurveyJudges);
+  const [surveyJudges] = useState<SurveyJudge[]>(initialSurveyJudges);
   const [includeResume, setIncludeResume] = useState<Set<string>>(new Set());
   const [includeComparisons, setIncludeComparisons] = useState<Set<string>>(new Set());
   const [creatingPersona, setCreatingPersona] = useState(false);
@@ -198,6 +199,11 @@ export function AiAgentPanel({
 
   // Judge persona detail dialog state
   const [judgeDetailPersona, setJudgeDetailPersona] = useState<JudgePersona | null>(null);
+
+  // Survey judge detail popup state
+  const [judgeResumeUrl, setJudgeResumeUrl] = useState<string | null>(null);
+  const [judgeComparisons, setJudgeComparisons] = useState<{ winner: string; loser: string }[] | null>(null);
+  const [judgeDetailTitle, setJudgeDetailTitle] = useState("");
 
   // Compute the effective persona value based on the selected mode
   // For nemotron, persona is derived per-run in handleRun; this is for other modes
@@ -1027,7 +1033,7 @@ export function AiAgentPanel({
                               <div className="text-xs text-muted-foreground">
                                 {jp.title}
                                 {compCount > 0 && ` · ${compCount} comparison${compCount !== 1 ? "s" : ""}`}
-                                {jp.cvFileName && ` · ${jp.cvFileName}`}
+                                {jp.cvText && jp.cvText !== "No resume provided." && ` · Resume Included`}
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
@@ -1133,40 +1139,74 @@ export function AiAgentPanel({
                                 </div>
                               )}
                             </div>
-                            <div className="w-20 flex justify-center">
+                            <div className="w-20 flex flex-col items-center gap-0.5">
                               {sj.cvFileName ? (
-                                <input
-                                  type="checkbox"
-                                  checked={includeResume.has(sj.sessionId)}
-                                  onChange={() =>
-                                    setIncludeResume((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(sj.sessionId)) next.delete(sj.sessionId);
-                                      else next.add(sj.sessionId);
-                                      return next;
-                                    })
-                                  }
-                                  disabled={creatingPersona || progress.running}
-                                />
+                                <>
+                                  <input
+                                    type="checkbox"
+                                    checked={includeResume.has(sj.sessionId)}
+                                    onChange={() =>
+                                      setIncludeResume((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(sj.sessionId)) next.delete(sj.sessionId);
+                                        else next.add(sj.sessionId);
+                                        return next;
+                                      })
+                                    }
+                                    disabled={creatingPersona || progress.running}
+                                  />
+                                  {sj.cvFileUrl && (
+                                    <button
+                                      className="text-xs text-blue-600 hover:underline"
+                                      onClick={() => {
+                                        const name = sj.jobTitle && sj.employer
+                                          ? `${sj.jobTitle} at ${sj.employer}`
+                                          : sj.participantEmail || "Judge";
+                                        setJudgeDetailTitle(name);
+                                        setJudgeResumeUrl(sj.cvFileUrl);
+                                      }}
+                                    >
+                                      View
+                                    </button>
+                                  )}
+                                </>
                               ) : (
                                 <span className="text-xs text-muted-foreground">&mdash;</span>
                               )}
                             </div>
-                            <div className="w-24 flex justify-center">
+                            <div className="w-24 flex flex-col items-center gap-0.5">
                               {sj.comparisonCount > 0 ? (
-                                <input
-                                  type="checkbox"
-                                  checked={includeComparisons.has(sj.sessionId)}
-                                  onChange={() =>
-                                    setIncludeComparisons((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(sj.sessionId)) next.delete(sj.sessionId);
-                                      else next.add(sj.sessionId);
-                                      return next;
-                                    })
-                                  }
-                                  disabled={creatingPersona || progress.running}
-                                />
+                                <>
+                                  <input
+                                    type="checkbox"
+                                    checked={includeComparisons.has(sj.sessionId)}
+                                    onChange={() =>
+                                      setIncludeComparisons((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(sj.sessionId)) next.delete(sj.sessionId);
+                                        else next.add(sj.sessionId);
+                                        return next;
+                                      })
+                                    }
+                                    disabled={creatingPersona || progress.running}
+                                  />
+                                  <button
+                                    className="text-xs text-blue-600 hover:underline"
+                                    onClick={async () => {
+                                      const name = sj.jobTitle && sj.employer
+                                        ? `${sj.jobTitle} at ${sj.employer}`
+                                        : sj.participantEmail || "Judge";
+                                      setJudgeDetailTitle(name);
+                                      setJudgeComparisons([]);
+                                      const res = await fetch(`/api/survey/${surveyId}/comparisons?sessionId=${sj.sessionId}`);
+                                      if (res.ok) {
+                                        setJudgeComparisons(await res.json());
+                                      }
+                                    }}
+                                  >
+                                    View
+                                  </button>
+                                </>
                               ) : (
                                 <span className="text-xs text-muted-foreground">&mdash;</span>
                               )}
@@ -1336,6 +1376,47 @@ export function AiAgentPanel({
     : ""
 }`}
               </pre>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Survey Judge Resume Dialog */}
+      <Dialog open={!!judgeResumeUrl} onOpenChange={(open) => !open && setJudgeResumeUrl(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{judgeDetailTitle} — Resume</DialogTitle>
+          </DialogHeader>
+          {judgeResumeUrl && (
+            <iframe
+              src={judgeResumeUrl}
+              className="flex-1 min-h-0 w-full rounded-md border"
+              style={{ height: "70vh" }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Survey Judge Comparisons Dialog */}
+      <Dialog open={!!judgeComparisons} onOpenChange={(open) => !open && setJudgeComparisons(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{judgeDetailTitle} — Comparisons</DialogTitle>
+          </DialogHeader>
+          {judgeComparisons && (
+            <div className="overflow-y-auto flex-1 min-h-0 rounded-md border divide-y">
+              {judgeComparisons.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground text-center">No comparisons recorded.</div>
+              ) : (
+                judgeComparisons.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 text-sm">
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">Winner</Badge>
+                    <span className="font-medium">{c.winner}</span>
+                    <span className="text-muted-foreground">over</span>
+                    <span>{c.loser}</span>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </DialogContent>

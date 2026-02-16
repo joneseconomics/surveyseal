@@ -133,6 +133,7 @@ export default async function AiAgentPage({
           jobTitle: (d?.jobTitle as string) || null,
           employer: (d?.employer as string) || null,
           cvFileName: (d?.cvFileName as string) || null,
+          cvFileUrl: (d?.cvFileUrl as string) || null,
           completedAt: s.completedAt?.toISOString() ?? null,
           comparisonCount: s._count.comparisons,
           generatedPersonaId: s.generatedPersona?.id ?? null,
