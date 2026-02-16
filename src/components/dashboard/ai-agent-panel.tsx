@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2, FileText, Link } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText, Link } from "lucide-react";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
 import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
 import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
@@ -253,23 +253,6 @@ export function AiAgentPanel({
     setSelectedJudge(newPersona.id);
   }, []);
 
-  const handleDeleteJudge = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/ai/judge-personas/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Failed to delete");
-        return;
-      }
-      setJudgePersonas((prev) => prev.filter((p) => p.id !== id));
-      if (selectedJudge === id) {
-        const remaining = judgePersonas.filter((p) => p.id !== id);
-        setSelectedJudge(remaining.length > 0 ? remaining[0].id : null);
-      }
-    } catch {
-      alert("Failed to delete judge persona");
-    }
-  }, [selectedJudge, judgePersonas]);
 
   const handleGenerateFromSession = useCallback(async (sessionId: string) => {
     setGeneratingPersonaFor(sessionId);
@@ -780,63 +763,6 @@ export function AiAgentPanel({
                   </div>
                 )}
 
-                {/* Judge Personas list */}
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Judge Personas
-                </div>
-                {judgePersonas.length > 0 ? (
-                  <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
-                    {judgePersonas.map((j) => (
-                      <label
-                        key={j.id}
-                        className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
-                          selectedJudge === j.id ? "bg-muted" : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="judge-persona"
-                          className="mt-1 shrink-0"
-                          checked={selectedJudge === j.id}
-                          onChange={() => setSelectedJudge(j.id)}
-                          disabled={progress.running}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium">{j.name}</div>
-                          <div className="text-xs text-muted-foreground">{j.title}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">{j.description}</div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-red-600"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteJudge(j.id);
-                          }}
-                          disabled={progress.running}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground py-4 text-center">
-                    No judge personas yet. Upload a CV to create one.
-                  </p>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full gap-1"
-                  onClick={() => setAddJudgeOpen(true)}
-                  disabled={progress.running}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add Judge
-                </Button>
               </TabsContent>
             </Tabs>
           </div>
