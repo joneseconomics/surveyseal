@@ -143,7 +143,7 @@ export function AiAgentPanel({
   const [presetPersona, setPresetPersona] = useState(AI_PERSONAS[0].id);
   const [nemQuery, setNemQuery] = useState("");
   const [nemResults, setNemResults] = useState<NemotronResult[]>([]);
-  const [nemSelected, setNemSelected] = useState<NemotronResult | null>(null);
+  const [nemSelected, setNemSelected] = useState<NemotronResult[]>([]);
   const [nemSearching, setNemSearching] = useState(false);
   const [nemFilters, setNemFilters] = useState<{
     sex: string;
@@ -173,16 +173,18 @@ export function AiAgentPanel({
   const [catalogDetailOpen, setCatalogDetailOpen] = useState(false);
 
   // Compute the effective persona value based on the selected mode
+  // For nemotron, persona is derived per-run in handleRun; this is for other modes
   const persona =
     personaMode === "preset"
       ? presetPersona
       : personaMode === "nemotron"
-        ? nemSelected ? `nemotron:${nemSelected.professionalPersona}` : ""
+        ? nemSelected.length > 0 ? `nemotron:${nemSelected[0].professionalPersona}` : ""
         : personaMode === "judge"
           ? selectedJudge ? `judge:${selectedJudge}` : ""
           : customPersona.trim() ? `custom:${customPersona.trim()}` : "";
 
-  const personaValid = persona.length > 0;
+  const personaValid =
+    personaMode === "nemotron" ? nemSelected.length > 0 : persona.length > 0;
 
   // Progress state
   const [progress, setProgress] = useState<ProgressState>({
@@ -228,7 +230,7 @@ export function AiAgentPanel({
     if ((!hasQuery && !hasFilters) || nemSearching) return;
     setNemSearching(true);
     setNemResults([]);
-    setNemSelected(null);
+    setNemSelected([]);
     try {
       const p = new URLSearchParams();
       if (hasQuery) p.set("q", nemQuery.trim());
@@ -302,146 +304,163 @@ export function AiAgentPanel({
       // Continue anyway
     }
 
-    // Resolve display name for run history
-    const displayName = personaMode === "judge"
-      ? judgePersonas.find((j) => j.id === selectedJudge)?.name ?? "Judge Persona"
-      : resolvePersonaName(persona);
+    // Build list of personas to run
+    // For nemotron multi-select, each selected persona gets its own run
+    // For other modes, a single persona/run
+    const personasToRun: { personaValue: string; displayName: string; demographics?: {
+      jobTitle: string; city: string; state: string; age: number; sex: string; educationLevel: string;
+    } }[] = [];
+
+    if (personaMode === "nemotron") {
+      for (const nem of nemSelected) {
+        personasToRun.push({
+          personaValue: `nemotron:${nem.professionalPersona}`,
+          displayName: resolvePersonaName(`nemotron:${nem.professionalPersona}`),
+          demographics: {
+            jobTitle: nem.occupation.replace(/_/g, " "),
+            city: nem.city,
+            state: nem.state,
+            age: nem.age,
+            sex: nem.sex,
+            educationLevel: nem.educationLevel,
+          },
+        });
+      }
+    } else {
+      const displayName = personaMode === "judge"
+        ? judgePersonas.find((j) => j.id === selectedJudge)?.name ?? "Judge Persona"
+        : resolvePersonaName(persona);
+      personasToRun.push({ personaValue: persona, displayName });
+    }
+
+    const totalSessions = personasToRun.length * sessionCount;
 
     setProgress({
       running: true,
       currentSession: 0,
-      totalSessions: sessionCount,
+      totalSessions,
       currentStep: 0,
       totalSteps: 0,
       status: "Starting...",
     });
 
-    try {
-      const { runId } = await createAiAgentRun({
-        surveyId,
-        provider,
-        model: effectiveModel,
-        persona,
-        sessionCount,
-      });
+    let globalSession = 0;
+    const newRuns: AiAgentRun[] = [];
 
-      for (let i = 0; i < sessionCount; i++) {
-        setProgress((p) => ({
-          ...p,
-          currentSession: i + 1,
-          currentStep: 0,
-          totalSteps: 0,
-          status: `Creating session ${i + 1}/${sessionCount}...`,
-        }));
+    for (const p of personasToRun) {
+      try {
+        const { runId } = await createAiAgentRun({
+          surveyId,
+          provider,
+          model: effectiveModel,
+          persona: p.personaValue,
+          sessionCount,
+        });
 
-        let sessionId: string;
-        try {
-          const sessionResult = await createAiSession({
-            surveyId,
-            runId,
-            provider,
-            model: effectiveModel,
-            persona,
-            ...(personaMode === "nemotron" && nemSelected ? {
-              demographics: {
-                jobTitle: nemSelected.occupation.replace(/_/g, " "),
-                city: nemSelected.city,
-                state: nemSelected.state,
-                age: nemSelected.age,
-                sex: nemSelected.sex,
-                educationLevel: nemSelected.educationLevel,
-              },
-            } : {}),
-          });
-          sessionId = sessionResult.sessionId;
+        for (let i = 0; i < sessionCount; i++) {
+          globalSession++;
+          setProgress((prev) => ({
+            ...prev,
+            currentSession: globalSession,
+            currentStep: 0,
+            totalSteps: 0,
+            status: `${p.displayName} — session ${i + 1}/${sessionCount}...`,
+          }));
 
-          if (surveyType === "QUESTIONNAIRE") {
-            const questions = sessionResult.questions;
-            const totalSteps = questions.length;
-            setProgress((p) => ({ ...p, totalSteps }));
+          let sessionId: string;
+          try {
+            const sessionResult = await createAiSession({
+              surveyId,
+              runId,
+              provider,
+              model: effectiveModel,
+              persona: p.personaValue,
+              ...(p.demographics ? { demographics: p.demographics } : {}),
+            });
+            sessionId = sessionResult.sessionId;
 
-            for (let q = 0; q < questions.length; q++) {
-              setProgress((p) => ({
-                ...p,
-                currentStep: q + 1,
-                status: questions[q].isVerificationPoint
-                  ? `Session ${i + 1}: Skipping VP ${q + 1}/${totalSteps}`
-                  : `Session ${i + 1}: Question ${q + 1}/${totalSteps}`,
-              }));
+            if (surveyType === "QUESTIONNAIRE") {
+              const questions = sessionResult.questions;
+              const totalSteps = questions.length;
+              setProgress((prev) => ({ ...prev, totalSteps }));
 
-              await executeAiQuestion({
-                surveyId,
-                sessionId,
-                questionId: questions[q].id,
-                questionType: questions[q].type,
-                questionContent: questions[q].content as Record<string, unknown>,
-                isVerificationPoint: questions[q].isVerificationPoint,
-                provider,
-                model: effectiveModel,
-                persona,
-                surveyTitle,
-              });
+              for (let q = 0; q < questions.length; q++) {
+                setProgress((prev) => ({
+                  ...prev,
+                  currentStep: q + 1,
+                  status: questions[q].isVerificationPoint
+                    ? `${p.displayName} — session ${i + 1}: Skipping VP ${q + 1}/${totalSteps}`
+                    : `${p.displayName} — session ${i + 1}: Q ${q + 1}/${totalSteps}`,
+                }));
 
-              // Rate limiting delay
-              if (!questions[q].isVerificationPoint) {
+                await executeAiQuestion({
+                  surveyId,
+                  sessionId,
+                  questionId: questions[q].id,
+                  questionType: questions[q].type,
+                  questionContent: questions[q].content as Record<string, unknown>,
+                  isVerificationPoint: questions[q].isVerificationPoint,
+                  provider,
+                  model: effectiveModel,
+                  persona: p.personaValue,
+                  surveyTitle,
+                });
+
+                if (!questions[q].isVerificationPoint) {
+                  await delay(500);
+                }
+              }
+            } else {
+              // CJ survey
+              const totalComparisons = sessionResult.totalComparisons;
+              setProgress((prev) => ({ ...prev, totalSteps: totalComparisons }));
+
+              for (let c = 0; c < totalComparisons; c++) {
+                setProgress((prev) => ({
+                  ...prev,
+                  currentStep: c + 1,
+                  status: `${p.displayName} — session ${i + 1}: Comparison ${c + 1}/${totalComparisons}`,
+                }));
+
+                const result = await executeAiComparison({
+                  surveyId,
+                  sessionId,
+                  comparisonIndex: c,
+                  provider,
+                  model: effectiveModel,
+                  persona: p.personaValue,
+                  surveyTitle,
+                  cjPrompt: sessionResult.cjPrompt ?? "Which is better?",
+                  cjJudgeInstructions: sessionResult.cjJudgeInstructions ?? null,
+                });
+
+                if (result.noPairsLeft) break;
                 await delay(500);
               }
             }
-          } else {
-            // CJ survey
-            const totalComparisons = sessionResult.totalComparisons;
-            setProgress((p) => ({ ...p, totalSteps: totalComparisons }));
 
-            for (let c = 0; c < totalComparisons; c++) {
-              setProgress((p) => ({
-                ...p,
-                currentStep: c + 1,
-                status: `Session ${i + 1}: Comparison ${c + 1}/${totalComparisons}`,
-              }));
-
-              const result = await executeAiComparison({
-                surveyId,
-                sessionId,
-                comparisonIndex: c,
-                provider,
-                model: effectiveModel,
-                persona,
-                surveyTitle,
-                cjPrompt: sessionResult.cjPrompt ?? "Which is better?",
-                cjJudgeInstructions: sessionResult.cjJudgeInstructions ?? null,
+            await completeAiSession({ sessionId, runId, surveyId });
+          } catch (e) {
+            const errMsg = e instanceof Error ? e.message : "Unknown error";
+            try {
+              await failAiSession({
+                sessionId: sessionId!,
+                runId,
+                error: `Session ${i + 1}: ${errMsg}`,
               });
-
-              if (result.noPairsLeft) break;
-
-              // Rate limiting delay
-              await delay(500);
+            } catch {
+              // If we couldn't even create the session, just log
             }
           }
-
-          await completeAiSession({ sessionId, runId, surveyId });
-        } catch (e) {
-          const errMsg = e instanceof Error ? e.message : "Unknown error";
-          try {
-            await failAiSession({
-              sessionId: sessionId!,
-              runId,
-              error: `Session ${i + 1}: ${errMsg}`,
-            });
-          } catch {
-            // If we couldn't even create the session, just log
-          }
         }
-      }
 
-      await completeAiAgentRun({ runId, surveyId });
+        await completeAiAgentRun({ runId, surveyId });
 
-      // Refresh runs list
-      setRuns((prev) => [
-        {
+        newRuns.push({
           id: runId,
           provider,
           model: effectiveModel,
-          persona: displayName,
+          persona: p.displayName,
           sessionCount,
           completedCount: sessionCount,
           failedCount: 0,
@@ -449,18 +468,17 @@ export function AiAgentPanel({
           startedAt: new Date().toISOString(),
           completedAt: new Date().toISOString(),
           errorLog: null,
-        },
-        ...prev,
-      ]);
-
-      setProgress((p) => ({ ...p, running: false, status: "Done!" }));
-    } catch (e) {
-      setProgress((p) => ({
-        ...p,
-        running: false,
-        status: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
-      }));
+        });
+      } catch (e) {
+        setProgress((prev) => ({
+          ...prev,
+          status: `Error (${p.displayName}): ${e instanceof Error ? e.message : "Unknown error"}`,
+        }));
+      }
     }
+
+    setRuns((prev) => [...newRuns, ...prev]);
+    setProgress((prev) => ({ ...prev, running: false, status: "Done!" }));
   }, [hasApiKey, progress.running, personaValid, surveyStatus, surveyId, provider, effectiveModel, persona, sessionCount, surveyTitle, surveyType, personaMode, judgePersonas, selectedJudge, nemSelected]);
 
   const isLive = surveyStatus === "LIVE";
@@ -771,33 +789,54 @@ export function AiAgentPanel({
                 {/* Results */}
                 {nemResults.length > 0 && (
                   <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
-                    {nemResults.map((r) => (
-                      <label
-                        key={r.index}
-                        className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
-                          nemSelected?.index === r.index ? "bg-muted" : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="nem-persona"
-                          className="mt-1 shrink-0"
-                          checked={nemSelected?.index === r.index}
-                          onChange={() => setNemSelected(r)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs">
-                            {r.occupation.replace(/_/g, " ")}
+                    {nemSelected.length > 0 && (
+                      <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30">
+                        <span className="text-xs text-muted-foreground">
+                          {nemSelected.length} persona{nemSelected.length !== 1 ? "s" : ""} selected
+                        </span>
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => setNemSelected([])}
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    )}
+                    {nemResults.map((r) => {
+                      const isChecked = nemSelected.some((s) => s.index === r.index);
+                      return (
+                        <label
+                          key={r.index}
+                          className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                            isChecked ? "bg-muted" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 shrink-0"
+                            checked={isChecked}
+                            onChange={() =>
+                              setNemSelected((prev) =>
+                                isChecked
+                                  ? prev.filter((s) => s.index !== r.index)
+                                  : [...prev, r],
+                              )
+                            }
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs">
+                              {r.occupation.replace(/_/g, " ")}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {r.city}, {r.state} · {r.age}{r.sex === "Male" ? "M" : "F"} · {r.educationLevel}
+                            </div>
+                            <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                              {r.professionalPersona}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {r.city}, {r.state} · {r.age}{r.sex === "Male" ? "M" : "F"} · {r.educationLevel}
-                          </div>
-                          <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                            {r.professionalPersona}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
                 {nemResults.length === 0 && !nemSearching && (nemQuery || nemFilters.sex || nemFilters.states.length > 0 || nemFilters.minEducation || nemFilters.city || nemFilters.ageMin || nemFilters.ageMax) && (
