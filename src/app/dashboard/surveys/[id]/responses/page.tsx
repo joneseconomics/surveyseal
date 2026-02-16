@@ -18,6 +18,7 @@ import { ResponseSummary } from "@/components/dashboard/response-summary";
 import { ReconcileButton } from "@/components/dashboard/reconcile-button";
 import { DeleteResponseButton } from "@/components/dashboard/delete-response-button";
 import { AiPersonaInfo } from "@/components/dashboard/ai-persona-info";
+import { LocalDate } from "@/components/local-date";
 import { resolvePersonaPrompt } from "@/lib/ai/resolve-persona";
 
 interface JudgeDemographics {
@@ -238,7 +239,7 @@ export default async function ResponsesPage({
                         </TableCell>
                       )}
                       <TableCell className="text-xs text-muted-foreground">
-                        {new Date(s.startedAt).toLocaleString()}
+                        <LocalDate date={s.startedAt} />
                       </TableCell>
                       {canEdit && (
                         <TableCell>
