@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { requireAccess } from "@/lib/access";
 import { notFound, redirect } from "next/navigation";
 import { AiAgentPanel } from "@/components/dashboard/ai-agent-panel";
@@ -72,7 +73,7 @@ export default async function AiAgentPage({
         surveyId: id,
         status: "COMPLETED",
         isAiGenerated: false,
-        judgeDemographics: { path: ["cvFileUrl"], not: null as unknown as undefined },
+        judgeDemographics: { path: ["cvFileUrl"], not: Prisma.DbNull },
       },
       orderBy: { completedAt: "desc" },
       select: {
@@ -96,10 +97,19 @@ export default async function AiAgentPage({
       savedProvider={survey.aiProvider}
       savedModel={survey.aiModel}
       canEdit={canEdit}
-      initialRuns={runs}
+      initialRuns={runs.map((r) => ({
+        ...r,
+        startedAt: r.startedAt.toISOString(),
+        completedAt: r.completedAt?.toISOString() ?? null,
+      }))}
       initialJudgePersonas={judgePersonas.map((j) => ({
-        ...j,
+        id: j.id,
+        name: j.name,
+        title: j.title,
+        description: j.description,
+        cvFileName: j.cvFileName,
         createdAt: j.createdAt.toISOString(),
+        createdBy: j.createdBy,
       }))}
       initialSurveyJudges={surveyJudges.map((s) => {
         const d = s.judgeDemographics as Record<string, unknown> | null;

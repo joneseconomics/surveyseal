@@ -41,8 +41,8 @@ interface AiAgentRun {
   completedCount: number;
   failedCount: number;
   status: string;
-  startedAt: Date;
-  completedAt: Date | null;
+  startedAt: string;
+  completedAt: string | null;
   errorLog: string | null;
 }
 
@@ -444,8 +444,8 @@ export function AiAgentPanel({
           completedCount: sessionCount,
           failedCount: 0,
           status: "COMPLETED",
-          startedAt: new Date(),
-          completedAt: new Date(),
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
           errorLog: null,
         },
         ...prev,
