@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2, FileText, ChevronDown, Link } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, Plus, Trash2, FileText, Link } from "lucide-react";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
 import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
 import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
@@ -148,7 +148,6 @@ export function AiAgentPanel({
   const [nemResults, setNemResults] = useState<NemotronResult[]>([]);
   const [nemSelected, setNemSelected] = useState<string | null>(null);
   const [nemSearching, setNemSearching] = useState(false);
-  const [nemFiltersOpen, setNemFiltersOpen] = useState(false);
   const [nemFilters, setNemFilters] = useState<NemotronFilters>({});
   const [nemUrl, setNemUrl] = useState("");
   const [nemSuggesting, setNemSuggesting] = useState(false);
@@ -689,101 +688,91 @@ export function AiAgentPanel({
                   </Button>
                 </div>
 
-                {/* Collapsible filters */}
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setNemFiltersOpen((v) => !v)}
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${nemFiltersOpen ? "rotate-180" : ""}`} />
-                  Filters
-                </button>
-                {nemFiltersOpen && (
-                  <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Sex</Label>
-                      <Select value={nemFilters.sex ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, sex: v === "any" ? undefined : v || undefined }))}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Any" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="Male">Male</SelectItem>
-                          <SelectItem value="Female">Female</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Age range</Label>
-                      <div className="flex gap-1">
-                        <Input
-                          type="number"
-                          placeholder="Min"
-                          className="h-8 text-xs"
-                          value={nemFilters.ageMin ?? ""}
-                          onChange={(e) => setNemFilters((f) => ({ ...f, ageMin: e.target.value || undefined }))}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max"
-                          className="h-8 text-xs"
-                          value={nemFilters.ageMax ?? ""}
-                          onChange={(e) => setNemFilters((f) => ({ ...f, ageMax: e.target.value || undefined }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Education</Label>
-                      <Select value={nemFilters.educationLevel ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, educationLevel: v === "any" ? undefined : v || undefined }))}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Any" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="Less than High School">Less than High School</SelectItem>
-                          <SelectItem value="High School Diploma">High School Diploma</SelectItem>
-                          <SelectItem value="Some College">Some College</SelectItem>
-                          <SelectItem value="Associate Degree">Associate Degree</SelectItem>
-                          <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
-                          <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
-                          <SelectItem value="Doctorate or Professional Degree">Doctorate/Professional</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">State</Label>
-                      <Select value={nemFilters.state ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, state: v === "any" ? undefined : v || undefined }))}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Any" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          {US_STATES.map((s) => (
-                            <SelectItem key={s} value={s}>{s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Occupation</Label>
+                {/* Filter fields */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Occupation</Label>
+                    <Input
+                      placeholder="e.g. software_developer"
+                      className="h-8 text-xs"
+                      value={nemFilters.occupation ?? ""}
+                      onChange={(e) => setNemFilters((f) => ({ ...f, occupation: e.target.value || undefined }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Education</Label>
+                    <Select value={nemFilters.educationLevel ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, educationLevel: v === "any" ? undefined : v || undefined }))}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Any" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="Less than High School">Less than High School</SelectItem>
+                        <SelectItem value="High School Diploma">High School Diploma</SelectItem>
+                        <SelectItem value="Some College">Some College</SelectItem>
+                        <SelectItem value="Associate Degree">Associate Degree</SelectItem>
+                        <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="Doctorate or Professional Degree">Doctorate/Professional</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Sex</Label>
+                    <Select value={nemFilters.sex ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, sex: v === "any" ? undefined : v || undefined }))}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Any" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Age range</Label>
+                    <div className="flex gap-1">
                       <Input
-                        placeholder="e.g. software_developer"
+                        type="number"
+                        placeholder="Min"
                         className="h-8 text-xs"
-                        value={nemFilters.occupation ?? ""}
-                        onChange={(e) => setNemFilters((f) => ({ ...f, occupation: e.target.value || undefined }))}
+                        value={nemFilters.ageMin ?? ""}
+                        onChange={(e) => setNemFilters((f) => ({ ...f, ageMin: e.target.value || undefined }))}
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">City</Label>
                       <Input
-                        placeholder="e.g. Cincinnati"
+                        type="number"
+                        placeholder="Max"
                         className="h-8 text-xs"
-                        value={nemFilters.city ?? ""}
-                        onChange={(e) => setNemFilters((f) => ({ ...f, city: e.target.value || undefined }))}
+                        value={nemFilters.ageMax ?? ""}
+                        onChange={(e) => setNemFilters((f) => ({ ...f, ageMax: e.target.value || undefined }))}
                       />
                     </div>
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <Label className="text-xs">City</Label>
+                    <Input
+                      placeholder="e.g. Cincinnati"
+                      className="h-8 text-xs"
+                      value={nemFilters.city ?? ""}
+                      onChange={(e) => setNemFilters((f) => ({ ...f, city: e.target.value || undefined }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">State</Label>
+                    <Select value={nemFilters.state ?? ""} onValueChange={(v) => setNemFilters((f) => ({ ...f, state: v === "any" ? undefined : v || undefined }))}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Any" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
                 {/* URL suggestion */}
                 <div className="flex gap-2">
