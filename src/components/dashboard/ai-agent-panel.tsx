@@ -865,6 +865,41 @@ export function AiAgentPanel({
               </TabsContent>
 
               <TabsContent value="judge" className="space-y-3">
+                {/* Generated Judge Personas — selectable for running */}
+                {judgePersonas.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Generated Personas
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                      {judgePersonas.map((jp) => (
+                        <label
+                          key={jp.id}
+                          className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                            selectedJudge === jp.id ? "bg-muted" : ""
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="judge-persona"
+                            className="mt-1 shrink-0"
+                            checked={selectedJudge === jp.id}
+                            onChange={() => setSelectedJudge(jp.id)}
+                            disabled={!canEdit || progress.running}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{jp.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {jp.title}
+                              {jp.cvFileName && ` · ${jp.cvFileName}`}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Survey Judges — completed human judges with CVs */}
                 {surveyJudges.length > 0 && (
                   <div className="space-y-2">
