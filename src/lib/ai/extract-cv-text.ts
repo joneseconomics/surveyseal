@@ -15,11 +15,11 @@ export async function extractCvText(
   }
 
   if (ext === "pdf") {
-    // Import the internal module directly to avoid pdf-parse's index.js
-    // which tries to load a test PDF file (./test/data/05-versions-space.pdf)
-    // that doesn't exist in serverless environments like Vercel
-    // @ts-expect-error -- no declaration file for deep import
-    const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
+    // pdf-parse's index.js tries to load ./test/data/05-versions-space.pdf
+    // which doesn't exist on Vercel. Use require with the internal path
+    // to bypass the package entry point entirely.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse/lib/pdf-parse");
     const result = await pdfParse(buffer);
     return result.text.trim();
   }
