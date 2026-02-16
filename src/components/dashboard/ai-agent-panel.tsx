@@ -513,12 +513,11 @@ export function AiAgentPanel({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium">{p.name}</div>
-                        {p.title && (
+                        {(p.title || p.employer || p.location) && (
                           <div className="text-xs text-muted-foreground">
-                            {p.title}{p.employer ? ` · ${p.employer}` : ""}{p.location ? ` · ${p.location}` : ""}
+                            {[p.title, p.employer, p.location].filter(Boolean).join(" · ")}
                           </div>
                         )}
-                        <div className="text-xs text-muted-foreground line-clamp-1">{p.description}</div>
                       </div>
                       {p.catalogSlug && (
                         <Button
