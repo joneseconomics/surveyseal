@@ -38,15 +38,15 @@ export interface NemotronResult {
   state: string;
 }
 
-// Education levels ordered from lowest to highest
+// Education levels ordered from lowest to highest (actual dataset values)
 const EDUCATION_ORDER = [
-  "Less than High School",
-  "High School Diploma/GED",
-  "Some College",
-  "Associate Degree",
-  "Bachelor's Degree",
-  "Master's Degree",
-  "Doctorate/Professional Degree",
+  "less_than_9th",
+  "9th_12th_no_diploma",
+  "high_school",
+  "some_college",
+  "associates",
+  "bachelors",
+  "graduate",
 ];
 
 const cache = new Map<string, { data: NemotronResult[]; ts: number }>();
@@ -166,7 +166,7 @@ function buildWhereClause(filters: {
     const minIdx = EDUCATION_ORDER.indexOf(filters.minEducation);
     if (minIdx >= 0) {
       const qualifying = EDUCATION_ORDER.slice(minIdx);
-      const inList = qualifying.map((e) => `'${e.replace(/'/g, "''")}'`).join(",");
+      const inList = qualifying.map((e) => `'${e}'`).join(",");
       conditions.push(`"education_level" IN (${inList})`);
     }
   }

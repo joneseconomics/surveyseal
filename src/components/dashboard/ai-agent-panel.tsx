@@ -722,13 +722,13 @@ export function AiAgentPanel({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__any">Any</SelectItem>
-                        <SelectItem value="Less than High School">Less than High School</SelectItem>
-                        <SelectItem value="High School Diploma/GED">High School/GED</SelectItem>
-                        <SelectItem value="Some College">Some College</SelectItem>
-                        <SelectItem value="Associate Degree">Associate Degree</SelectItem>
-                        <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
-                        <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
-                        <SelectItem value="Doctorate/Professional Degree">Doctorate/Professional</SelectItem>
+                        <SelectItem value="less_than_9th">Less than 9th Grade</SelectItem>
+                        <SelectItem value="9th_12th_no_diploma">9th-12th (No Diploma)</SelectItem>
+                        <SelectItem value="high_school">High School</SelectItem>
+                        <SelectItem value="some_college">Some College</SelectItem>
+                        <SelectItem value="associates">Associate&apos;s</SelectItem>
+                        <SelectItem value="bachelors">Bachelor&apos;s</SelectItem>
+                        <SelectItem value="graduate">Graduate</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
