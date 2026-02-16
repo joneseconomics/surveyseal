@@ -15,8 +15,11 @@ export async function extractCvText(
   }
 
   if (ext === "pdf") {
-    // pdf-parse is CJS-only; dynamic import avoids Turbopack ESM resolution issues
-    const pdfParse = (await import("pdf-parse")).default;
+    // Import the internal module directly to avoid pdf-parse's index.js
+    // which tries to load a test PDF file (./test/data/05-versions-space.pdf)
+    // that doesn't exist in serverless environments like Vercel
+    // @ts-expect-error -- no declaration file for deep import
+    const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
     const result = await pdfParse(buffer);
     return result.text.trim();
   }
