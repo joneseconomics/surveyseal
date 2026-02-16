@@ -87,6 +87,16 @@ interface NemotronResult {
 }
 
 
+const EDUCATION_LABELS: Record<string, string> = {
+  less_than_9th: "Less than 9th",
+  "9th_12th_no_diploma": "9th-12th",
+  high_school: "High School",
+  some_college: "Some College",
+  associates: "Associate's",
+  bachelors: "Bachelor's",
+  graduate: "Graduate",
+};
+
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
   "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
@@ -828,7 +838,7 @@ export function AiAgentPanel({
                               {r.occupation.replace(/_/g, " ")}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {r.city}, {r.state} · {r.age}{r.sex === "Male" ? "M" : "F"} · {r.educationLevel}
+                              {r.city}, {r.state} · {r.age}{r.sex === "Male" ? "M" : "F"} · {EDUCATION_LABELS[r.educationLevel] || r.educationLevel}
                             </div>
                             <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                               {r.professionalPersona}
