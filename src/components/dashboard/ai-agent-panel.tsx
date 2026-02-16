@@ -42,7 +42,7 @@ import {
   failAiSession,
   completeAiAgentRun,
 } from "@/lib/actions/ai-agent";
-import { generatePersonaFromSession, combineSessionsIntoPersona } from "@/lib/actions/generate-judge-persona";
+import { createPersonaFromSessions } from "@/lib/actions/generate-judge-persona";
 
 interface AiAgentRun {
   id: string;
@@ -184,9 +184,9 @@ export function AiAgentPanel({
 
   // Survey judges state
   const [surveyJudges, setSurveyJudges] = useState<SurveyJudge[]>(initialSurveyJudges);
-  const [generatingPersonaFor, setGeneratingPersonaFor] = useState<string | null>(null);
-  const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
-  const [combining, setCombining] = useState(false);
+  const [includeResume, setIncludeResume] = useState<Set<string>>(new Set());
+  const [includeComparisons, setIncludeComparisons] = useState<Set<string>>(new Set());
+  const [creatingPersona, setCreatingPersona] = useState(false);
 
   // Rename persona state
   const [renamingPersonaId, setRenamingPersonaId] = useState<string | null>(null);
@@ -285,60 +285,18 @@ export function AiAgentPanel({
   }, []);
 
 
-  const handleGenerateFromSession = useCallback(async (sessionId: string) => {
-    setGeneratingPersonaFor(sessionId);
+  const handleCreatePersona = useCallback(async () => {
+    if (creatingPersona) return;
+    const resumeIds = [...includeResume];
+    const compIds = [...includeComparisons];
+    if (resumeIds.length === 0 && compIds.length === 0) return;
+    setCreatingPersona(true);
     try {
-      const result = await generatePersonaFromSession({ surveyId, sessionId });
-      if (!result.success) {
-        alert(result.error);
-        return;
-      }
-      const updatedPersona: JudgePersona = {
-        id: result.persona.id,
-        name: result.persona.name,
-        title: result.persona.title,
-        description: result.persona.description,
-        cvText: result.persona.cvText,
-        cvFileName: result.persona.cvFileName,
-        createdAt: result.persona.createdAt,
-      };
-      setJudgePersonas((prev) => {
-        const existingIdx = prev.findIndex((p) => p.id === updatedPersona.id);
-        if (existingIdx >= 0) {
-          // Update existing persona in place
-          const copy = [...prev];
-          copy[existingIdx] = updatedPersona;
-          return copy;
-        }
-        return [updatedPersona, ...prev];
+      const result = await createPersonaFromSessions({
+        surveyId,
+        resumeSessionIds: resumeIds,
+        comparisonSessionIds: compIds,
       });
-      setSelectedJudge(updatedPersona.id);
-      // Mark all sessions with the same email as having a generated persona
-      const clickedJudge = surveyJudges.find((j) => j.sessionId === sessionId);
-      const clickedEmail = clickedJudge?.participantEmail;
-      setSurveyJudges((prev) =>
-        prev.map((j) => {
-          if (j.sessionId === sessionId) {
-            return { ...j, generatedPersonaId: result.persona.id };
-          }
-          if (clickedEmail && j.participantEmail === clickedEmail) {
-            return { ...j, generatedPersonaId: result.persona.id };
-          }
-          return j;
-        }),
-      );
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to generate persona");
-    } finally {
-      setGeneratingPersonaFor(null);
-    }
-  }, [surveyId, surveyJudges]);
-
-  const handleCombineSessions = useCallback(async () => {
-    if (selectedSessions.length < 2 || combining) return;
-    setCombining(true);
-    try {
-      const result = await combineSessionsIntoPersona({ surveyId, sessionIds: selectedSessions });
       if (!result.success) {
         alert(result.error);
         return;
@@ -354,21 +312,23 @@ export function AiAgentPanel({
       };
       setJudgePersonas((prev) => [newPersona, ...prev]);
       setSelectedJudge(newPersona.id);
-      // Mark all selected sessions as generated
+      // Mark all included sessions as generated
+      const allIncluded = new Set([...resumeIds, ...compIds]);
       setSurveyJudges((prev) =>
         prev.map((j) =>
-          selectedSessions.includes(j.sessionId)
+          allIncluded.has(j.sessionId)
             ? { ...j, generatedPersonaId: result.persona.id }
             : j,
         ),
       );
-      setSelectedSessions([]);
+      setIncludeResume(new Set());
+      setIncludeComparisons(new Set());
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to combine sessions");
+      alert(e instanceof Error ? e.message : "Failed to create persona");
     } finally {
-      setCombining(false);
+      setCreatingPersona(false);
     }
-  }, [surveyId, selectedSessions, combining]);
+  }, [surveyId, includeResume, includeComparisons, creatingPersona]);
 
   const handleRun = useCallback(async () => {
     if (!hasApiKey || progress.running || !personaValid) return;
@@ -728,7 +688,7 @@ export function AiAgentPanel({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                          className="shrink-0 h-auto gap-1 px-1.5 py-1 text-xs text-muted-foreground hover:text-primary"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -737,6 +697,7 @@ export function AiAgentPanel({
                           }}
                         >
                           <FileText className="h-3.5 w-3.5" />
+                          System Prompt
                         </Button>
                       )}
                     </label>
@@ -1057,7 +1018,20 @@ export function AiAgentPanel({
                                   />
                                 </form>
                               ) : (
-                                <div className="font-medium">{jp.name}</div>
+                                <div className="font-medium flex items-center gap-1">
+                                  {jp.name}
+                                  <button
+                                    className="text-muted-foreground hover:text-primary"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setRenameValue(jp.name);
+                                      setRenamingPersonaId(jp.id);
+                                    }}
+                                  >
+                                    <PenLine className="h-3 w-3" />
+                                  </button>
+                                </div>
                               )}
                               <div className="text-xs text-muted-foreground">
                                 {jp.title}
@@ -1066,19 +1040,6 @@ export function AiAgentPanel({
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setRenameValue(jp.name);
-                                  setRenamingPersonaId(jp.id);
-                                }}
-                              >
-                                <PenLine className="h-3.5 w-3.5" />
-                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1132,46 +1093,36 @@ export function AiAgentPanel({
                       <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Survey Judges
                       </div>
-                      {selectedSessions.length >= 2 && (
+                      {(includeResume.size > 0 || includeComparisons.size > 0) && (
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           className="h-7 gap-1 text-xs"
-                          onClick={handleCombineSessions}
-                          disabled={combining || progress.running}
+                          onClick={handleCreatePersona}
+                          disabled={creatingPersona || progress.running}
                         >
-                          {combining ? (
+                          {creatingPersona ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <Bot className="h-3 w-3" />
                           )}
-                          Combine {selectedSessions.length} into Persona
+                          Create AI Persona
                         </Button>
                       )}
                     </div>
-                    <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
-                      {surveyJudges.map((sj) => {
-                        const isSelected = selectedSessions.includes(sj.sessionId);
-                        return (
+                    <div className="rounded-md border">
+                      {/* Column headers */}
+                      <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs text-muted-foreground font-medium">
+                        <div className="flex-1">Judge</div>
+                        <div className="w-20 text-center">Resume</div>
+                        <div className="w-24 text-center">Comparisons</div>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto divide-y">
+                        {surveyJudges.map((sj) => (
                           <div
                             key={sj.sessionId}
                             className="flex items-center gap-2 px-3 py-2 text-sm"
                           >
-                            {!sj.generatedPersonaId && (
-                              <input
-                                type="checkbox"
-                                className="shrink-0"
-                                checked={isSelected}
-                                onChange={() =>
-                                  setSelectedSessions((prev) =>
-                                    isSelected
-                                      ? prev.filter((id) => id !== sj.sessionId)
-                                      : [...prev, sj.sessionId],
-                                  )
-                                }
-                                disabled={combining || progress.running}
-                              />
-                            )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium">
                                 {sj.jobTitle && sj.employer
@@ -1191,38 +1142,47 @@ export function AiAgentPanel({
                                 </div>
                               )}
                             </div>
-                            {sj.generatedPersonaId ? (
-                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
-                                <CheckCircle className="mr-1 h-3 w-3" />
-                                Generated
-                              </Badge>
-                            ) : (() => {
-                              const emailHasPersona = sj.participantEmail &&
-                                surveyJudges.some((other) =>
-                                  other.sessionId !== sj.sessionId &&
-                                  other.participantEmail === sj.participantEmail &&
-                                  other.generatedPersonaId,
-                                );
-                              return (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="shrink-0 gap-1"
-                                  onClick={() => handleGenerateFromSession(sj.sessionId)}
-                                  disabled={generatingPersonaFor !== null || progress.running}
-                                >
-                                  {generatingPersonaFor === sj.sessionId ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Bot className="h-3.5 w-3.5" />
-                                  )}
-                                  {emailHasPersona ? "Update Persona" : "Generate Persona"}
-                                </Button>
-                              );
-                            })()}
+                            <div className="w-20 flex justify-center">
+                              {sj.cvFileName ? (
+                                <input
+                                  type="checkbox"
+                                  checked={includeResume.has(sj.sessionId)}
+                                  onChange={() =>
+                                    setIncludeResume((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(sj.sessionId)) next.delete(sj.sessionId);
+                                      else next.add(sj.sessionId);
+                                      return next;
+                                    })
+                                  }
+                                  disabled={creatingPersona || progress.running}
+                                />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">&mdash;</span>
+                              )}
+                            </div>
+                            <div className="w-24 flex justify-center">
+                              {sj.comparisonCount > 0 ? (
+                                <input
+                                  type="checkbox"
+                                  checked={includeComparisons.has(sj.sessionId)}
+                                  onChange={() =>
+                                    setIncludeComparisons((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(sj.sessionId)) next.delete(sj.sessionId);
+                                      else next.add(sj.sessionId);
+                                      return next;
+                                    })
+                                  }
+                                  disabled={creatingPersona || progress.running}
+                                />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">&mdash;</span>
+                              )}
+                            </div>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

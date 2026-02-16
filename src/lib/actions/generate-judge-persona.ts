@@ -218,12 +218,14 @@ export async function generatePersonaFromSession(data: {
 }
 
 /**
- * Combine multiple survey judge sessions into a single persona.
- * Uses the latest session's demographics and CV, merges all comparisons.
+ * Create a persona from selected survey judge sessions.
+ * resumeSessionIds: sessions whose CV/resume to include (latest per email used)
+ * comparisonSessionIds: sessions whose comparisons to include
  */
-export async function combineSessionsIntoPersona(data: {
+export async function createPersonaFromSessions(data: {
   surveyId: string;
-  sessionIds: string[];
+  resumeSessionIds: string[];
+  comparisonSessionIds: string[];
 }): Promise<GenerateResult> {
   try {
     const authSession = await auth();
@@ -231,8 +233,9 @@ export async function combineSessionsIntoPersona(data: {
 
     await requireAccess(data.surveyId, authSession.user.id, "editor");
 
-    if (data.sessionIds.length < 2) {
-      return { success: false, error: "Select at least 2 sessions to combine" };
+    const allIds = [...new Set([...data.resumeSessionIds, ...data.comparisonSessionIds])];
+    if (allIds.length === 0) {
+      return { success: false, error: "Select at least one resume or comparison session" };
     }
 
     const sessionSelect = {
@@ -255,7 +258,7 @@ export async function combineSessionsIntoPersona(data: {
 
     const sessions = await db.surveySession.findMany({
       where: {
-        id: { in: data.sessionIds },
+        id: { in: allIds },
         surveyId: data.surveyId,
         status: "COMPLETED",
       },
@@ -267,59 +270,86 @@ export async function combineSessionsIntoPersona(data: {
       return { success: false, error: "No completed sessions found" };
     }
 
-    // Use the latest session's demographics and CV
-    const latestSession = sessions[0];
-    const demographics = latestSession.judgeDemographics as Record<string, unknown> | null;
-    if (!demographics?.cvFileUrl) {
-      return { success: false, error: "Most recent selected session has no CV upload" };
+    // --- Resume: pick the latest session per email from resumeSessionIds ---
+    let cvText = "";
+    let cvFileName = "";
+    let demographics: Record<string, unknown> | null = null;
+
+    if (data.resumeSessionIds.length > 0) {
+      // Sessions are already sorted by completedAt desc, so first match per email is latest
+      const resumeSessions = sessions.filter((s) => data.resumeSessionIds.includes(s.id));
+      const seenEmails = new Set<string>();
+      let bestResumeSession = resumeSessions[0]; // fallback to latest overall
+
+      for (const rs of resumeSessions) {
+        const email = rs.participantEmail || rs.id;
+        if (seenEmails.has(email)) continue;
+        seenEmails.add(email);
+        if (!bestResumeSession) bestResumeSession = rs;
+      }
+
+      if (bestResumeSession) {
+        demographics = bestResumeSession.judgeDemographics as Record<string, unknown> | null;
+        if (demographics?.cvFileUrl) {
+          const cvUrl = demographics.cvFileUrl as string;
+          cvFileName = (demographics.cvFileName as string) || "cv.pdf";
+
+          const pathMatch = cvUrl.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
+          if (pathMatch) {
+            const storagePath = decodeURIComponent(pathMatch[1]);
+            const supabase = getServerSupabase();
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from(BUCKET)
+              .download(storagePath);
+            if (!downloadError && fileData) {
+              const buffer = Buffer.from(await fileData.arrayBuffer());
+              cvText = await extractCvText(buffer, cvFileName);
+            }
+          }
+        }
+      }
     }
 
-    const cvUrl = demographics.cvFileUrl as string;
-    const cvFileName = (demographics.cvFileName as string) || "cv.pdf";
+    // If no resume was selected, still grab demographics from the latest session
+    if (!demographics) {
+      demographics = sessions[0].judgeDemographics as Record<string, unknown> | null;
+    }
 
-    const pathMatch = cvUrl.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
-    if (!pathMatch) return { success: false, error: "Cannot parse CV storage path from URL" };
-    const storagePath = decodeURIComponent(pathMatch[1]);
+    // --- Comparisons: combine from comparisonSessionIds ---
+    let comparisonLines: string[] = [];
+    if (data.comparisonSessionIds.length > 0) {
+      const compSessions = sessions.filter((s) => data.comparisonSessionIds.includes(s.id));
+      const allComparisons = compSessions.flatMap((s) => s.comparisons);
+      comparisonLines = allComparisons
+        .filter((c) => c.winner != null)
+        .map((c) => {
+          const winnerLabel =
+            c.winner!.id === c.leftItemId ? c.leftItem.label : c.rightItem.label;
+          const loserLabel =
+            c.winner!.id === c.leftItemId ? c.rightItem.label : c.leftItem.label;
+          return `- Selected "${winnerLabel}" over "${loserLabel}"`;
+        });
+    }
 
-    const supabase = getServerSupabase();
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from(BUCKET)
-      .download(storagePath);
-    if (downloadError || !fileData) return { success: false, error: "Failed to download CV file" };
-
-    const buffer = Buffer.from(await fileData.arrayBuffer());
-    const cvText = await extractCvText(buffer, cvFileName);
-    if (!cvText.trim()) return { success: false, error: "No text could be extracted from CV" };
-
-    // Combine comparisons from ALL selected sessions
-    const allComparisons = sessions.flatMap((s) => s.comparisons);
-    const comparisonLines = allComparisons
-      .filter((c) => c.winner != null)
-      .map((c) => {
-        const winnerLabel =
-          c.winner!.id === c.leftItemId ? c.leftItem.label : c.rightItem.label;
-        const loserLabel =
-          c.winner!.id === c.leftItemId ? c.rightItem.label : c.leftItem.label;
-        return `- Selected "${winnerLabel}" over "${loserLabel}"`;
-      });
-
-    const jobTitle = (demographics.jobTitle as string) || "";
-    const employer = (demographics.employer as string) || "";
-    const hiringExp = demographics.hasHiringExperience
+    const jobTitle = (demographics?.jobTitle as string) || "";
+    const employer = (demographics?.employer as string) || "";
+    const hiringExp = demographics?.hasHiringExperience
       ? `Has hiring experience in: ${(demographics.hiringRoles as string[] || []).join(", ") || "general hiring"}.`
       : "No direct hiring experience.";
 
     const emails = [...new Set(sessions.map((s) => s.participantEmail).filter(Boolean))];
-    const judgeNote = emails.length > 1
-      ? `Combined from ${sessions.length} sessions across ${emails.length} judges.`
-      : `Combined from ${sessions.length} judging sessions.`;
+    const sessionNote = allIds.length > 1
+      ? emails.length > 1
+        ? `Combined from ${allIds.length} sessions across ${emails.length} judges.`
+        : `Combined from ${allIds.length} judging sessions.`
+      : "";
 
     const description = [
       jobTitle && employer
         ? `${jobTitle} at ${employer}.`
         : jobTitle || employer || "Professional judge.",
       hiringExp,
-      judgeNote,
+      sessionNote,
       "",
       comparisonLines.length > 0
         ? `Comparison history (${comparisonLines.length} judgments):\n${comparisonLines.join("\n")}`
@@ -331,20 +361,19 @@ export async function combineSessionsIntoPersona(data: {
     const name =
       jobTitle && employer
         ? `${jobTitle} at ${employer}`
-        : emails[0] || "Combined Judge";
+        : emails[0] || "Survey Judge";
 
     const title = jobTitle || "Judge";
 
-    // Use the latest session as the source
     const persona = await db.judgePersona.create({
       data: {
         name,
         title,
         description,
-        cvText,
-        cvFileName,
+        cvText: cvText || "No resume provided.",
+        cvFileName: cvFileName || "",
         createdById: authSession.user.id,
-        sourceSessionId: latestSession.id,
+        sourceSessionId: sessions[0].id,
       },
       select: {
         id: true,
@@ -365,6 +394,6 @@ export async function combineSessionsIntoPersona(data: {
       },
     };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Failed to combine sessions" };
+    return { success: false, error: e instanceof Error ? e.message : "Failed to create persona" };
   }
 }
