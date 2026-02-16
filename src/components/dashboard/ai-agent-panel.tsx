@@ -1085,23 +1085,6 @@ export function AiAgentPanel({
                                 <FileText className="h-3.5 w-3.5" />
                                 System Prompt
                               </Button>
-                              <button
-                                className="text-muted-foreground hover:text-red-600 p-1"
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (!confirm(`Delete persona "${jp.name}"?`)) return;
-                                  const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
-                                    method: "DELETE",
-                                  });
-                                  if (res.ok) {
-                                    setJudgePersonas((prev) => prev.filter((p) => p.id !== jp.id));
-                                    if (selectedJudge === jp.id) setSelectedJudge(null);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
                               <Button
                                 size="sm"
                                 variant={jp.isCatalog ? "default" : "outline"}
@@ -1127,6 +1110,23 @@ export function AiAgentPanel({
                                 <Globe className="h-3.5 w-3.5" />
                                 {jp.isCatalog ? "In Catalog" : "Deploy to Catalog"}
                               </Button>
+                              <button
+                                className="text-muted-foreground hover:text-red-600 p-1"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (!confirm(`Delete persona "${jp.name}"?`)) return;
+                                  const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
+                                    method: "DELETE",
+                                  });
+                                  if (res.ok) {
+                                    setJudgePersonas((prev) => prev.filter((p) => p.id !== jp.id));
+                                    if (selectedJudge === jp.id) setSelectedJudge(null);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </label>
                         );
