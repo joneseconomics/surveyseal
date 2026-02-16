@@ -166,7 +166,7 @@ function buildWhereClause(filters: {
     const minIdx = EDUCATION_ORDER.indexOf(filters.minEducation);
     if (minIdx >= 0) {
       const qualifying = EDUCATION_ORDER.slice(minIdx);
-      const inList = qualifying.map((e) => `'${e}'`).join(",");
+      const inList = qualifying.map((e) => `'${e.replace(/'/g, "''")}'`).join(",");
       conditions.push(`"education_level" IN (${inList})`);
     }
   }
