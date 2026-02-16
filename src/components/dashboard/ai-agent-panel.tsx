@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText, ChevronDown, X } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText, ChevronDown, X, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -65,6 +65,7 @@ export interface JudgePersona {
   description: string;
   cvText?: string;
   cvFileName: string;
+  isCatalog?: boolean;
   createdAt: string;
   createdBy?: { name: string | null; email: string | null };
 }
@@ -740,6 +741,46 @@ export function AiAgentPanel({
                       )}
                     </label>
                   ))}
+                  {judgePersonas.filter((jp) => jp.isCatalog).map((jp) => {
+                    const catalogId = `judge:${jp.id}`;
+                    return (
+                      <label
+                        key={catalogId}
+                        className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
+                          presetPersona === catalogId ? "bg-muted" : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="preset-persona"
+                          className="mt-1 shrink-0"
+                          checked={presetPersona === catalogId}
+                          onChange={() => setPresetPersona(catalogId)}
+                          disabled={!canEdit || progress.running}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{jp.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {jp.title}
+                            {jp.cvFileName && ` · ${jp.cvFileName}`}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-auto gap-1 px-1.5 py-1 text-xs text-muted-foreground hover:text-primary"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setJudgeDetailPersona(jp);
+                          }}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          System Prompt
+                        </Button>
+                      </label>
+                    );
+                  })}
                 </div>
               </TabsContent>
 
@@ -1024,31 +1065,59 @@ export function AiAgentPanel({
                                 {jp.cvFileName && ` · ${jp.cvFileName}`}
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setRenameValue(jp.name);
-                                setRenamingPersonaId(jp.id);
-                              }}
-                            >
-                              <PenLine className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setJudgeDetailPersona(jp);
-                              }}
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setRenameValue(jp.name);
+                                  setRenamingPersonaId(jp.id);
+                                }}
+                              >
+                                <PenLine className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-auto gap-1 px-1.5 py-1 text-xs text-muted-foreground hover:text-primary"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setJudgeDetailPersona(jp);
+                                }}
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                System Prompt
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={jp.isCatalog ? "default" : "outline"}
+                                className="h-auto gap-1 px-1.5 py-1 text-xs"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const newValue = !jp.isCatalog;
+                                  const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ isCatalog: newValue }),
+                                  });
+                                  if (res.ok) {
+                                    setJudgePersonas((prev) =>
+                                      prev.map((p) =>
+                                        p.id === jp.id ? { ...p, isCatalog: newValue } : p,
+                                      ),
+                                    );
+                                  }
+                                }}
+                              >
+                                <Globe className="h-3.5 w-3.5" />
+                                {jp.isCatalog ? "In Catalog" : "Deploy to Catalog"}
+                              </Button>
+                            </div>
                           </label>
                         );
                       })}

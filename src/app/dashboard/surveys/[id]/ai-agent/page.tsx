@@ -65,6 +65,7 @@ export default async function AiAgentPage({
         description: true,
         cvText: true,
         cvFileName: true,
+        isCatalog: true,
         createdAt: true,
         createdBy: { select: { name: true, email: true } },
       },
@@ -120,6 +121,7 @@ export default async function AiAgentPage({
         description: j.description,
         cvText: j.cvText,
         cvFileName: j.cvFileName,
+        isCatalog: j.isCatalog,
         createdAt: j.createdAt.toISOString(),
         createdBy: j.createdBy,
       }))}

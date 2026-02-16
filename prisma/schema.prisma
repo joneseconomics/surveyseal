@@ -366,6 +366,7 @@ model JudgePersona {
   cvFileName      String   @map("cv_file_name")
   createdById     String   @map("created_by_id")
   sourceSessionId String?  @unique @map("source_session_id")
+  isCatalog       Boolean  @default(false) @map("is_catalog")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

@@ -45,11 +45,6 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-
-  if (!name) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
-  }
 
   const persona = await db.judgePersona.findUnique({
     where: { id },
@@ -62,15 +57,29 @@ export async function PATCH(
 
   if (persona.createdById !== session.user.id) {
     return NextResponse.json(
-      { error: "Only the creator can rename this persona" },
+      { error: "Only the creator can modify this persona" },
       { status: 403 },
     );
   }
 
+  const data: Record<string, unknown> = {};
+
+  if (typeof body.name === "string" && body.name.trim()) {
+    data.name = body.name.trim();
+  }
+
+  if (typeof body.isCatalog === "boolean") {
+    data.isCatalog = body.isCatalog;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
   const updated = await db.judgePersona.update({
     where: { id },
-    data: { name },
-    select: { id: true, name: true },
+    data,
+    select: { id: true, name: true, isCatalog: true },
   });
 
   return NextResponse.json(updated);
