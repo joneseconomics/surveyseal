@@ -187,6 +187,10 @@ export function AiAgentPanel({
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [combining, setCombining] = useState(false);
 
+  // Rename persona state
+  const [renamingPersonaId, setRenamingPersonaId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
   // Catalog detail dialog state
   const [catalogDetailSlug, setCatalogDetailSlug] = useState<string | null>(null);
   const [catalogDetailOpen, setCatalogDetailOpen] = useState(false);
@@ -959,6 +963,7 @@ export function AiAgentPanel({
                       {judgePersonas.map((jp) => {
                         const countMatch = jp.description.match(/Comparison history \((\d+) judgments?\)/);
                         const compCount = countMatch ? parseInt(countMatch[1]) : 0;
+                        const isRenaming = renamingPersonaId === jp.id;
                         return (
                           <label
                             key={jp.id}
@@ -975,13 +980,63 @@ export function AiAgentPanel({
                               disabled={!canEdit || progress.running}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium">{jp.name}</div>
+                              {isRenaming ? (
+                                <form
+                                  className="flex items-center gap-1"
+                                  onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    const trimmed = renameValue.trim();
+                                    if (!trimmed || trimmed === jp.name) {
+                                      setRenamingPersonaId(null);
+                                      return;
+                                    }
+                                    const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ name: trimmed }),
+                                    });
+                                    if (res.ok) {
+                                      setJudgePersonas((prev) =>
+                                        prev.map((p) => (p.id === jp.id ? { ...p, name: trimmed } : p)),
+                                      );
+                                    }
+                                    setRenamingPersonaId(null);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Input
+                                    autoFocus
+                                    className="h-6 text-sm px-1"
+                                    value={renameValue}
+                                    onChange={(e) => setRenameValue(e.target.value)}
+                                    onBlur={() => setRenamingPersonaId(null)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Escape") setRenamingPersonaId(null);
+                                    }}
+                                  />
+                                </form>
+                              ) : (
+                                <div className="font-medium">{jp.name}</div>
+                              )}
                               <div className="text-xs text-muted-foreground">
                                 {jp.title}
                                 {compCount > 0 && ` · ${compCount} comparison${compCount !== 1 ? "s" : ""}`}
                                 {jp.cvFileName && ` · ${jp.cvFileName}`}
                               </div>
                             </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setRenameValue(jp.name);
+                                setRenamingPersonaId(jp.id);
+                              }}
+                            >
+                              <PenLine className="h-3.5 w-3.5" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1054,6 +1109,9 @@ export function AiAgentPanel({
                                   ? `${sj.jobTitle} at ${sj.employer}`
                                   : sj.jobTitle || sj.employer || sj.participantEmail || "Anonymous Judge"}
                               </div>
+                              {sj.participantEmail && (
+                                <div className="text-xs text-muted-foreground">{sj.participantEmail}</div>
+                              )}
                               <div className="text-xs text-muted-foreground">
                                 {sj.comparisonCount} comparison{sj.comparisonCount !== 1 ? "s" : ""}
                                 {sj.cvFileName && ` · ${sj.cvFileName}`}
