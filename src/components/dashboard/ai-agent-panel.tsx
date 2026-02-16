@@ -312,15 +312,6 @@ export function AiAgentPanel({
       };
       setJudgePersonas((prev) => [newPersona, ...prev]);
       setSelectedJudge(newPersona.id);
-      // Mark all included sessions as generated
-      const allIncluded = new Set([...resumeIds, ...compIds]);
-      setSurveyJudges((prev) =>
-        prev.map((j) =>
-          allIncluded.has(j.sessionId)
-            ? { ...j, generatedPersonaId: result.persona.id }
-            : j,
-        ),
-      );
       setIncludeResume(new Set());
       setIncludeComparisons(new Set());
     } catch (e) {
