@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText, Link } from "lucide-react";
+import { Bot, Key, Play, CheckCircle, XCircle, Loader2, Search, PenLine, UserCheck, FileText } from "lucide-react";
 import { AI_PROVIDERS } from "@/lib/ai/providers";
 import { AI_PERSONAS, resolvePersonaName } from "@/lib/ai/personas";
 import { AddJudgeDialog } from "@/components/dashboard/add-judge-dialog";
@@ -81,6 +81,13 @@ interface NemotronResult {
 }
 
 
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
+  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
+  "VA","WA","WV","WI","WY","DC",
+];
+
 interface AiAgentPanelProps {
   surveyId: string;
   surveyTitle: string;
@@ -132,9 +139,14 @@ export function AiAgentPanel({
   const [nemResults, setNemResults] = useState<NemotronResult[]>([]);
   const [nemSelected, setNemSelected] = useState<NemotronResult | null>(null);
   const [nemSearching, setNemSearching] = useState(false);
-  const [nemUrl, setNemUrl] = useState("");
-  const [nemSuggesting, setNemSuggesting] = useState(false);
-  const [nemSuggestError, setNemSuggestError] = useState("");
+  const [nemFilters, setNemFilters] = useState<{
+    sex: string;
+    ageMin: string;
+    ageMax: string;
+    educationLevel: string;
+    state: string;
+    city: string;
+  }>({ sex: "", ageMin: "", ageMax: "", educationLevel: "", state: "", city: "" });
   const [customPersona, setCustomPersona] = useState("");
   const [sessionCount, setSessionCount] = useState(1);
   const [runs, setRuns] = useState<AiAgentRun[]>(initialRuns);
@@ -204,12 +216,24 @@ export function AiAgentPanel({
   }, [apiKey, hasApiKey, surveyId, provider, effectiveModel]);
 
   const handleNemotronSearch = useCallback(async () => {
-    if (!nemQuery.trim() || nemSearching) return;
+    const hasQuery = nemQuery.trim();
+    const hasFilters = nemFilters.sex || nemFilters.ageMin || nemFilters.ageMax ||
+      nemFilters.educationLevel || nemFilters.state || nemFilters.city;
+    if ((!hasQuery && !hasFilters) || nemSearching) return;
     setNemSearching(true);
     setNemResults([]);
     setNemSelected(null);
     try {
-      const res = await fetch(`/api/ai/persona-search?q=${encodeURIComponent(nemQuery.trim())}&limit=10`);
+      const p = new URLSearchParams();
+      if (hasQuery) p.set("q", nemQuery.trim());
+      p.set("limit", "10");
+      if (nemFilters.sex) p.set("sex", nemFilters.sex);
+      if (nemFilters.ageMin) p.set("ageMin", nemFilters.ageMin);
+      if (nemFilters.ageMax) p.set("ageMax", nemFilters.ageMax);
+      if (nemFilters.educationLevel) p.set("educationLevel", nemFilters.educationLevel);
+      if (nemFilters.state) p.set("state", nemFilters.state);
+      if (nemFilters.city) p.set("city", nemFilters.city);
+      const res = await fetch(`/api/ai/persona-search?${p.toString()}`);
       if (!res.ok) throw new Error("Search failed");
       const data = await res.json();
       setNemResults(data.results ?? []);
@@ -218,35 +242,7 @@ export function AiAgentPanel({
     } finally {
       setNemSearching(false);
     }
-  }, [nemQuery, nemSearching]);
-
-  const handleNemotronSuggest = useCallback(async () => {
-    if (!nemUrl.trim() || nemSuggesting || !hasApiKey) return;
-    setNemSuggesting(true);
-    setNemSuggestError("");
-    setNemResults([]);
-    setNemSelected(null);
-    try {
-      const res = await fetch("/api/ai/nemotron-suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: nemUrl.trim(), surveyId }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: "Suggestion failed" }));
-        throw new Error(data.error || "Suggestion failed");
-      }
-      const data = await res.json();
-      setNemResults(data.results ?? []);
-      if (data.suggestion?.searchQuery) {
-        setNemQuery(data.suggestion.searchQuery);
-      }
-    } catch (e) {
-      setNemSuggestError(e instanceof Error ? e.message : "Suggestion failed");
-    } finally {
-      setNemSuggesting(false);
-    }
-  }, [nemUrl, nemSuggesting, hasApiKey, surveyId]);
+  }, [nemQuery, nemFilters, nemSearching]);
 
   const handleCreateJudge = useCallback((newPersona: JudgePersona) => {
     setJudgePersonas((prev) => [newPersona, ...prev]);
@@ -639,35 +635,108 @@ export function AiAgentPanel({
                     size="sm"
                     variant="outline"
                     onClick={handleNemotronSearch}
-                    disabled={!nemQuery.trim() || nemSearching || progress.running}
+                    disabled={nemSearching || progress.running}
                   >
                     {nemSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </Button>
                 </div>
 
-                {/* URL suggestion */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Paste a URL to suggest personas..."
-                    value={nemUrl}
-                    onChange={(e) => setNemUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleNemotronSuggest()}
-                    disabled={nemSuggesting || progress.running || !hasApiKey}
-                    className="text-xs"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleNemotronSuggest}
-                    disabled={!nemUrl.trim() || nemSuggesting || progress.running || !hasApiKey}
-                    title={!hasApiKey ? "Configure API key first" : "Suggest personas from URL"}
-                  >
-                    {nemSuggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link className="h-4 w-4" />}
-                  </Button>
+                {/* Filters */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Sex</Label>
+                    <Select
+                      value={nemFilters.sex || "__any"}
+                      onValueChange={(v) => setNemFilters((f) => ({ ...f, sex: v === "__any" ? "" : v }))}
+                      disabled={progress.running}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__any">Either</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Age Min</Label>
+                    <Input
+                      type="number"
+                      min={18}
+                      max={100}
+                      placeholder="18"
+                      value={nemFilters.ageMin}
+                      onChange={(e) => setNemFilters((f) => ({ ...f, ageMin: e.target.value }))}
+                      disabled={progress.running}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Age Max</Label>
+                    <Input
+                      type="number"
+                      min={18}
+                      max={100}
+                      placeholder="100"
+                      value={nemFilters.ageMax}
+                      onChange={(e) => setNemFilters((f) => ({ ...f, ageMax: e.target.value }))}
+                      disabled={progress.running}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Education</Label>
+                    <Select
+                      value={nemFilters.educationLevel || "__any"}
+                      onValueChange={(v) => setNemFilters((f) => ({ ...f, educationLevel: v === "__any" ? "" : v }))}
+                      disabled={progress.running}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__any">Any</SelectItem>
+                        <SelectItem value="Less than High School">Less than High School</SelectItem>
+                        <SelectItem value="High School Diploma/GED">High School/GED</SelectItem>
+                        <SelectItem value="Some College">Some College</SelectItem>
+                        <SelectItem value="Associate Degree">Associate Degree</SelectItem>
+                        <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="Doctorate/Professional Degree">Doctorate/Professional</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">State</Label>
+                    <Select
+                      value={nemFilters.state || "__any"}
+                      onValueChange={(v) => setNemFilters((f) => ({ ...f, state: v === "__any" ? "" : v }))}
+                      disabled={progress.running}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__any">Any</SelectItem>
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">City</Label>
+                    <Input
+                      placeholder="Any"
+                      value={nemFilters.city}
+                      onChange={(e) => setNemFilters((f) => ({ ...f, city: e.target.value }))}
+                      disabled={progress.running}
+                      className="h-8 text-xs"
+                    />
+                  </div>
                 </div>
-                {nemSuggestError && (
-                  <p className="text-xs text-red-600">{nemSuggestError}</p>
-                )}
 
                 {/* Results */}
                 {nemResults.length > 0 && (
@@ -701,8 +770,8 @@ export function AiAgentPanel({
                     ))}
                   </div>
                 )}
-                {nemResults.length === 0 && nemQuery && !nemSearching && !nemSuggesting && (
-                  <p className="text-xs text-muted-foreground">No results. Try a different search term.</p>
+                {nemResults.length === 0 && !nemSearching && (nemQuery || nemFilters.sex || nemFilters.state || nemFilters.educationLevel || nemFilters.city || nemFilters.ageMin || nemFilters.ageMax) && (
+                  <p className="text-xs text-muted-foreground">No results. Try different search terms or filters.</p>
                 )}
               </TabsContent>
 
