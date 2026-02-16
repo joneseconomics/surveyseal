@@ -286,7 +286,7 @@ export function AiAgentPanel({
         alert(result.error);
         return;
       }
-      const newPersona: JudgePersona = {
+      const updatedPersona: JudgePersona = {
         id: result.persona.id,
         name: result.persona.name,
         title: result.persona.title,
@@ -295,8 +295,17 @@ export function AiAgentPanel({
         cvFileName: result.persona.cvFileName,
         createdAt: result.persona.createdAt,
       };
-      setJudgePersonas((prev) => [newPersona, ...prev]);
-      setSelectedJudge(newPersona.id);
+      setJudgePersonas((prev) => {
+        const existingIdx = prev.findIndex((p) => p.id === updatedPersona.id);
+        if (existingIdx >= 0) {
+          // Update existing persona in place
+          const copy = [...prev];
+          copy[existingIdx] = updatedPersona;
+          return copy;
+        }
+        return [updatedPersona, ...prev];
+      });
+      setSelectedJudge(updatedPersona.id);
       setSurveyJudges((prev) =>
         prev.map((j) =>
           j.sessionId === sessionId ? { ...j, generatedPersonaId: result.persona.id } : j,
@@ -951,22 +960,31 @@ export function AiAgentPanel({
                               <CheckCircle className="mr-1 h-3 w-3" />
                               Generated
                             </Badge>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="shrink-0 gap-1"
-                              onClick={() => handleGenerateFromSession(sj.sessionId)}
-                              disabled={generatingPersonaFor !== null || progress.running}
-                            >
-                              {generatingPersonaFor === sj.sessionId ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Bot className="h-3.5 w-3.5" />
-                              )}
-                              Generate Persona
-                            </Button>
-                          )}
+                          ) : (() => {
+                            // Check if another session with the same email already has a persona
+                            const emailHasPersona = sj.participantEmail &&
+                              surveyJudges.some((other) =>
+                                other.sessionId !== sj.sessionId &&
+                                other.participantEmail === sj.participantEmail &&
+                                other.generatedPersonaId,
+                              );
+                            return (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="shrink-0 gap-1"
+                                onClick={() => handleGenerateFromSession(sj.sessionId)}
+                                disabled={generatingPersonaFor !== null || progress.running}
+                              >
+                                {generatingPersonaFor === sj.sessionId ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Bot className="h-3.5 w-3.5" />
+                                )}
+                                {emailHasPersona ? "Update Persona" : "Generate Persona"}
+                              </Button>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>

@@ -40,6 +40,7 @@ export async function generatePersonaFromSession(data: {
     const email = clickedSession.participantEmail;
 
     // Check for existing persona — by email (all sessions) or by session ID
+    let existingPersonaId: string | null = null;
     if (email) {
       const existingByEmail = await db.judgePersona.findFirst({
         where: {
@@ -48,13 +49,13 @@ export async function generatePersonaFromSession(data: {
             surveyId: data.surveyId,
           },
         },
+        select: { id: true },
       });
-      if (existingByEmail) {
-        return { success: false, error: "A persona has already been generated for this judge" };
-      }
+      existingPersonaId = existingByEmail?.id ?? null;
     } else {
       const existing = await db.judgePersona.findUnique({
         where: { sourceSessionId: data.sessionId },
+        select: { id: true },
       });
       if (existing) {
         return { success: false, error: "A persona has already been generated from this session" };
@@ -173,26 +174,36 @@ export async function generatePersonaFromSession(data: {
 
     const title = jobTitle || "Judge";
 
-    const persona = await db.judgePersona.create({
-      data: {
-        name,
-        title,
-        description,
-        cvText,
-        cvFileName,
-        createdById: authSession.user.id,
-        sourceSessionId: data.sessionId,
-      },
-      select: {
-        id: true,
-        name: true,
-        title: true,
-        description: true,
-        cvText: true,
-        cvFileName: true,
-        createdAt: true,
-      },
-    });
+    const personaFields = { name, title, description, cvText, cvFileName };
+    const personaSelect = {
+      id: true,
+      name: true,
+      title: true,
+      description: true,
+      cvText: true,
+      cvFileName: true,
+      createdAt: true,
+    };
+
+    let persona;
+    if (existingPersonaId) {
+      // Update existing persona with combined data
+      persona = await db.judgePersona.update({
+        where: { id: existingPersonaId },
+        data: personaFields,
+        select: personaSelect,
+      });
+    } else {
+      // Create new persona
+      persona = await db.judgePersona.create({
+        data: {
+          ...personaFields,
+          createdById: authSession.user.id,
+          sourceSessionId: data.sessionId,
+        },
+        select: personaSelect,
+      });
+    }
 
     return {
       success: true,
