@@ -54,39 +54,43 @@ export async function createAiAgentRun(data: {
   model: string;
   persona: string;
   sessionCount: number;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ runId: string } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  await requireAccess(data.surveyId, session.user.id, "editor");
+    await requireAccess(data.surveyId, session.user.id, "editor");
 
-  const [user, survey] = await Promise.all([
-    db.user.findUnique({
-      where: { id: session.user.id },
-      select: { aiApiKey: true },
-    }),
-    db.survey.findUnique({
-      where: { id: data.surveyId },
-      select: { status: true },
-    }),
-  ]);
+    const [user, survey] = await Promise.all([
+      db.user.findUnique({
+        where: { id: session.user.id },
+        select: { aiApiKey: true },
+      }),
+      db.survey.findUnique({
+        where: { id: data.surveyId },
+        select: { status: true },
+      }),
+    ]);
 
-  if (!survey) throw new Error("Survey not found");
-  if (!user?.aiApiKey) throw new Error("AI API key not configured");
-  if (survey.status !== "LIVE") throw new Error("Survey must be live to run AI agent");
+    if (!survey) return { error: "Survey not found" };
+    if (!user?.aiApiKey) return { error: "AI API key not configured" };
+    if (survey.status !== "LIVE") return { error: "Survey must be live to run AI agent" };
 
-  const run = await db.aiAgentRun.create({
-    data: {
-      surveyId: data.surveyId,
-      userId: session.user.id,
-      provider: data.provider,
-      model: data.model,
-      persona: data.persona,
-      sessionCount: data.sessionCount,
-    },
-  });
+    const run = await db.aiAgentRun.create({
+      data: {
+        surveyId: data.surveyId,
+        userId: session.user.id,
+        provider: data.provider,
+        model: data.model,
+        persona: data.persona,
+        sessionCount: data.sessionCount,
+      },
+    });
 
-  return { runId: run.id };
+    return { runId: run.id };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to create run" };
+  }
 }
 
 // ─── Create AI Session ────────────────────────────────────────────────────
@@ -106,108 +110,121 @@ export async function createAiSession(data: {
     sex?: string;
     educationLevel?: string;
   };
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<
+  | {
+      sessionId: string;
+      questions: { id: string; type: string; content: unknown; isVerificationPoint: boolean; position: number }[];
+      totalComparisons: number;
+      cjPrompt?: string | null;
+      cjJudgeInstructions?: string | null;
+    }
+  | { error: string }
+> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  await requireAccess(data.surveyId, session.user.id, "editor");
+    await requireAccess(data.surveyId, session.user.id, "editor");
 
-  const survey = await db.survey.findUnique({
-    where: { id: data.surveyId },
-    select: {
-      type: true,
-      cjSubtype: true,
-      comparisonsPerJudge: true,
-      cjPrompt: true,
-      cjJudgeInstructions: true,
-      questions: {
-        orderBy: { position: "asc" },
-        select: { id: true, type: true, content: true, isVerificationPoint: true, position: true },
+    const survey = await db.survey.findUnique({
+      where: { id: data.surveyId },
+      select: {
+        type: true,
+        cjSubtype: true,
+        comparisonsPerJudge: true,
+        cjPrompt: true,
+        cjJudgeInstructions: true,
+        questions: {
+          orderBy: { position: "asc" },
+          select: { id: true, type: true, content: true, isVerificationPoint: true, position: true },
+        },
+        cjItems: { select: { id: true } },
       },
-      cjItems: { select: { id: true } },
-    },
-  });
-
-  if (!survey) throw new Error("Survey not found");
-
-  let personaName = resolvePersonaName(data.persona);
-  let judgeDemographics: Prisma.InputJsonValue | undefined;
-
-  // For judge personas, resolve the actual name and demographics from DB
-  if (data.persona.startsWith("judge:")) {
-    const judgeId = data.persona.slice("judge:".length);
-    const judge = await db.judgePersona.findUnique({
-      where: { id: judgeId },
-      select: { name: true, title: true, cvText: true, cvFileName: true },
     });
-    if (judge) {
-      personaName = judge.name;
+
+    if (!survey) return { error: "Survey not found" };
+
+    let personaName = resolvePersonaName(data.persona);
+    let judgeDemographics: Prisma.InputJsonValue | undefined;
+
+    // For judge personas, resolve the actual name and demographics from DB
+    if (data.persona.startsWith("judge:")) {
+      const judgeId = data.persona.slice("judge:".length);
+      const judge = await db.judgePersona.findUnique({
+        where: { id: judgeId },
+        select: { name: true, title: true, cvText: true, cvFileName: true },
+      });
+      if (judge) {
+        personaName = judge.name;
+        judgeDemographics = {
+          jobTitle: judge.title,
+          hasHiringExperience: true,
+          hiringRoles: ["hiringCommittee"],
+          cvFileName: judge.cvFileName,
+        };
+      }
+    } else if (data.demographics) {
+      // Explicit demographics passed from client (Nemotron personas, etc.)
       judgeDemographics = {
-        jobTitle: judge.title,
-        hasHiringExperience: true,
-        hiringRoles: ["hiringCommittee"],
-        cvFileName: judge.cvFileName,
+        ...(data.demographics.jobTitle ? { jobTitle: data.demographics.jobTitle } : {}),
+        ...(data.demographics.employer ? { employer: data.demographics.employer } : {}),
+        ...(data.demographics.city ? { city: data.demographics.city } : {}),
+        ...(data.demographics.state ? { state: data.demographics.state } : {}),
+        ...(data.demographics.age ? { age: data.demographics.age } : {}),
+        ...(data.demographics.sex ? { sex: data.demographics.sex } : {}),
+        ...(data.demographics.educationLevel ? { educationLevel: data.demographics.educationLevel } : {}),
+      };
+    } else {
+      // Catalog persona — extract demographics from Persona data
+      const catalogPersona = getPersona(data.persona);
+      if (catalogPersona) {
+        const locationParts = catalogPersona.location?.split(", ") ?? [];
+        judgeDemographics = {
+          jobTitle: catalogPersona.title,
+          employer: catalogPersona.employer,
+          city: locationParts[0] || undefined,
+          state: locationParts[1] || undefined,
+          ...(catalogPersona.catalogSlug ? { cvSlug: catalogPersona.catalogSlug } : {}),
+        };
+      }
+    }
+
+    const surveySession = await db.surveySession.create({
+      data: {
+        surveyId: data.surveyId,
+        status: "ACTIVE",
+        verificationStatus: "UNVERIFIED",
+        isAiGenerated: true,
+        aiPersona: personaName,
+        aiProvider: data.provider,
+        aiModel: data.model,
+        aiRunId: data.runId,
+        ...(judgeDemographics ? { judgeDemographics } : {}),
+      },
+    });
+
+    if (survey.type === "QUESTIONNAIRE") {
+      const questions = survey.questions.map((q) => ({
+        id: q.id,
+        type: q.type,
+        content: q.content,
+        isVerificationPoint: q.isVerificationPoint,
+        position: q.position,
+      }));
+      return { sessionId: surveySession.id, questions, totalComparisons: 0 };
+    } else {
+      const totalComparisons =
+        survey.comparisonsPerJudge ?? Math.max(survey.cjItems.length - 1, 1);
+      return {
+        sessionId: surveySession.id,
+        questions: [],
+        totalComparisons,
+        cjPrompt: survey.cjPrompt,
+        cjJudgeInstructions: survey.cjJudgeInstructions,
       };
     }
-  } else if (data.demographics) {
-    // Explicit demographics passed from client (Nemotron personas, etc.)
-    judgeDemographics = {
-      ...(data.demographics.jobTitle ? { jobTitle: data.demographics.jobTitle } : {}),
-      ...(data.demographics.employer ? { employer: data.demographics.employer } : {}),
-      ...(data.demographics.city ? { city: data.demographics.city } : {}),
-      ...(data.demographics.state ? { state: data.demographics.state } : {}),
-      ...(data.demographics.age ? { age: data.demographics.age } : {}),
-      ...(data.demographics.sex ? { sex: data.demographics.sex } : {}),
-      ...(data.demographics.educationLevel ? { educationLevel: data.demographics.educationLevel } : {}),
-    };
-  } else {
-    // Catalog persona — extract demographics from Persona data
-    const catalogPersona = getPersona(data.persona);
-    if (catalogPersona) {
-      const locationParts = catalogPersona.location?.split(", ") ?? [];
-      judgeDemographics = {
-        jobTitle: catalogPersona.title,
-        employer: catalogPersona.employer,
-        city: locationParts[0] || undefined,
-        state: locationParts[1] || undefined,
-        ...(catalogPersona.catalogSlug ? { cvSlug: catalogPersona.catalogSlug } : {}),
-      };
-    }
-  }
-
-  const surveySession = await db.surveySession.create({
-    data: {
-      surveyId: data.surveyId,
-      status: "ACTIVE",
-      verificationStatus: "UNVERIFIED",
-      isAiGenerated: true,
-      aiPersona: personaName,
-      aiProvider: data.provider,
-      aiModel: data.model,
-      aiRunId: data.runId,
-      ...(judgeDemographics ? { judgeDemographics } : {}),
-    },
-  });
-
-  if (survey.type === "QUESTIONNAIRE") {
-    const questions = survey.questions.map((q) => ({
-      id: q.id,
-      type: q.type,
-      content: q.content,
-      isVerificationPoint: q.isVerificationPoint,
-      position: q.position,
-    }));
-    return { sessionId: surveySession.id, questions, totalComparisons: 0 };
-  } else {
-    const totalComparisons =
-      survey.comparisonsPerJudge ?? Math.max(survey.cjItems.length - 1, 1);
-    return {
-      sessionId: surveySession.id,
-      questions: [],
-      totalComparisons,
-      cjPrompt: survey.cjPrompt,
-      cjJudgeInstructions: survey.cjJudgeInstructions,
-    };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to create session" };
   }
 }
 
@@ -224,13 +241,72 @@ export async function executeAiQuestion(data: {
   model: string;
   persona: string;
   surveyTitle: string;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ success: true; skipped: boolean } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  // Skip verification points — auto-create as skipped
-  if (data.isVerificationPoint) {
-    await db.verificationPoint.upsert({
+    // Skip verification points — auto-create as skipped
+    if (data.isVerificationPoint) {
+      await db.verificationPoint.upsert({
+        where: {
+          sessionId_questionId: {
+            sessionId: data.sessionId,
+            questionId: data.questionId,
+          },
+        },
+        create: {
+          sessionId: data.sessionId,
+          questionId: data.questionId,
+          skipped: true,
+          verified: false,
+        },
+        update: {},
+      });
+      return { success: true, skipped: true };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { aiApiKey: true },
+    });
+    if (!user?.aiApiKey) return { error: "AI API key not configured" };
+
+    const systemPrompt = await resolvePersonaPrompt(data.persona);
+
+    const questionType = data.questionType as import("@/generated/prisma/client").QuestionType;
+    const content = data.questionContent as { text?: string; options?: string[]; scale?: { min: number; max: number; minLabel?: string; maxLabel?: string }; rows?: string[]; columns?: string[]; min?: number; max?: number; step?: number };
+
+    // Build prompt and call LLM
+    const messages = buildQuestionPrompt(
+      systemPrompt,
+      data.surveyTitle,
+      questionType,
+      content,
+    );
+
+    let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
+    let validation = parseAndValidate(llmResponse.content, questionType, content);
+
+    // Retry once on validation failure
+    if (!validation.valid) {
+      const retryMessages = buildQuestionPrompt(
+        systemPrompt,
+        data.surveyTitle,
+        questionType,
+        content,
+        validation.error,
+      );
+      llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
+      validation = parseAndValidate(llmResponse.content, questionType, content);
+
+      if (!validation.valid) {
+        return { error: `Failed to get valid answer: ${validation.error}` };
+      }
+    }
+
+    // Save response
+    await db.response.upsert({
       where: {
         sessionId_questionId: {
           sessionId: data.sessionId,
@@ -240,72 +316,17 @@ export async function executeAiQuestion(data: {
       create: {
         sessionId: data.sessionId,
         questionId: data.questionId,
-        skipped: true,
-        verified: false,
+        answer: validation.parsed as Prisma.InputJsonValue,
       },
-      update: {},
+      update: {
+        answer: validation.parsed as Prisma.InputJsonValue,
+      },
     });
-    return { success: true, skipped: true };
+
+    return { success: true, skipped: false };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to execute question" };
   }
-
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { aiApiKey: true },
-  });
-  if (!user?.aiApiKey) throw new Error("AI API key not configured");
-
-  const systemPrompt = await resolvePersonaPrompt(data.persona);
-
-  const questionType = data.questionType as import("@/generated/prisma/client").QuestionType;
-  const content = data.questionContent as { text?: string; options?: string[]; scale?: { min: number; max: number; minLabel?: string; maxLabel?: string }; rows?: string[]; columns?: string[]; min?: number; max?: number; step?: number };
-
-  // Build prompt and call LLM
-  const messages = buildQuestionPrompt(
-    systemPrompt,
-    data.surveyTitle,
-    questionType,
-    content,
-  );
-
-  let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
-  let validation = parseAndValidate(llmResponse.content, questionType, content);
-
-  // Retry once on validation failure
-  if (!validation.valid) {
-    const retryMessages = buildQuestionPrompt(
-      systemPrompt,
-      data.surveyTitle,
-      questionType,
-      content,
-      validation.error,
-    );
-    llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
-    validation = parseAndValidate(llmResponse.content, questionType, content);
-
-    if (!validation.valid) {
-      throw new Error(`Failed to get valid answer: ${validation.error}`);
-    }
-  }
-
-  // Save response
-  await db.response.upsert({
-    where: {
-      sessionId_questionId: {
-        sessionId: data.sessionId,
-        questionId: data.questionId,
-      },
-    },
-    create: {
-      sessionId: data.sessionId,
-      questionId: data.questionId,
-      answer: validation.parsed as Prisma.InputJsonValue,
-    },
-    update: {
-      answer: validation.parsed as Prisma.InputJsonValue,
-    },
-  });
-
-  return { success: true, skipped: false };
 }
 
 // ─── Execute single AI CJ comparison ─────────────────────────────────────
@@ -320,163 +341,167 @@ export async function executeAiComparison(data: {
   surveyTitle: string;
   cjPrompt: string;
   cjJudgeInstructions: string | null;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ success: true; done: boolean; noPairsLeft?: boolean } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const [user, survey] = await Promise.all([
-    db.user.findUnique({
-      where: { id: session.user.id },
-      select: { aiApiKey: true },
-    }),
-    db.survey.findUnique({
-      where: { id: data.surveyId },
-      select: {
-        cjItems: {
-          select: { id: true, mu: true, sigmaSq: true, comparisonCount: true, label: true, content: true },
-        },
-        questions: {
-          where: { isVerificationPoint: true },
-          select: { id: true, position: true },
-          orderBy: { position: "asc" },
-        },
-      },
-    }),
-  ]);
-  if (!user?.aiApiKey) throw new Error("AI API key not configured");
-  if (!survey) throw new Error("Survey not found");
-
-  // Check if this index hits a verification point
-  const vpPositions = getVPPositions(survey.questions.length, data.comparisonIndex);
-  if (vpPositions.length > 0) {
-    for (const vpQ of survey.questions) {
-      await db.verificationPoint.upsert({
-        where: {
-          sessionId_questionId: {
-            sessionId: data.sessionId,
-            questionId: vpQ.id,
+    const [user, survey] = await Promise.all([
+      db.user.findUnique({
+        where: { id: session.user.id },
+        select: { aiApiKey: true },
+      }),
+      db.survey.findUnique({
+        where: { id: data.surveyId },
+        select: {
+          cjItems: {
+            select: { id: true, mu: true, sigmaSq: true, comparisonCount: true, label: true, content: true },
+          },
+          questions: {
+            where: { isVerificationPoint: true },
+            select: { id: true, position: true },
+            orderBy: { position: "asc" },
           },
         },
-        create: {
-          sessionId: data.sessionId,
-          questionId: vpQ.id,
-          skipped: true,
-          verified: false,
-        },
-        update: {},
-      });
+      }),
+    ]);
+    if (!user?.aiApiKey) return { error: "AI API key not configured" };
+    if (!survey) return { error: "Survey not found" };
+
+    // Check if this index hits a verification point
+    const vpPositions = getVPPositions(survey.questions.length, data.comparisonIndex);
+    if (vpPositions.length > 0) {
+      for (const vpQ of survey.questions) {
+        await db.verificationPoint.upsert({
+          where: {
+            sessionId_questionId: {
+              sessionId: data.sessionId,
+              questionId: vpQ.id,
+            },
+          },
+          create: {
+            sessionId: data.sessionId,
+            questionId: vpQ.id,
+            skipped: true,
+            verified: false,
+          },
+          update: {},
+        });
+      }
     }
-  }
 
-  // Get existing comparisons for this session to find compared pair keys
-  const existingComparisons = await db.comparison.findMany({
-    where: { sessionId: data.sessionId },
-    select: { leftItemId: true, rightItemId: true },
-  });
-  const comparedKeys = buildComparedPairKeys(existingComparisons);
+    // Get existing comparisons for this session to find compared pair keys
+    const existingComparisons = await db.comparison.findMany({
+      where: { sessionId: data.sessionId },
+      select: { leftItemId: true, rightItemId: true },
+    });
+    const comparedKeys = buildComparedPairKeys(existingComparisons);
 
-  // Select next pair
-  const pair = selectNextPair(
-    survey.cjItems.map((item) => ({
-      id: item.id,
-      mu: item.mu,
-      sigmaSq: item.sigmaSq,
-    })),
-    comparedKeys,
-  );
+    // Select next pair
+    const pair = selectNextPair(
+      survey.cjItems.map((item) => ({
+        id: item.id,
+        mu: item.mu,
+        sigmaSq: item.sigmaSq,
+      })),
+      comparedKeys,
+    );
 
-  if (!pair) {
-    return { success: true, done: true, noPairsLeft: true };
-  }
+    if (!pair) {
+      return { success: true, done: true, noPairsLeft: true };
+    }
 
-  // Create comparison record
-  const comparison = await db.comparison.create({
-    data: {
-      sessionId: data.sessionId,
-      leftItemId: pair.left.id,
-      rightItemId: pair.right.id,
-      position: data.comparisonIndex,
-    },
-  });
+    // Create comparison record
+    const comparison = await db.comparison.create({
+      data: {
+        sessionId: data.sessionId,
+        leftItemId: pair.left.id,
+        rightItemId: pair.right.id,
+        position: data.comparisonIndex,
+      },
+    });
 
-  // Get full item data for prompt
-  const leftItem = survey.cjItems.find((i) => i.id === pair.left.id)!;
-  const rightItem = survey.cjItems.find((i) => i.id === pair.right.id)!;
+    // Get full item data for prompt
+    const leftItem = survey.cjItems.find((i) => i.id === pair.left.id)!;
+    const rightItem = survey.cjItems.find((i) => i.id === pair.right.id)!;
 
-  const systemPrompt = await resolvePersonaPrompt(data.persona);
+    const systemPrompt = await resolvePersonaPrompt(data.persona);
 
-  const messages = buildCJComparisonPrompt(
-    systemPrompt,
-    data.surveyTitle,
-    data.cjPrompt,
-    data.cjJudgeInstructions,
-    { label: leftItem.label, content: leftItem.content as Record<string, string> },
-    { label: rightItem.label, content: rightItem.content as Record<string, string> },
-  );
-
-  let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
-  let result = parseCJResponse(llmResponse.content);
-
-  // Retry once
-  if (!result) {
-    const retryMessages = buildCJComparisonPrompt(
+    const messages = buildCJComparisonPrompt(
       systemPrompt,
       data.surveyTitle,
       data.cjPrompt,
       data.cjJudgeInstructions,
       { label: leftItem.label, content: leftItem.content as Record<string, string> },
       { label: rightItem.label, content: rightItem.content as Record<string, string> },
-      "Response must be exactly {\"winner\": \"A\"} or {\"winner\": \"B\"}",
     );
-    llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
-    result = parseCJResponse(llmResponse.content);
 
+    let llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, messages);
+    let result = parseCJResponse(llmResponse.content);
+
+    // Retry once
     if (!result) {
-      throw new Error("Failed to get valid comparison judgment");
+      const retryMessages = buildCJComparisonPrompt(
+        systemPrompt,
+        data.surveyTitle,
+        data.cjPrompt,
+        data.cjJudgeInstructions,
+        { label: leftItem.label, content: leftItem.content as Record<string, string> },
+        { label: rightItem.label, content: rightItem.content as Record<string, string> },
+        "Response must be exactly {\"winner\": \"A\"} or {\"winner\": \"B\"}",
+      );
+      llmResponse = await callLLM(data.provider, data.model, user.aiApiKey, retryMessages);
+      result = parseCJResponse(llmResponse.content);
+
+      if (!result) {
+        return { error: "Failed to get valid comparison judgment" };
+      }
     }
+
+    // Determine winner
+    const winnerId = result.winner === "A" ? pair.left.id : pair.right.id;
+    const winnerItem = winnerId === leftItem.id ? leftItem : rightItem;
+    const loserItem = winnerId === leftItem.id ? rightItem : leftItem;
+
+    const ratingUpdate = updateRatings(
+      { mu: winnerItem.mu, sigmaSq: winnerItem.sigmaSq },
+      { mu: loserItem.mu, sigmaSq: loserItem.sigmaSq },
+    );
+
+    await db.$transaction([
+      db.comparison.update({
+        where: { id: comparison.id },
+        data: {
+          winnerId,
+          judgedAt: new Date(),
+          prevLeftMu: leftItem.mu,
+          prevLeftSigmaSq: leftItem.sigmaSq,
+          prevRightMu: rightItem.mu,
+          prevRightSigmaSq: rightItem.sigmaSq,
+        },
+      }),
+      db.cJItem.update({
+        where: { id: winnerItem.id },
+        data: {
+          mu: ratingUpdate.winner.mu,
+          sigmaSq: ratingUpdate.winner.sigmaSq,
+          comparisonCount: { increment: 1 },
+        },
+      }),
+      db.cJItem.update({
+        where: { id: loserItem.id },
+        data: {
+          mu: ratingUpdate.loser.mu,
+          sigmaSq: ratingUpdate.loser.sigmaSq,
+          comparisonCount: { increment: 1 },
+        },
+      }),
+    ]);
+
+    return { success: true, done: false };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to execute comparison" };
   }
-
-  // Determine winner
-  const winnerId = result.winner === "A" ? pair.left.id : pair.right.id;
-  const winnerItem = winnerId === leftItem.id ? leftItem : rightItem;
-  const loserItem = winnerId === leftItem.id ? rightItem : leftItem;
-
-  const ratingUpdate = updateRatings(
-    { mu: winnerItem.mu, sigmaSq: winnerItem.sigmaSq },
-    { mu: loserItem.mu, sigmaSq: loserItem.sigmaSq },
-  );
-
-  await db.$transaction([
-    db.comparison.update({
-      where: { id: comparison.id },
-      data: {
-        winnerId,
-        judgedAt: new Date(),
-        prevLeftMu: leftItem.mu,
-        prevLeftSigmaSq: leftItem.sigmaSq,
-        prevRightMu: rightItem.mu,
-        prevRightSigmaSq: rightItem.sigmaSq,
-      },
-    }),
-    db.cJItem.update({
-      where: { id: winnerItem.id },
-      data: {
-        mu: ratingUpdate.winner.mu,
-        sigmaSq: ratingUpdate.winner.sigmaSq,
-        comparisonCount: { increment: 1 },
-      },
-    }),
-    db.cJItem.update({
-      where: { id: loserItem.id },
-      data: {
-        mu: ratingUpdate.loser.mu,
-        sigmaSq: ratingUpdate.loser.sigmaSq,
-        comparisonCount: { increment: 1 },
-      },
-    }),
-  ]);
-
-  return { success: true, done: false };
 }
 
 // ─── Complete AI Session ──────────────────────────────────────────────────
@@ -485,28 +510,32 @@ export async function completeAiSession(data: {
   sessionId: string;
   runId: string;
   surveyId: string;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ success: true } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  await db.surveySession.update({
-    where: { id: data.sessionId },
-    data: {
-      status: "COMPLETED",
-      completedAt: new Date(),
-      verificationStatus: "UNVERIFIED",
-      botScore: 1.0,
-    },
-  });
+    await db.surveySession.update({
+      where: { id: data.sessionId },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        verificationStatus: "UNVERIFIED",
+        botScore: 1.0,
+      },
+    });
 
-  await db.aiAgentRun.update({
-    where: { id: data.runId },
-    data: { completedCount: { increment: 1 } },
-  });
+    await db.aiAgentRun.update({
+      where: { id: data.runId },
+      data: { completedCount: { increment: 1 } },
+    });
 
-  revalidatePath(`/dashboard/surveys/${data.surveyId}/responses`);
+    revalidatePath(`/dashboard/surveys/${data.surveyId}/responses`);
 
-  return { success: true };
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to complete session" };
+  }
 }
 
 // ─── Fail AI Session ──────────────────────────────────────────────────────
@@ -515,34 +544,38 @@ export async function failAiSession(data: {
   sessionId: string;
   runId: string;
   error: string;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ success: true } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  await db.surveySession.update({
-    where: { id: data.sessionId },
-    data: { status: "ABANDONED" },
-  });
+    await db.surveySession.update({
+      where: { id: data.sessionId },
+      data: { status: "ABANDONED" },
+    });
 
-  const run = await db.aiAgentRun.findUnique({
-    where: { id: data.runId },
-    select: { errorLog: true },
-  });
+    const run = await db.aiAgentRun.findUnique({
+      where: { id: data.runId },
+      select: { errorLog: true },
+    });
 
-  const existingLog = run?.errorLog ?? "";
-  const newLog = existingLog
-    ? `${existingLog}\n${data.error}`
-    : data.error;
+    const existingLog = run?.errorLog ?? "";
+    const newLog = existingLog
+      ? `${existingLog}\n${data.error}`
+      : data.error;
 
-  await db.aiAgentRun.update({
-    where: { id: data.runId },
-    data: {
-      failedCount: { increment: 1 },
-      errorLog: newLog,
-    },
-  });
+    await db.aiAgentRun.update({
+      where: { id: data.runId },
+      data: {
+        failedCount: { increment: 1 },
+        errorLog: newLog,
+      },
+    });
 
-  return { success: true };
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to record session failure" };
+  }
 }
 
 // ─── Complete AI Agent Run ────────────────────────────────────────────────
@@ -550,29 +583,33 @@ export async function failAiSession(data: {
 export async function completeAiAgentRun(data: {
   runId: string;
   surveyId: string;
-}) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+}): Promise<{ success: true } | { error: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-  const run = await db.aiAgentRun.findUnique({
-    where: { id: data.runId },
-    select: { failedCount: true, sessionCount: true },
-  });
+    const run = await db.aiAgentRun.findUnique({
+      where: { id: data.runId },
+      select: { failedCount: true, sessionCount: true },
+    });
 
-  const status = run && run.failedCount === run.sessionCount ? "FAILED" : "COMPLETED";
+    const status = run && run.failedCount === run.sessionCount ? "FAILED" : "COMPLETED";
 
-  await db.aiAgentRun.update({
-    where: { id: data.runId },
-    data: {
-      status,
-      completedAt: new Date(),
-    },
-  });
+    await db.aiAgentRun.update({
+      where: { id: data.runId },
+      data: {
+        status,
+        completedAt: new Date(),
+      },
+    });
 
-  revalidatePath(`/dashboard/surveys/${data.surveyId}/ai-agent`);
-  revalidatePath(`/dashboard/surveys/${data.surveyId}/responses`);
+    revalidatePath(`/dashboard/surveys/${data.surveyId}/ai-agent`);
+    revalidatePath(`/dashboard/surveys/${data.surveyId}/responses`);
 
-  return { success: true };
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to complete run" };
+  }
 }
 
 // ─── Get AI Agent Runs ────────────────────────────────────────────────────

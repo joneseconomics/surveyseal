@@ -98,11 +98,21 @@ export default async function AiAgentPage({
       savedProvider={survey.aiProvider}
       savedModel={survey.aiModel}
       canEdit={canEdit}
-      initialRuns={runs.map((r) => ({
-        ...r,
-        startedAt: r.startedAt.toISOString(),
-        completedAt: r.completedAt?.toISOString() ?? null,
-      }))}
+      initialRuns={runs.map((r) => {
+        // Resolve judge:<id> persona values to friendly names
+        let personaDisplay = r.persona;
+        if (r.persona.startsWith("judge:")) {
+          const judgeId = r.persona.slice("judge:".length);
+          const jp = judgePersonas.find((j) => j.id === judgeId);
+          personaDisplay = jp ? jp.name : "Judge Persona";
+        }
+        return {
+          ...r,
+          persona: personaDisplay,
+          startedAt: r.startedAt.toISOString(),
+          completedAt: r.completedAt?.toISOString() ?? null,
+        };
+      })}
       initialJudgePersonas={judgePersonas.map((j) => ({
         id: j.id,
         name: j.name,

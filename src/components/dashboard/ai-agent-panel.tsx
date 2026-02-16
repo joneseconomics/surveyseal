@@ -378,133 +378,150 @@ export function AiAgentPanel({
     const newRuns: AiAgentRun[] = [];
 
     for (const p of personasToRun) {
-      try {
-        const { runId } = await createAiAgentRun({
-          surveyId,
-          provider,
-          model: effectiveModel,
-          persona: p.personaValue,
-          sessionCount,
-        });
+      const runResult = await createAiAgentRun({
+        surveyId,
+        provider,
+        model: effectiveModel,
+        persona: p.personaValue,
+        sessionCount,
+      });
 
-        for (let i = 0; i < sessionCount; i++) {
-          globalSession++;
-          setProgress((prev) => ({
-            ...prev,
-            currentSession: globalSession,
-            currentStep: 0,
-            totalSteps: 0,
-            status: `${p.displayName} — session ${i + 1}/${sessionCount}...`,
-          }));
+      if ("error" in runResult) {
+        setProgress((prev) => ({
+          ...prev,
+          status: `Error (${p.displayName}): ${runResult.error}`,
+        }));
+        continue;
+      }
 
-          let sessionId: string;
-          try {
-            const sessionResult = await createAiSession({
-              surveyId,
-              runId,
-              provider,
-              model: effectiveModel,
-              persona: p.personaValue,
-              ...(p.demographics ? { demographics: p.demographics } : {}),
-            });
-            sessionId = sessionResult.sessionId;
+      const { runId } = runResult;
 
-            if (surveyType === "QUESTIONNAIRE") {
-              const questions = sessionResult.questions;
-              const totalSteps = questions.length;
-              setProgress((prev) => ({ ...prev, totalSteps }));
+      for (let i = 0; i < sessionCount; i++) {
+        globalSession++;
+        setProgress((prev) => ({
+          ...prev,
+          currentSession: globalSession,
+          currentStep: 0,
+          totalSteps: 0,
+          status: `${p.displayName} — session ${i + 1}/${sessionCount}...`,
+        }));
 
-              for (let q = 0; q < questions.length; q++) {
-                setProgress((prev) => ({
-                  ...prev,
-                  currentStep: q + 1,
-                  status: questions[q].isVerificationPoint
-                    ? `${p.displayName} — session ${i + 1}: Skipping VP ${q + 1}/${totalSteps}`
-                    : `${p.displayName} — session ${i + 1}: Q ${q + 1}/${totalSteps}`,
-                }));
+        let sessionId: string | undefined;
+        try {
+          const sessionResult = await createAiSession({
+            surveyId,
+            runId,
+            provider,
+            model: effectiveModel,
+            persona: p.personaValue,
+            ...(p.demographics ? { demographics: p.demographics } : {}),
+          });
 
-                await executeAiQuestion({
-                  surveyId,
-                  sessionId,
-                  questionId: questions[q].id,
-                  questionType: questions[q].type,
-                  questionContent: questions[q].content as Record<string, unknown>,
-                  isVerificationPoint: questions[q].isVerificationPoint,
-                  provider,
-                  model: effectiveModel,
-                  persona: p.personaValue,
-                  surveyTitle,
-                });
+          if ("error" in sessionResult) {
+            throw new Error(sessionResult.error);
+          }
 
-                if (!questions[q].isVerificationPoint) {
-                  await delay(500);
-                }
+          sessionId = sessionResult.sessionId;
+
+          if (surveyType === "QUESTIONNAIRE") {
+            const questions = sessionResult.questions;
+            const totalSteps = questions.length;
+            setProgress((prev) => ({ ...prev, totalSteps }));
+
+            for (let q = 0; q < questions.length; q++) {
+              setProgress((prev) => ({
+                ...prev,
+                currentStep: q + 1,
+                status: questions[q].isVerificationPoint
+                  ? `${p.displayName} — session ${i + 1}: Skipping VP ${q + 1}/${totalSteps}`
+                  : `${p.displayName} — session ${i + 1}: Q ${q + 1}/${totalSteps}`,
+              }));
+
+              const qResult = await executeAiQuestion({
+                surveyId,
+                sessionId,
+                questionId: questions[q].id,
+                questionType: questions[q].type,
+                questionContent: questions[q].content as Record<string, unknown>,
+                isVerificationPoint: questions[q].isVerificationPoint,
+                provider,
+                model: effectiveModel,
+                persona: p.personaValue,
+                surveyTitle,
+              });
+
+              if ("error" in qResult) {
+                throw new Error(qResult.error);
               }
-            } else {
-              // CJ survey
-              const totalComparisons = sessionResult.totalComparisons;
-              setProgress((prev) => ({ ...prev, totalSteps: totalComparisons }));
 
-              for (let c = 0; c < totalComparisons; c++) {
-                setProgress((prev) => ({
-                  ...prev,
-                  currentStep: c + 1,
-                  status: `${p.displayName} — session ${i + 1}: Comparison ${c + 1}/${totalComparisons}`,
-                }));
-
-                const result = await executeAiComparison({
-                  surveyId,
-                  sessionId,
-                  comparisonIndex: c,
-                  provider,
-                  model: effectiveModel,
-                  persona: p.personaValue,
-                  surveyTitle,
-                  cjPrompt: sessionResult.cjPrompt ?? "Which is better?",
-                  cjJudgeInstructions: sessionResult.cjJudgeInstructions ?? null,
-                });
-
-                if (result.noPairsLeft) break;
+              if (!questions[q].isVerificationPoint) {
                 await delay(500);
               }
             }
+          } else {
+            // CJ survey
+            const totalComparisons = sessionResult.totalComparisons;
+            setProgress((prev) => ({ ...prev, totalSteps: totalComparisons }));
 
-            await completeAiSession({ sessionId, runId, surveyId });
-          } catch (e) {
-            const errMsg = e instanceof Error ? e.message : "Unknown error";
-            try {
-              await failAiSession({
-                sessionId: sessionId!,
-                runId,
-                error: `Session ${i + 1}: ${errMsg}`,
+            for (let c = 0; c < totalComparisons; c++) {
+              setProgress((prev) => ({
+                ...prev,
+                currentStep: c + 1,
+                status: `${p.displayName} — session ${i + 1}: Comparison ${c + 1}/${totalComparisons}`,
+              }));
+
+              const cResult = await executeAiComparison({
+                surveyId,
+                sessionId,
+                comparisonIndex: c,
+                provider,
+                model: effectiveModel,
+                persona: p.personaValue,
+                surveyTitle,
+                cjPrompt: sessionResult.cjPrompt ?? "Which is better?",
+                cjJudgeInstructions: sessionResult.cjJudgeInstructions ?? null,
               });
-            } catch {
-              // If we couldn't even create the session, just log
+
+              if ("error" in cResult) {
+                throw new Error(cResult.error);
+              }
+
+              if (cResult.noPairsLeft) break;
+              await delay(500);
             }
           }
+
+          const completeResult = await completeAiSession({ sessionId, runId, surveyId });
+          if ("error" in completeResult) {
+            throw new Error(completeResult.error);
+          }
+        } catch (e) {
+          const errMsg = e instanceof Error ? e.message : "Unknown error";
+          if (sessionId) {
+            await failAiSession({
+              sessionId,
+              runId,
+              error: `Session ${i + 1}: ${errMsg}`,
+            });
+          }
         }
-
-        await completeAiAgentRun({ runId, surveyId });
-
-        newRuns.push({
-          id: runId,
-          provider,
-          model: effectiveModel,
-          persona: p.displayName,
-          sessionCount,
-          completedCount: sessionCount,
-          failedCount: 0,
-          status: "COMPLETED",
-          startedAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
-          errorLog: null,
-        });
-      } catch (e) {
-        setProgress((prev) => ({
-          ...prev,
-          status: `Error (${p.displayName}): ${e instanceof Error ? e.message : "Unknown error"}`,
-        }));
       }
+
+      await completeAiAgentRun({ runId, surveyId });
+
+      newRuns.push({
+        id: runId,
+        provider,
+        model: effectiveModel,
+        persona: p.displayName,
+        sessionCount,
+        completedCount: sessionCount,
+        failedCount: 0,
+        status: "COMPLETED",
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        errorLog: null,
+      });
     }
 
     setRuns((prev) => [...newRuns, ...prev]);
