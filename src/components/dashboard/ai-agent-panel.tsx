@@ -957,7 +957,7 @@ export function AiAgentPanel({
                 {judgePersonas.length > 0 && (
                   <div className="space-y-2">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Generated Personas
+                      Generated AI Personas
                     </div>
                     <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
                       {judgePersonas.map((jp) => {
