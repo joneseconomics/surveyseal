@@ -27,6 +27,12 @@ interface JudgeData {
   sessionId: string;
   email: string | null;
   isAiGenerated: boolean;
+  aiPersona: string | null;
+  occupation: string | null;
+  city: string | null;
+  state: string | null;
+  age: number | null;
+  sex: string | null;
   status: string;
   verificationStatus: string;
   botScore: number | null;
@@ -135,13 +141,14 @@ function StatusBadge({ status }: { status: string }) {
   }
 }
 
-function VerificationBadge({ status }: { status: string }) {
+function VerificationBadge({ status, isAi }: { status: string; isAi?: boolean }) {
   switch (status) {
     case "VERIFIED":
       return <Badge className="bg-green-100 text-green-800">Verified</Badge>;
     case "PARTIAL":
       return <Badge className="bg-yellow-100 text-yellow-800">Partial</Badge>;
     case "UNVERIFIED":
+      if (isAi) return <Badge className="bg-purple-100 text-purple-800">AI</Badge>;
       return <Badge variant="outline">Unverified</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
@@ -313,9 +320,15 @@ export function JudgesTable({ judges, items }: JudgesTableProps) {
                       <p className="text-sm font-medium">
                         {judge.email || (judge.isAiGenerated ? "AI" : "Anonymous")}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {judge.sessionId.slice(0, 8)}…
-                      </p>
+                      {judge.isAiGenerated && (judge.occupation || judge.city || judge.state || judge.age || judge.sex) && (
+                        <p className="text-xs text-muted-foreground">
+                          {[
+                            judge.occupation,
+                            [judge.city, judge.state].filter(Boolean).join(", "),
+                            judge.age && judge.sex ? `${judge.age}${judge.sex === "Male" ? "M" : "F"}` : judge.age || judge.sex,
+                          ].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono">
@@ -345,7 +358,7 @@ export function JudgesTable({ judges, items }: JudgesTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <StatusBadge status={judge.status} />
-                      <VerificationBadge status={judge.verificationStatus} />
+                      <VerificationBadge status={judge.verificationStatus} isAi={judge.isAiGenerated} />
                       <BotRiskBadge score={judge.botScore} />
                     </div>
                   </TableCell>

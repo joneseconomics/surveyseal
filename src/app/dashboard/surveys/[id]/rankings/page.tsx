@@ -51,6 +51,8 @@ export default async function RankingsPage({
       id: true,
       participantEmail: true,
       isAiGenerated: true,
+      aiPersona: true,
+      judgeDemographics: true,
       status: true,
       verificationStatus: true,
       botScore: true,
@@ -182,10 +184,18 @@ export default async function RankingsPage({
   });
 
   // Serialize judge data for client component
-  const judgeData = sessions.map((s) => ({
+  const judgeData = sessions.map((s) => {
+    const demo = s.judgeDemographics as Record<string, unknown> | null;
+    return {
     sessionId: s.id,
     email: s.participantEmail,
     isAiGenerated: s.isAiGenerated,
+    aiPersona: s.aiPersona,
+    occupation: (demo?.jobTitle as string) || null,
+    city: (demo?.city as string) || null,
+    state: (demo?.state as string) || null,
+    age: (demo?.age as number) || null,
+    sex: (demo?.sex as string) || null,
     status: s.status,
     verificationStatus: s.verificationStatus,
     botScore: s.botScore,
@@ -200,7 +210,7 @@ export default async function RankingsPage({
       createdAt: c.createdAt.toISOString(),
       judgedAt: c.judgedAt?.toISOString() ?? null,
     })),
-  }));
+  }; });
 
   return (
     <div className="space-y-6">
