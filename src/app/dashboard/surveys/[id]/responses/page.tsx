@@ -17,12 +17,17 @@ import { Download } from "lucide-react";
 import { ResponseSummary } from "@/components/dashboard/response-summary";
 import { ReconcileButton } from "@/components/dashboard/reconcile-button";
 import { DeleteResponseButton } from "@/components/dashboard/delete-response-button";
+import { AiPersonaInfo } from "@/components/dashboard/ai-persona-info";
+import { resolvePersonaPrompt } from "@/lib/ai/resolve-persona";
 
 interface JudgeDemographics {
   jobTitle?: string;
   employer?: string;
   city?: string;
   state?: string;
+  age?: number;
+  sex?: string;
+  educationLevel?: string;
   hasHiringExperience?: boolean;
   hiringRoles?: string[];
 }
@@ -53,6 +58,7 @@ export default async function ResponsesPage({
           judgeDemographics: true,
           isAiGenerated: true,
           aiPersona: true,
+          aiRunId: true,
           verificationPoints: { select: { validatedAt: true, verified: true } },
           responses: { select: { id: true } },
           tapinTaps: { select: { id: true } },
@@ -64,6 +70,32 @@ export default async function ResponsesPage({
   });
 
   if (!survey) notFound();
+
+  // Fetch AI run persona details for AI sessions
+  const aiRunIds = [...new Set(
+    survey.sessions
+      .filter((s) => s.isAiGenerated && s.aiRunId)
+      .map((s) => s.aiRunId!)
+  )];
+  const aiRuns = aiRunIds.length > 0
+    ? await db.aiAgentRun.findMany({
+        where: { id: { in: aiRunIds } },
+        select: { id: true, persona: true, provider: true, model: true },
+      })
+    : [];
+  const runMap = new Map(aiRuns.map((r) => [r.id, r]));
+
+  // Pre-resolve persona prompts for AI sessions
+  const personaPromptMap = new Map<string, string>();
+  for (const s of survey.sessions) {
+    if (s.isAiGenerated && s.aiRunId) {
+      const run = runMap.get(s.aiRunId);
+      if (run && !personaPromptMap.has(s.id)) {
+        const prompt = await resolvePersonaPrompt(run.persona);
+        personaPromptMap.set(s.id, prompt);
+      }
+    }
+  }
 
   const hasTapInKey = !!survey.tapinApiKey;
   const isCJ = survey.type === "COMPARATIVE_JUDGMENT";
@@ -128,17 +160,37 @@ export default async function ResponsesPage({
                     locationParts.length > 0 ? locationParts.join(", ") : null,
                   ].filter(Boolean).join(" · ");
 
+                  const run = s.aiRunId ? runMap.get(s.aiRunId) : null;
+                  const rawPersona = run?.persona ?? "";
+                  const personaType = rawPersona.startsWith("nemotron:") ? "nemotron" as const
+                    : rawPersona.startsWith("custom:") ? "custom" as const
+                    : rawPersona.startsWith("judge:") ? "judge" as const
+                    : rawPersona ? "catalog" as const
+                    : "unknown" as const;
+
                   return (
                     <TableRow key={s.id}>
                       <TableCell>
-                        <div>
-                          <p className="text-xs">
-                            {s.isAiGenerated
-                              ? s.aiPersona || <span className="text-muted-foreground">AI Agent</span>
-                              : s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
-                          </p>
-                          {isResumes && subtitle && (
-                            <p className="text-xs text-muted-foreground">{subtitle}</p>
+                        <div className="flex items-center gap-1">
+                          <div>
+                            <p className="text-xs">
+                              {s.isAiGenerated
+                                ? s.aiPersona || <span className="text-muted-foreground">AI Agent</span>
+                                : s.participantEmail || <span className="text-muted-foreground">Anonymous</span>}
+                            </p>
+                            {isResumes && subtitle && (
+                              <p className="text-xs text-muted-foreground">{subtitle}</p>
+                            )}
+                          </div>
+                          {s.isAiGenerated && personaPromptMap.has(s.id) && (
+                            <AiPersonaInfo
+                              personaName={s.aiPersona || "AI Agent"}
+                              personaType={personaType}
+                              systemPrompt={personaPromptMap.get(s.id)!}
+                              provider={run?.provider}
+                              model={run?.model}
+                              demographics={demo}
+                            />
                           )}
                         </div>
                       </TableCell>
