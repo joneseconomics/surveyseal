@@ -1031,18 +1031,15 @@ export function AiAgentPanel({
                                   </button>
                                 </div>
                               )}
-                              <div className="text-xs text-muted-foreground">{jp.title}</div>
                               <div className="text-xs text-muted-foreground">
                                 Created {new Date(jp.createdAt).toLocaleString()}
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
+                                {compCount > 0 && " · "}
                                 {compCount > 0 && (
                                   <button
-                                    className="text-xs text-blue-600 hover:underline"
+                                    className="text-blue-600 hover:underline"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      // Parse comparisons from description
                                       const lines = jp.description.split("\n");
                                       const parsed = lines
                                         .filter((l) => l.startsWith("- Selected "))
@@ -1058,9 +1055,10 @@ export function AiAgentPanel({
                                     {compCount} comparison{compCount !== 1 ? "s" : ""}
                                   </button>
                                 )}
+                                {jp.cvText && jp.cvText !== "No resume provided." && " · "}
                                 {jp.cvText && jp.cvText !== "No resume provided." && (
                                   <button
-                                    className="text-xs text-blue-600 hover:underline"
+                                    className="text-blue-600 hover:underline"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
@@ -1073,39 +1071,37 @@ export function AiAgentPanel({
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-auto gap-1 px-1.5 py-1 text-xs text-muted-foreground hover:text-primary"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setJudgeDetailPersona(jp);
-                                  }}
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  System Prompt
-                                </Button>
-                                <button
-                                  className="text-muted-foreground hover:text-red-600 p-1"
-                                  onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (!confirm(`Delete persona "${jp.name}"?`)) return;
-                                    const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
-                                      method: "DELETE",
-                                    });
-                                    if (res.ok) {
-                                      setJudgePersonas((prev) => prev.filter((p) => p.id !== jp.id));
-                                      if (selectedJudge === jp.id) setSelectedJudge(null);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-auto gap-1 px-1.5 py-1 text-xs text-muted-foreground hover:text-primary"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setJudgeDetailPersona(jp);
+                                }}
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                System Prompt
+                              </Button>
+                              <button
+                                className="text-muted-foreground hover:text-red-600 p-1"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (!confirm(`Delete persona "${jp.name}"?`)) return;
+                                  const res = await fetch(`/api/ai/judge-personas/${jp.id}`, {
+                                    method: "DELETE",
+                                  });
+                                  if (res.ok) {
+                                    setJudgePersonas((prev) => prev.filter((p) => p.id !== jp.id));
+                                    if (selectedJudge === jp.id) setSelectedJudge(null);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                               <Button
                                 size="sm"
                                 variant={jp.isCatalog ? "default" : "outline"}
