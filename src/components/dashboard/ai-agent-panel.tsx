@@ -9,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -57,6 +63,7 @@ export interface JudgePersona {
   name: string;
   title: string;
   description: string;
+  cvText?: string;
   cvFileName: string;
   createdAt: string;
   createdBy?: { name: string | null; email: string | null };
@@ -182,6 +189,9 @@ export function AiAgentPanel({
   const [catalogDetailSlug, setCatalogDetailSlug] = useState<string | null>(null);
   const [catalogDetailOpen, setCatalogDetailOpen] = useState(false);
 
+  // Judge persona detail dialog state
+  const [judgeDetailPersona, setJudgeDetailPersona] = useState<JudgePersona | null>(null);
+
   // Compute the effective persona value based on the selected mode
   // For nemotron, persona is derived per-run in handleRun; this is for other modes
   const persona =
@@ -281,6 +291,7 @@ export function AiAgentPanel({
         name: result.persona.name,
         title: result.persona.title,
         description: result.persona.description,
+        cvText: result.persona.cvText,
         cvFileName: result.persona.cvFileName,
         createdAt: result.persona.createdAt,
       };
@@ -894,6 +905,18 @@ export function AiAgentPanel({
                               {jp.cvFileName && ` · ${jp.cvFileName}`}
                             </div>
                           </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="shrink-0 h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setJudgeDetailPersona(jp);
+                            }}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </Button>
                         </label>
                       ))}
                     </div>
@@ -1089,6 +1112,26 @@ export function AiAgentPanel({
           slug={catalogDetailSlug}
         />
       )}
+
+      {/* Judge Persona System Prompt Dialog */}
+      <Dialog open={!!judgeDetailPersona} onOpenChange={(open) => !open && setJudgeDetailPersona(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{judgeDetailPersona?.name ?? "Judge Persona"} — System Prompt</DialogTitle>
+          </DialogHeader>
+          {judgeDetailPersona && (
+            <div className="overflow-y-auto flex-1 min-h-0 rounded-md border p-4 bg-muted/30">
+              <pre className="whitespace-pre-wrap text-xs font-mono">
+{`You are ${judgeDetailPersona.name}, ${judgeDetailPersona.title}. ${judgeDetailPersona.description}${
+  judgeDetailPersona.cvText
+    ? `\n\nYou are participating in a survey. Draw on your full professional background, expertise, and personality as reflected in your CV below.\n\n=== CURRICULUM VITAE ===\n${judgeDetailPersona.cvText}\n=== END CURRICULUM VITAE ===`
+    : ""
+}`}
+              </pre>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

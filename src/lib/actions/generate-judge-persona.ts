@@ -11,6 +11,7 @@ interface PersonaData {
   name: string;
   title: string;
   description: string;
+  cvText: string;
   cvFileName: string;
   createdAt: string;
 }
@@ -29,44 +30,90 @@ export async function generatePersonaFromSession(data: {
 
     await requireAccess(data.surveyId, authSession.user.id, "editor");
 
-    // Check for existing persona from this session
-    const existing = await db.judgePersona.findUnique({
-      where: { sourceSessionId: data.sessionId },
-    });
-    if (existing) return { success: false, error: "A persona has already been generated from this session" };
-
-    // Fetch session with comparisons
-    const session = await db.surveySession.findUnique({
+    // Fetch the clicked session to get its email
+    const clickedSession = await db.surveySession.findUnique({
       where: { id: data.sessionId },
-      select: {
-        id: true,
-        participantEmail: true,
-        judgeDemographics: true,
-        comparisons: {
-          where: { winnerId: { not: null } },
-          orderBy: { position: "asc" },
-          select: {
-            leftItem: { select: { label: true } },
-            rightItem: { select: { label: true } },
-            winner: { select: { id: true } },
-            leftItemId: true,
-            rightItemId: true,
+      select: { id: true, participantEmail: true },
+    });
+    if (!clickedSession) return { success: false, error: "Session not found" };
+
+    const email = clickedSession.participantEmail;
+
+    // Check for existing persona — by email (all sessions) or by session ID
+    if (email) {
+      const existingByEmail = await db.judgePersona.findFirst({
+        where: {
+          sourceSession: {
+            participantEmail: email,
+            surveyId: data.surveyId,
           },
         },
+      });
+      if (existingByEmail) {
+        return { success: false, error: "A persona has already been generated for this judge" };
+      }
+    } else {
+      const existing = await db.judgePersona.findUnique({
+        where: { sourceSessionId: data.sessionId },
+      });
+      if (existing) {
+        return { success: false, error: "A persona has already been generated from this session" };
+      }
+    }
+
+    // Fetch all completed sessions for this email in this survey (or just this one)
+    const sessionSelect = {
+      id: true,
+      participantEmail: true,
+      judgeDemographics: true,
+      completedAt: true,
+      comparisons: {
+        where: { winnerId: { not: null } } as const,
+        orderBy: { position: "asc" } as const,
+        select: {
+          leftItem: { select: { label: true } },
+          rightItem: { select: { label: true } },
+          winner: { select: { id: true } },
+          leftItemId: true,
+          rightItemId: true,
+        },
       },
-    });
+    };
 
-    if (!session) return { success: false, error: "Session not found" };
+    let allSessions;
+    if (email) {
+      allSessions = await db.surveySession.findMany({
+        where: {
+          surveyId: data.surveyId,
+          participantEmail: email,
+          status: "COMPLETED",
+        },
+        orderBy: { completedAt: "desc" },
+        select: sessionSelect,
+      });
+    } else {
+      const s = await db.surveySession.findUnique({
+        where: { id: data.sessionId },
+        select: sessionSelect,
+      });
+      allSessions = s ? [s] : [];
+    }
 
-    const demographics = session.judgeDemographics as Record<string, unknown> | null;
-    if (!demographics?.cvFileUrl) return { success: false, error: "Session has no CV upload" };
+    if (allSessions.length === 0) {
+      return { success: false, error: "No completed sessions found" };
+    }
+
+    // Use the latest session's demographics and CV (sorted desc by completedAt)
+    const latestSession = allSessions[0];
+    const demographics = latestSession.judgeDemographics as Record<string, unknown> | null;
+    if (!demographics?.cvFileUrl) {
+      return { success: false, error: "Latest session has no CV upload" };
+    }
 
     // Download CV from Supabase Storage
     const cvUrl = demographics.cvFileUrl as string;
     const cvFileName = (demographics.cvFileName as string) || "cv.pdf";
 
-    // Extract the storage path from the public URL
-    // Public URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
     const pathMatch = cvUrl.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
     if (!pathMatch) return { success: false, error: "Cannot parse CV storage path from URL" };
     const storagePath = decodeURIComponent(pathMatch[1]);
@@ -81,8 +128,9 @@ export async function generatePersonaFromSession(data: {
     const cvText = await extractCvText(buffer, cvFileName);
     if (!cvText.trim()) return { success: false, error: "No text could be extracted from CV" };
 
-    // Build description from comparison history
-    const comparisonLines = session.comparisons
+    // Combine comparisons from ALL sessions
+    const allComparisons = allSessions.flatMap((s) => s.comparisons);
+    const comparisonLines = allComparisons
       .filter((c) => c.winner != null)
       .map((c) => {
         const winnerLabel =
@@ -98,22 +146,30 @@ export async function generatePersonaFromSession(data: {
       ? `Has hiring experience in: ${(demographics.hiringRoles as string[] || []).join(", ") || "general hiring"}.`
       : "No direct hiring experience.";
 
+    const sessionNote =
+      allSessions.length > 1
+        ? `Combined from ${allSessions.length} judging sessions.`
+        : "";
+
     const description = [
       jobTitle && employer
         ? `${jobTitle} at ${employer}.`
         : jobTitle || employer || "Professional judge.",
       hiringExp,
+      sessionNote,
       "",
       comparisonLines.length > 0
         ? `Comparison history (${comparisonLines.length} judgments):\n${comparisonLines.join("\n")}`
         : "No completed comparisons recorded.",
-    ].join("\n");
+    ]
+      .filter((line) => line !== "" || comparisonLines.length > 0)
+      .join("\n");
 
     // Derive name
     const name =
       jobTitle && employer
         ? `${jobTitle} at ${employer}`
-        : session.participantEmail || "Survey Judge";
+        : email || "Survey Judge";
 
     const title = jobTitle || "Judge";
 
@@ -132,6 +188,7 @@ export async function generatePersonaFromSession(data: {
         name: true,
         title: true,
         description: true,
+        cvText: true,
         cvFileName: true,
         createdAt: true,
       },
