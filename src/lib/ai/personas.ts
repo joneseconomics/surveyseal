@@ -60,10 +60,12 @@ export function getPersona(id: string): Persona | undefined {
  * Resolve the system prompt from a polymorphic persona value (client-safe, no DB).
  * For server-side resolution with judge persona support, use resolvePersonaPrompt
  * from "@/lib/ai/resolve-persona".
+ *
+ * - "nemotron:<text>" → text used directly as system prompt
  */
 export function resolvePersonaPrompt(persona: string): string {
-  if (persona.startsWith("personahub:")) {
-    return persona.slice("personahub:".length);
+  if (persona.startsWith("nemotron:")) {
+    return persona.slice("nemotron:".length);
   }
   if (persona.startsWith("custom:")) {
     return persona.slice("custom:".length);
@@ -77,13 +79,13 @@ export function resolvePersonaPrompt(persona: string): string {
 /**
  * Resolve a display name from a polymorphic persona value.
  * - Preset IDs → persona name (e.g. "Diligent Graduate Student")
- * - "personahub:<text>" → first 60 chars + "..."
+ * - "nemotron:<text>" → first 60 chars + "..."
  * - "custom:<text>" → "Custom Persona"
  * - "judge:<id>" → "Judge Persona" (actual name resolved via DB in createAiSession)
  */
 export function resolvePersonaName(persona: string): string {
-  if (persona.startsWith("personahub:")) {
-    const text = persona.slice("personahub:".length);
+  if (persona.startsWith("nemotron:")) {
+    const text = persona.slice("nemotron:".length);
     return text.length > 60 ? text.slice(0, 60) + "..." : text;
   }
   if (persona.startsWith("custom:")) {

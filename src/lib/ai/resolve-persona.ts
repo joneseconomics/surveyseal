@@ -6,13 +6,13 @@ import { getPersona } from "@/lib/ai/personas";
  * Server-only — uses DB for judge persona lookups.
  *
  * - Preset IDs (e.g. "diligent-grad-student") → looked up from AI_PERSONAS
- * - "personahub:<text>" → text used directly as system prompt
+ * - "nemotron:<text>" → text used directly as system prompt
  * - "custom:<text>" → text used directly as system prompt
  * - "judge:<id>" → looked up from DB (JudgePersona)
  */
 export async function resolvePersonaPrompt(persona: string): Promise<string> {
-  if (persona.startsWith("personahub:")) {
-    return persona.slice("personahub:".length);
+  if (persona.startsWith("nemotron:")) {
+    return persona.slice("nemotron:".length);
   }
   if (persona.startsWith("custom:")) {
     return persona.slice("custom:".length);
