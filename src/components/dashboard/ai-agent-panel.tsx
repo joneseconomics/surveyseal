@@ -30,6 +30,7 @@ import {
   failAiSession,
   completeAiAgentRun,
 } from "@/lib/actions/ai-agent";
+import { generatePersonaFromSession } from "@/lib/actions/generate-judge-persona";
 
 interface AiAgentRun {
   id: string;
@@ -55,6 +56,17 @@ export interface JudgePersona {
   createdBy?: { name: string | null; email: string | null };
 }
 
+export interface SurveyJudge {
+  sessionId: string;
+  participantEmail: string | null;
+  jobTitle: string | null;
+  employer: string | null;
+  cvFileName: string | null;
+  completedAt: string | null;
+  comparisonCount: number;
+  generatedPersonaId: string | null;
+}
+
 interface AiAgentPanelProps {
   surveyId: string;
   surveyTitle: string;
@@ -66,6 +78,7 @@ interface AiAgentPanelProps {
   canEdit: boolean;
   initialRuns: AiAgentRun[];
   initialJudgePersonas?: JudgePersona[];
+  initialSurveyJudges?: SurveyJudge[];
 }
 
 interface ProgressState {
@@ -88,6 +101,7 @@ export function AiAgentPanel({
   canEdit,
   initialRuns,
   initialJudgePersonas = [],
+  initialSurveyJudges = [],
 }: AiAgentPanelProps) {
   // Config state
   const [provider, setProvider] = useState(savedProvider ?? "openai");
@@ -114,6 +128,10 @@ export function AiAgentPanel({
     initialJudgePersonas.length > 0 ? initialJudgePersonas[0].id : null,
   );
   const [addJudgeOpen, setAddJudgeOpen] = useState(false);
+
+  // Survey judges state
+  const [surveyJudges, setSurveyJudges] = useState<SurveyJudge[]>(initialSurveyJudges);
+  const [generatingPersonaFor, setGeneratingPersonaFor] = useState<string | null>(null);
 
   // Catalog detail dialog state
   const [catalogDetailSlug, setCatalogDetailSlug] = useState<string | null>(null);
@@ -207,6 +225,32 @@ export function AiAgentPanel({
       alert("Failed to delete judge persona");
     }
   }, [selectedJudge, judgePersonas]);
+
+  const handleGenerateFromSession = useCallback(async (sessionId: string) => {
+    setGeneratingPersonaFor(sessionId);
+    try {
+      const { persona } = await generatePersonaFromSession({ surveyId, sessionId });
+      const newPersona: JudgePersona = {
+        id: persona.id,
+        name: persona.name,
+        title: persona.title,
+        description: persona.description,
+        cvFileName: persona.cvFileName,
+        createdAt: persona.createdAt,
+      };
+      setJudgePersonas((prev) => [newPersona, ...prev]);
+      setSelectedJudge(newPersona.id);
+      setSurveyJudges((prev) =>
+        prev.map((j) =>
+          j.sessionId === sessionId ? { ...j, generatedPersonaId: persona.id } : j,
+        ),
+      );
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to generate persona");
+    } finally {
+      setGeneratingPersonaFor(null);
+    }
+  }, [surveyId]);
 
   const handleRun = useCallback(async () => {
     if (!hasApiKey || progress.running || !personaValid) return;
@@ -594,6 +638,60 @@ export function AiAgentPanel({
               </TabsContent>
 
               <TabsContent value="judge" className="space-y-3">
+                {/* Survey Judges — completed human judges with CVs */}
+                {surveyJudges.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Survey Judges
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                      {surveyJudges.map((sj) => (
+                        <div
+                          key={sj.sessionId}
+                          className="flex items-center gap-2 px-3 py-2 text-sm"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">
+                              {sj.jobTitle && sj.employer
+                                ? `${sj.jobTitle} at ${sj.employer}`
+                                : sj.jobTitle || sj.employer || sj.participantEmail || "Anonymous Judge"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {sj.comparisonCount} comparison{sj.comparisonCount !== 1 ? "s" : ""}
+                              {sj.cvFileName && ` · ${sj.cvFileName}`}
+                            </div>
+                          </div>
+                          {sj.generatedPersonaId ? (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
+                              <CheckCircle className="mr-1 h-3 w-3" />
+                              Generated
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="shrink-0 gap-1"
+                              onClick={() => handleGenerateFromSession(sj.sessionId)}
+                              disabled={generatingPersonaFor !== null || progress.running}
+                            >
+                              {generatingPersonaFor === sj.sessionId ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Bot className="h-3.5 w-3.5" />
+                              )}
+                              Generate Persona
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Judge Personas list */}
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Judge Personas
+                </div>
                 {judgePersonas.length > 0 ? (
                   <div className="max-h-56 overflow-y-auto rounded-md border divide-y">
                     {judgePersonas.map((j) => (

@@ -219,6 +219,7 @@ model SurveySession {
   responses   Response[]
   tapinTaps   TapInTap[]
   comparisons Comparison[]
+  generatedPersona JudgePersona?
 
   @@map("survey_sessions")
 }
@@ -357,17 +358,19 @@ model AiAgentRun {
 }
 
 model JudgePersona {
-  id          String   @id @default(cuid())
-  name        String
-  title       String
-  description String   @db.Text
-  cvText      String   @map("cv_text") @db.Text
-  cvFileName  String   @map("cv_file_name")
-  createdById String   @map("created_by_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  name            String
+  title           String
+  description     String   @db.Text
+  cvText          String   @map("cv_text") @db.Text
+  cvFileName      String   @map("cv_file_name")
+  createdById     String   @map("created_by_id")
+  sourceSessionId String?  @unique @map("source_session_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  sourceSession SurveySession? @relation(fields: [sourceSessionId], references: [id], onDelete: SetNull)
 
   @@map("judge_personas")
 }

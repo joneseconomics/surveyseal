@@ -36,7 +36,7 @@ export default async function AiAgentPage({
 
   if (!survey) notFound();
 
-  const [runs, judgePersonas] = await Promise.all([
+  const [runs, judgePersonas, surveyJudges] = await Promise.all([
     db.aiAgentRun.findMany({
       where: { surveyId: id },
       orderBy: { startedAt: "desc" },
@@ -67,6 +67,23 @@ export default async function AiAgentPage({
         createdBy: { select: { name: true, email: true } },
       },
     }),
+    db.surveySession.findMany({
+      where: {
+        surveyId: id,
+        status: "COMPLETED",
+        isAiGenerated: false,
+        judgeDemographics: { path: ["cvFileUrl"], not: null as unknown as undefined },
+      },
+      orderBy: { completedAt: "desc" },
+      select: {
+        id: true,
+        participantEmail: true,
+        judgeDemographics: true,
+        completedAt: true,
+        generatedPersona: { select: { id: true } },
+        _count: { select: { comparisons: true } },
+      },
+    }),
   ]);
 
   return (
@@ -84,6 +101,19 @@ export default async function AiAgentPage({
         ...j,
         createdAt: j.createdAt.toISOString(),
       }))}
+      initialSurveyJudges={surveyJudges.map((s) => {
+        const d = s.judgeDemographics as Record<string, unknown> | null;
+        return {
+          sessionId: s.id,
+          participantEmail: s.participantEmail,
+          jobTitle: (d?.jobTitle as string) || null,
+          employer: (d?.employer as string) || null,
+          cvFileName: (d?.cvFileName as string) || null,
+          completedAt: s.completedAt?.toISOString() ?? null,
+          comparisonCount: s._count.comparisons,
+          generatedPersonaId: s.generatedPersona?.id ?? null,
+        };
+      })}
     />
   );
 }
