@@ -82,13 +82,15 @@ export async function generatePersonaFromSession(data: {
     if (!cvText.trim()) return { success: false, error: "No text could be extracted from CV" };
 
     // Build description from comparison history
-    const comparisonLines = session.comparisons.map((c) => {
-      const winnerLabel =
-        c.winner!.id === c.leftItemId ? c.leftItem.label : c.rightItem.label;
-      const loserLabel =
-        c.winner!.id === c.leftItemId ? c.rightItem.label : c.leftItem.label;
-      return `- Selected "${winnerLabel}" over "${loserLabel}"`;
-    });
+    const comparisonLines = session.comparisons
+      .filter((c) => c.winner != null)
+      .map((c) => {
+        const winnerLabel =
+          c.winner!.id === c.leftItemId ? c.leftItem.label : c.rightItem.label;
+        const loserLabel =
+          c.winner!.id === c.leftItemId ? c.rightItem.label : c.leftItem.label;
+        return `- Selected "${winnerLabel}" over "${loserLabel}"`;
+      });
 
     const jobTitle = (demographics.jobTitle as string) || "";
     const employer = (demographics.employer as string) || "";
