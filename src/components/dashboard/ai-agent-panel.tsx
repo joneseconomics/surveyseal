@@ -146,7 +146,7 @@ export function AiAgentPanel({
   const [presetPersona, setPresetPersona] = useState(AI_PERSONAS[0].id);
   const [nemQuery, setNemQuery] = useState("");
   const [nemResults, setNemResults] = useState<NemotronResult[]>([]);
-  const [nemSelected, setNemSelected] = useState<string | null>(null);
+  const [nemSelected, setNemSelected] = useState<NemotronResult | null>(null);
   const [nemSearching, setNemSearching] = useState(false);
   const [nemFilters, setNemFilters] = useState<NemotronFilters>({});
   const [nemUrl, setNemUrl] = useState("");
@@ -176,7 +176,7 @@ export function AiAgentPanel({
     personaMode === "preset"
       ? presetPersona
       : personaMode === "nemotron"
-        ? nemSelected ? `nemotron:${nemSelected}` : ""
+        ? nemSelected ? `nemotron:${nemSelected.professionalPersona}` : ""
         : personaMode === "judge"
           ? selectedJudge ? `judge:${selectedJudge}` : ""
           : customPersona.trim() ? `custom:${customPersona.trim()}` : "";
@@ -393,6 +393,16 @@ export function AiAgentPanel({
             provider,
             model: effectiveModel,
             persona,
+            ...(personaMode === "nemotron" && nemSelected ? {
+              demographics: {
+                jobTitle: nemSelected.occupation.replace(/_/g, " "),
+                city: nemSelected.city,
+                state: nemSelected.state,
+                age: nemSelected.age,
+                sex: nemSelected.sex,
+                educationLevel: nemSelected.educationLevel,
+              },
+            } : {}),
           });
           sessionId = sessionResult.sessionId;
 
@@ -502,7 +512,7 @@ export function AiAgentPanel({
         status: `Error: ${e instanceof Error ? e.message : "Unknown error"}`,
       }));
     }
-  }, [hasApiKey, progress.running, personaValid, surveyStatus, surveyId, provider, effectiveModel, persona, sessionCount, surveyTitle, surveyType, personaMode, judgePersonas, selectedJudge]);
+  }, [hasApiKey, progress.running, personaValid, surveyStatus, surveyId, provider, effectiveModel, persona, sessionCount, surveyTitle, surveyType, personaMode, judgePersonas, selectedJudge, nemSelected]);
 
   const isLive = surveyStatus === "LIVE";
 
@@ -805,15 +815,15 @@ export function AiAgentPanel({
                       <label
                         key={r.index}
                         className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-muted/50 text-sm ${
-                          nemSelected === r.professionalPersona ? "bg-muted" : ""
+                          nemSelected?.index === r.index ? "bg-muted" : ""
                         }`}
                       >
                         <input
                           type="radio"
                           name="nem-persona"
                           className="mt-1 shrink-0"
-                          checked={nemSelected === r.professionalPersona}
-                          onChange={() => setNemSelected(r.professionalPersona)}
+                          checked={nemSelected?.index === r.index}
+                          onChange={() => setNemSelected(r)}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-xs">

@@ -97,6 +97,15 @@ export async function createAiSession(data: {
   provider: string;
   model: string;
   persona: string;
+  demographics?: {
+    jobTitle?: string;
+    employer?: string;
+    city?: string;
+    state?: string;
+    age?: number;
+    sex?: string;
+    educationLevel?: string;
+  };
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -133,27 +142,34 @@ export async function createAiSession(data: {
     });
     if (judge) {
       personaName = judge.name;
-      if (survey.type === "COMPARATIVE_JUDGMENT" && survey.cjSubtype === "RESUMES") {
-        judgeDemographics = {
-          jobTitle: judge.title,
-          hasHiringExperience: true,
-          hiringRoles: ["hiringCommittee"],
-          cvFileName: judge.cvFileName,
-        };
-      }
+      judgeDemographics = {
+        jobTitle: judge.title,
+        hasHiringExperience: true,
+        hiringRoles: ["hiringCommittee"],
+        cvFileName: judge.cvFileName,
+      };
     }
+  } else if (data.demographics) {
+    // Explicit demographics passed from client (Nemotron personas, etc.)
+    judgeDemographics = {
+      ...(data.demographics.jobTitle ? { jobTitle: data.demographics.jobTitle } : {}),
+      ...(data.demographics.employer ? { employer: data.demographics.employer } : {}),
+      ...(data.demographics.city ? { city: data.demographics.city } : {}),
+      ...(data.demographics.state ? { state: data.demographics.state } : {}),
+      ...(data.demographics.age ? { age: data.demographics.age } : {}),
+      ...(data.demographics.sex ? { sex: data.demographics.sex } : {}),
+      ...(data.demographics.educationLevel ? { educationLevel: data.demographics.educationLevel } : {}),
+    };
   } else {
-    // Catalog or generic persona — extract demographics from Persona data
+    // Catalog persona — extract demographics from Persona data
     const catalogPersona = getPersona(data.persona);
-    if (catalogPersona && survey.type === "COMPARATIVE_JUDGMENT" && survey.cjSubtype === "RESUMES") {
+    if (catalogPersona) {
       const locationParts = catalogPersona.location?.split(", ") ?? [];
       judgeDemographics = {
         jobTitle: catalogPersona.title,
         employer: catalogPersona.employer,
         city: locationParts[0] || undefined,
         state: locationParts[1] || undefined,
-        hasHiringExperience: true,
-        hiringRoles: ["hiringCommittee"],
         ...(catalogPersona.catalogSlug ? { cvSlug: catalogPersona.catalogSlug } : {}),
       };
     }
