@@ -306,10 +306,19 @@ export function AiAgentPanel({
         return [updatedPersona, ...prev];
       });
       setSelectedJudge(updatedPersona.id);
+      // Mark all sessions with the same email as having a generated persona
+      const clickedJudge = surveyJudges.find((j) => j.sessionId === sessionId);
+      const clickedEmail = clickedJudge?.participantEmail;
       setSurveyJudges((prev) =>
-        prev.map((j) =>
-          j.sessionId === sessionId ? { ...j, generatedPersonaId: result.persona.id } : j,
-        ),
+        prev.map((j) => {
+          if (j.sessionId === sessionId) {
+            return { ...j, generatedPersonaId: result.persona.id };
+          }
+          if (clickedEmail && j.participantEmail === clickedEmail) {
+            return { ...j, generatedPersonaId: result.persona.id };
+          }
+          return j;
+        }),
       );
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed to generate persona");
@@ -971,6 +980,11 @@ export function AiAgentPanel({
                               {sj.comparisonCount} comparison{sj.comparisonCount !== 1 ? "s" : ""}
                               {sj.cvFileName && ` · ${sj.cvFileName}`}
                             </div>
+                            {sj.completedAt && (
+                              <div className="text-xs text-muted-foreground">
+                                Completed {new Date(sj.completedAt).toLocaleString()}
+                              </div>
+                            )}
                           </div>
                           {sj.generatedPersonaId ? (
                             <Badge className="bg-green-100 text-green-800 hover:bg-green-100 shrink-0">
