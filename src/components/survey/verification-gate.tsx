@@ -162,9 +162,6 @@ export function VerificationGate({
               <p className="font-medium text-foreground">
                 Tap your TapIn Verify card on your phone now
               </p>
-              <p>
-                After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
-              </p>
             </div>
 
             <Button
@@ -177,7 +174,7 @@ export function VerificationGate({
               ) : (
                 <CheckCircle className="mr-2 h-4 w-4" />
               )}
-              I see the green checkmark — Continue
+              Continue
             </Button>
 
             <div className="pt-2 border-t">
