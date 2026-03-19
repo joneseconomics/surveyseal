@@ -213,75 +213,29 @@ export default function LandingPage() {
               </CardHeader>
             </Card>
           </div>
-          <div className="mt-8 space-y-4">
-            <div className="rounded-lg border bg-background p-6">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  &ldquo;We can no longer trust that survey responses are coming
-                  from real people.&rdquo;
-                </span>{" "}
-                — Sean Westwood, Dartmouth College. His{" "}
-                <a
-                  href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  PNAS paper
-                </a>{" "}
-                describes AI agents that simulate realistic reading speeds,
-                natural mouse movements, and deliberate typing errors — making
-                them indistinguishable from human respondents. The paper calls
-                the threat to online surveys{" "}
-                <span className="font-medium text-foreground">
-                  &ldquo;existential.&rdquo;
-                </span>
-              </p>
-            </div>
-            <div className="rounded-lg border bg-background p-6">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  &ldquo;The research community must acknowledge the problem and
-                  dedicate resources to testing and implementing
-                  safeguards&hellip; to ensure that the data guiding clinical
-                  care reflect the real patient voice.&rdquo;
-                </span>{" "}
-                — Oxford University researchers, writing in{" "}
-                <a
-                  href="https://theweek.com/health/how-medical-imposters-are-ruining-health-studies"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  BMJ Evidence-Based Medicine
-                </a>
-                . Their review found that automated bots and lying individuals{" "}
-                <span className="font-medium text-foreground">
-                  &ldquo;threaten patient safety and the integrity of
-                  research.&rdquo;
-                </span>
-              </p>
-            </div>
-            <div className="rounded-lg border bg-background p-6">
-              <p className="text-sm text-muted-foreground">
-                Despite 96% of companies expressing confidence in their ability
-                to detect harmful bots,{" "}
-                <span className="font-medium text-foreground">
-                  9 in 10 still reported being harmed by them
-                </span>
-                — revealing a dangerous &ldquo;overconfidence gap&rdquo; where
-                organizations believe their defenses work while fraud quietly
-                drains revenue, customers, and trust.{" "}
-                <a
-                  href="https://www.pymnts.com/digital-identity/2025/nearly-60percent-of-companies-struggle-with-bot-fraud/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  PYMNTS
-                </a>
-              </p>
-            </div>
+          <div className="mt-8 rounded-lg border bg-background p-6">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                &ldquo;We can no longer trust that survey responses are coming
+                from real people.&rdquo;
+              </span>{" "}
+              — Sean Westwood, Dartmouth College. His{" "}
+              <a
+                href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                PNAS paper
+              </a>{" "}
+              describes AI agents that simulate realistic reading speeds,
+              natural mouse movements, and deliberate typing errors — making
+              them indistinguishable from human respondents. The paper calls
+              the threat to online surveys{" "}
+              <span className="font-medium text-foreground">
+                &ldquo;existential.&rdquo;
+              </span>
+            </p>
           </div>
         </div>
       </section>
