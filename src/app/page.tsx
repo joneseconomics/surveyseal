@@ -156,18 +156,19 @@ export default function LandingPage() {
             <Card className="border-0 shadow-none bg-background">
               <CardHeader>
                 <CardTitle className="text-3xl font-bold text-destructive">
-                  99.8%
+                  78%
                 </CardTitle>
                 <CardDescription>
-                  of attention checks passed by an AI survey agent in 43,000
-                  tests — evading every detection method currently in use.{" "}
+                  of studies compromised — a BMJ review of 23 health studies
+                  found 18 contained fraudulent data, with infiltration rates
+                  from 3% to 94% of participants.{" "}
                   <a
-                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    href="https://theweek.com/health/how-medical-imposters-are-ruining-health-studies"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    Westwood, 2025
+                    The Week, 2025
                   </a>
                 </CardDescription>
               </CardHeader>
@@ -175,18 +176,18 @@ export default function LandingPage() {
             <Card className="border-0 shadow-none bg-background">
               <CardHeader>
                 <CardTitle className="text-3xl font-bold text-destructive">
-                  $0.05
+                  58.6%
                 </CardTitle>
                 <CardDescription>
-                  per fake response vs. $1.50 for a real human — making
-                  large-scale survey manipulation trivially cheap.{" "}
+                  of businesses report struggling with bot-driven fraud — and
+                  96% who said they could spot bots were still harmed by them.{" "}
                   <a
-                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    href="https://www.pymnts.com/digital-identity/2025/nearly-60percent-of-companies-struggle-with-bot-fraud/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    Westwood, 2025
+                    PYMNTS, 2025
                   </a>
                 </CardDescription>
               </CardHeader>
@@ -194,38 +195,69 @@ export default function LandingPage() {
             <Card className="border-0 shadow-none bg-background">
               <CardHeader>
                 <CardTitle className="text-3xl font-bold text-destructive">
-                  10–52
+                  $95B
                 </CardTitle>
                 <CardDescription>
-                  fake responses would have been enough to flip the outcome of
-                  seven major 2024 election polls.{" "}
+                  lost by global companies to verification failures — an average
+                  of 3.1% of annual revenue drained by identity fraud.{" "}
                   <a
-                    href="https://www.pnas.org/doi/10.1073/pnas.2518075122"
+                    href="https://www.pymnts.com/digital-identity/2025/nearly-60percent-of-companies-struggle-with-bot-fraud/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline underline-offset-2 hover:text-foreground"
                   >
-                    Westwood, 2025
+                    PYMNTS, 2025
                   </a>
                 </CardDescription>
               </CardHeader>
             </Card>
           </div>
-          <div className="mt-8 rounded-lg border bg-background p-6">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                &ldquo;We can no longer trust that survey responses are coming
-                from real people.&rdquo;
-              </span>{" "}
-              — Sean Westwood, Dartmouth College. His PNAS paper describes AI
-              agents that simulate realistic reading speeds, natural mouse
-              movements, and deliberate typing errors — making them
-              indistinguishable from human respondents. The paper calls the
-              threat to online surveys{" "}
-              <span className="font-medium text-foreground">
-                &ldquo;existential.&rdquo;
-              </span>
-            </p>
+          <div className="mt-8 space-y-4">
+            <div className="rounded-lg border bg-background p-6">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  &ldquo;The research community must acknowledge the problem and
+                  dedicate resources to testing and implementing
+                  safeguards&hellip; to ensure that the data guiding clinical
+                  care reflect the real patient voice.&rdquo;
+                </span>{" "}
+                — Oxford University researchers, writing in BMJ Evidence-Based
+                Medicine. Their review found that automated bots and lying
+                individuals{" "}
+                <span className="font-medium text-foreground">
+                  &ldquo;threaten patient safety and the integrity of
+                  research.&rdquo;
+                </span>{" "}
+                <a
+                  href="https://theweek.com/health/how-medical-imposters-are-ruining-health-studies"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  The Week
+                </a>
+              </p>
+            </div>
+            <div className="rounded-lg border bg-background p-6">
+              <p className="text-sm text-muted-foreground">
+                Despite 96% of companies expressing confidence in their ability
+                to detect harmful bots,{" "}
+                <span className="font-medium text-foreground">
+                  9 in 10 still reported being harmed by them
+                </span>
+                — revealing a dangerous &ldquo;overconfidence gap&rdquo; where
+                organizations believe their defenses work while fraud quietly
+                drains revenue, customers, and trust.{" "}
+                <a
+                  href="https://www.pymnts.com/digital-identity/2025/nearly-60percent-of-companies-struggle-with-bot-fraud/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  PYMNTS
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </section>
