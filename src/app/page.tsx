@@ -311,9 +311,9 @@ export default function LandingPage() {
               {
                 step: 1,
                 icon: CreditCard,
-                title: "Distribute TapIn Survey cards",
+                title: "Distribute TapIn Verify cards",
                 description:
-                  "Hand out reusable TapIn Survey cards to your audience. No app or setup required.",
+                  "Hand out reusable TapIn Verify cards to your audience. No app or setup required.",
               },
               {
                 step: 2,
@@ -505,7 +505,7 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Physical-Tap Verification",
                 description:
-                  "Verification points create an unbroken chain of physical presence proof using TapIn Survey cards.",
+                  "Verification points create an unbroken chain of physical presence proof using TapIn Verify cards.",
               },
               {
                 icon: Lock,
@@ -625,13 +625,13 @@ export default function LandingPage() {
                 className="mb-4 gap-1.5 px-3 py-1 text-sm font-normal"
               >
                 <CreditCard className="h-3.5 w-3.5" />
-                TapIn Survey Cards
+                TapIn Verify Cards
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight">
                 Durable smart cards with hardware security.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                TapIn Survey cards are credit-card-sized smart cards designed
+                TapIn Verify cards are credit-card-sized smart cards designed
                 for verified surveys. Each card carries a unique identity that
                 produces verifiable taps — impossible to clone, share, or
                 replay.
@@ -685,7 +685,7 @@ export default function LandingPage() {
               Frequently Asked Questions
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Everything you need to know about SurveySeal and TapIn Survey
+              Everything you need to know about SurveySeal and TapIn Verify
               cards.
             </p>
           </div>

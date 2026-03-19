@@ -333,7 +333,7 @@ export function SurveyBuilder({ survey, questions, cjItems }: SurveyBuilderProps
                         <Smartphone className="h-8 w-8 text-primary" />
                       </div>
                       <p className="font-medium text-foreground">
-                        Tap your TapIn Survey card on your phone now
+                        Tap your TapIn Verify card on your phone now
                       </p>
                       <p>
                         After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.
