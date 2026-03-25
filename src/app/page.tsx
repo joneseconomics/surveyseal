@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Smartphone,
   Lock,
-  BarChart3,
   TestTube2,
   LogIn,
   Users,
@@ -27,10 +26,6 @@ import {
   MonitorSmartphone,
   XCircle,
   Scale,
-  GraduationCap,
-  FileText,
-  TrendingUp,
-  Navigation,
   Copy,
   Download,
   Clock,
@@ -55,12 +50,6 @@ export default function LandingPage() {
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
               How It Works
-            </a>
-            <a
-              href="#survey-types"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Survey Types
             </a>
             <a
               href="#features"
@@ -357,150 +346,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. Survey Types ── */}
-      <section id="survey-types" className="border-t bg-muted/40 px-4 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Two survey types. One platform.
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Whether you need traditional questionnaires or pairwise rankings,
-              SurveySeal has you covered — with physical-tap verification built
-              into both.
-            </p>
-          </div>
-
-          {/* Questionnaires */}
-          <div className="mb-16">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <ClipboardList className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold">Questionnaires</h3>
-                <p className="text-sm text-muted-foreground">
-                  Traditional surveys with a rich set of question types.
-                </p>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  title: "Multiple Choice",
-                  description:
-                    "Single-select or multi-select options. Ideal for demographics, preferences, and categorical data.",
-                },
-                {
-                  title: "Likert Scale",
-                  description:
-                    "Customizable agreement scales (e.g. Strongly Disagree to Strongly Agree) for measuring attitudes and opinions.",
-                },
-                {
-                  title: "Free Text",
-                  description:
-                    "Open-ended long-form responses for qualitative feedback, comments, and detailed explanations.",
-                },
-                {
-                  title: "Short Text",
-                  description:
-                    "Single-line text input for names, emails, brief answers, and other short responses.",
-                },
-                {
-                  title: "Matrix",
-                  description:
-                    "Grid-style questions with multiple rows rated on the same scale — efficient for evaluating several items at once.",
-                },
-                {
-                  title: "Ranking",
-                  description:
-                    "Drag-and-drop ordering of items by preference. Respondents rank options from most to least preferred.",
-                },
-              ].map((item) => (
-                <Card key={item.title} className="border-0 shadow-none bg-background">
-                  <CardHeader>
-                    <CardTitle className="text-base">{item.title}</CardTitle>
-                    <CardDescription>{item.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Comparative Judgment */}
-          <div>
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Scale className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold">Comparative Judgment</h3>
-                <p className="text-sm text-muted-foreground">
-                  Rank items through pairwise comparisons with adaptive Elo ratings.
-                </p>
-              </div>
-            </div>
-            <p className="mb-6 text-sm text-muted-foreground max-w-3xl">
-              Instead of rubrics or scores, judges see two items side by side and
-              pick the better one. SurveySeal uses an adaptive algorithm to select
-              the most informative pair for each comparison, producing reliable,
-              defensible rankings with fewer total judgments.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  icon: FileText,
-                  title: "Resume Screening",
-                  description:
-                    "Upload resumes and a job description (URL, PDF, or Word file). Judges act as hiring managers and pick the stronger candidate.",
-                },
-                {
-                  icon: GraduationCap,
-                  title: "Assignment Grading",
-                  description:
-                    "Import student submissions directly from Canvas LMS. Compare work side by side to produce fair, consistent rankings.",
-                },
-                {
-                  icon: Scale,
-                  title: "General Comparison",
-                  description:
-                    "Rank any collection of items — essays, designs, proposals, portfolios. Upload content or paste text.",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Adaptive Pairing",
-                  description:
-                    "The algorithm picks the most informative pair each time — items with similar ratings or high uncertainty — so every judgment counts.",
-                },
-                {
-                  icon: BarChart3,
-                  title: "Judge Analytics",
-                  description:
-                    "Track reliability, left/right bias, consensus agreement, speed flags, and bot risk for every judge.",
-                },
-                {
-                  icon: Navigation,
-                  title: "Revisit & Revise",
-                  description:
-                    "Judges can navigate back to any earlier comparison and change their pick. Ratings update automatically.",
-                },
-              ].map((item) => (
-                <Card key={item.title} className="border-0 shadow-none bg-background">
-                  <CardHeader>
-                    <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <CardTitle className="text-base">{item.title}</CardTitle>
-                    <CardDescription>{item.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 7. Features ── */}
+      {/* ── 6. Features ── */}
       <section id="features" className="border-t bg-muted/40 px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
@@ -524,16 +370,16 @@ export default function LandingPage() {
                   "Questions beyond the current verification point are never sent to the browser, preventing data leakage or skip-ahead.",
               },
               {
+                icon: ClipboardList,
+                title: "18 Question Types",
+                description:
+                  "Multiple choice, Likert scales, matrix grids, ranking, sliders, free text, and more — everything you need for traditional questionnaires.",
+              },
+              {
                 icon: Scale,
                 title: "Comparative Judgment",
                 description:
-                  "Rank resumes, assignments, or any items via pairwise comparisons with adaptive Elo ratings and reliability scores.",
-              },
-              {
-                icon: GraduationCap,
-                title: "Canvas LMS Integration",
-                description:
-                  "Import student submissions directly from Canvas courses. Submissions become items ready for side-by-side comparison.",
+                  "Judges compare items side by side instead of scoring them. Three modes: resume screening, assignment grading, and general comparison — with adaptive Elo ratings.",
               },
               {
                 icon: Download,
