@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ArrowRight,
   Smartphone,
   Lock,
   TestTube2,
@@ -464,70 +463,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 8. TapIn Cards ── */}
-      <section className="border-t bg-muted/40 px-4 py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <Badge
-                variant="secondary"
-                className="mb-4 gap-1.5 px-3 py-1 text-sm font-normal"
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                TapIn Identity Cards
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight">
-                Human Factor Authentication.
-              </h2>
-              <p className="mt-4 text-muted-foreground">
-                TapIn Identity cards bring Human Factor Authentication (HFA) to
-                surveys — a physical proof-of-presence that no software can
-                fake. Each credit-card-sized smart card carries a unique
-                cryptographic identity that produces verifiable taps, impossible
-                to clone, share, or replay.
-              </p>
-              <a
-                href="https://tapin.me"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" className="mt-6">
-                  Learn more at tapin.me
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
-            </div>
-            <div className="space-y-4">
-              {[
-                {
-                  title: "Reusable across surveys",
-                  description:
-                    "One card works for every survey. No reprogramming needed between projects.",
-                },
-                {
-                  title: "No app required",
-                  description:
-                    "Respondents tap the card on their phone. It opens a web page — that's it.",
-                },
-                {
-                  title: "Email-matched verification",
-                  description:
-                    "Each tap is linked to the respondent's email, ensuring the person who tapped is the person taking the survey.",
-                },
-              ].map((item) => (
-                <Card key={item.title} className="border-0 shadow-none bg-background">
-                  <CardHeader>
-                    <CardTitle className="text-base">{item.title}</CardTitle>
-                    <CardDescription>{item.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 9. FAQ ── */}
+      {/* ── 8. FAQ ── */}
       <section id="faq" className="border-t px-4 py-20">
         <div className="mx-auto max-w-3xl">
           <div className="mb-12 text-center">
@@ -543,33 +479,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 10. CTA Banner ── */}
-      <section className="border-t px-4 py-20">
-        <div className="mx-auto max-w-3xl rounded-2xl bg-primary/5 px-6 py-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">
-            Ready to collect verified survey data?
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            Create your first human-verified survey in minutes. No technical
-            setup required.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/dashboard">
-              <Button size="lg">
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/auth/signin">
-              <Button variant="outline" size="lg">
-                Sign In
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 11. Footer ── */}
+      {/* ── 9. Footer ── */}
       <footer className="border-t bg-muted/40 px-4 py-12">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-8 sm:grid-cols-3">
