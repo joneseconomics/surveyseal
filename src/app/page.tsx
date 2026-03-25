@@ -94,8 +94,8 @@ export default function LandingPage() {
             Verified Surveys.
           </h1>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            SurveySeal introduces physical-tap verification to give you
-            trustworthy survey data. Powered by{" "}
+            SurveySeal introduces human-factor authentication (HFA) to give
+            you trustworthy survey data. Powered by{" "}
             <a
               href="https://tapin.me"
               target="_blank"
@@ -104,9 +104,9 @@ export default function LandingPage() {
             >
               TapIn
             </a>
-            {" "}smart cards, each survey response is backed by a real,
-            physical tap — proving the respondent is a human who is
-            actually present, not a bot, not a proxy, and not a duplicate.
+            {" "}Identity cards, each survey response is backed by a real,
+            physical interaction — proving the respondent is not a bot but
+            a human who is physically present.
           </p>
           <a
             href="https://tapin.me"
