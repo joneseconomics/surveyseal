@@ -14,7 +14,7 @@ const faqs = [
       "SurveySeal is a survey platform that uses physical-tap verification to prove respondents are real, physically present humans — not bots, proxies, or duplicate entries. It works for any use case: brand feedback, political polling, customer satisfaction, academic research, and more.",
   },
   {
-    question: "How does physical-tap verification work?",
+    question: "How does human-factor authentication (HFA) work?",
     answer:
       "Each survey includes three verification points: opening, mid-survey, and closing. At each verification point, a countdown timer gives the respondent time to tap their TapIn Identity card on their phone. After tapping, the TapIn platform shows a green checkmark, and the respondent clicks Continue. After the survey, you can reconcile TapIn tap logs with SurveySeal sessions by email and timestamp. Respondents without a card can skip verification points — their responses are tagged as unverified.",
   },
