@@ -31,7 +31,7 @@ const faqs = [
   {
     question: "What devices are compatible?",
     answer:
-      "TapIn Identity cards work with most modern smartphones. This includes most Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in reader handles everything.",
+      "TapIn Identity cards use NFC (Near Field Communication) to communicate with your phone, so the device needs to have an NFC reader. Most modern smartphones have one built in — this includes most Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in NFC reader handles everything.",
   },
   {
     question: "What data does SurveySeal collect?",
