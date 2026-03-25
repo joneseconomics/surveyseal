@@ -160,7 +160,7 @@ export function VerificationGate({
                 <Smartphone className="h-8 w-8 text-primary" />
               </div>
               <p className="font-medium text-foreground">
-                Tap your TapIn Verify card on your phone now
+                Tap your TapIn Identity card on your phone now
               </p>
             </div>
 

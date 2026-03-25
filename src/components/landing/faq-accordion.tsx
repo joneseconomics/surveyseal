@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "How does physical-tap verification work?",
     answer:
-      "Each survey includes three verification points: opening, mid-survey, and closing. At each verification point, a countdown timer gives the respondent time to tap their TapIn Verify card on their phone. After tapping, the TapIn platform shows a green checkmark, and the respondent clicks Continue. After the survey, you can reconcile TapIn tap logs with SurveySeal sessions by email and timestamp. Respondents without a card can skip verification points — their responses are tagged as unverified.",
+      "Each survey includes three verification points: opening, mid-survey, and closing. At each verification point, a countdown timer gives the respondent time to tap their TapIn Identity card on their phone. After tapping, the TapIn platform shows a green checkmark, and the respondent clicks Continue. After the survey, you can reconcile TapIn tap logs with SurveySeal sessions by email and timestamp. Respondents without a card can skip verification points — their responses are tagged as unverified.",
   },
   {
     question: "What is TapIn?",
@@ -24,14 +24,14 @@ const faqs = [
       "TapIn (tapin.me) is the smart card platform that powers SurveySeal's physical-tap verification. TapIn produces credit-card-sized smart cards with built-in hardware security — each card carries a unique identity that generates verifiable taps impossible to clone, share, or replay. When a respondent taps their TapIn card on their phone, the TapIn platform verifies the tap and matches it to the respondent's email. SurveySeal uses this to confirm that the person taking the survey is physically present and real.",
   },
   {
-    question: "What are TapIn Verify cards?",
+    question: "What are TapIn Identity cards?",
     answer:
-      "TapIn Verify cards are the specific TapIn card product designed for survey verification. They're durable, reusable across multiple surveys, and don't require any app — just tap the card on any compatible phone. You can order TapIn Verify cards at tapin.me.",
+      "TapIn Identity cards are physical smart cards that provide Human Factor Authentication (HFA) — a verification method that requires a real human to be physically present with their card. Unlike software-based authentication (passwords, biometrics, CAPTCHAs), HFA uses a physical token that cannot be cloned, shared remotely, or automated by bots. Each card carries a unique cryptographic identity that generates verifiable taps, proving the respondent is a real person who is actually there. They're durable, reusable across multiple surveys, and don't require any app — just tap the card on any compatible phone. You can order TapIn Identity cards at tapin.me.",
   },
   {
     question: "What devices are compatible?",
     answer:
-      "TapIn Verify cards work with most modern smartphones. This includes most Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in reader handles everything.",
+      "TapIn Identity cards work with most modern smartphones. This includes most Android phones and iPhones (iPhone 7 and later). No app installation is required — the phone's built-in reader handles everything.",
   },
   {
     question: "What data does SurveySeal collect?",
@@ -41,7 +41,7 @@ const faqs = [
   {
     question: "Do respondents need to install an app?",
     answer:
-      "No. Respondents don't need to install anything. When they tap a TapIn Verify card on their phone, it opens a web page in their default browser. Respondents without a TapIn card can skip verification points and still complete the survey — their responses will be marked as unverified.",
+      "No. Respondents don't need to install anything. When they tap a TapIn Identity card on their phone, it opens a web page in their default browser. Respondents without a TapIn card can skip verification points and still complete the survey — their responses will be marked as unverified.",
   },
   {
     question: "Can I make my survey anonymous?",
@@ -71,7 +71,7 @@ const faqs = [
   {
     question: "How do I get started?",
     answer:
-      "Sign in with your Google account, create a survey in the dashboard, and distribute TapIn Verify cards to your respondents. For Comparative Judgment surveys, upload items (or import from Canvas), share the link with judges, and view rankings as results come in. The survey builder is designed to be simple — no technical expertise required.",
+      "Sign in with your Google account, create a survey in the dashboard, and distribute TapIn Identity cards to your respondents. For Comparative Judgment surveys, upload items (or import from Canvas), share the link with judges, and view rankings as results come in. The survey builder is designed to be simple — no technical expertise required.",
   },
 ];
 

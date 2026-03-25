@@ -321,9 +321,9 @@ export default function LandingPage() {
               {
                 step: 1,
                 icon: CreditCard,
-                title: "Distribute TapIn Verify cards",
+                title: "Distribute TapIn Identity cards",
                 description:
-                  "Hand out reusable TapIn Verify cards to your audience. No app or setup required.",
+                  "Hand out reusable TapIn Identity cards to your audience. No app or setup required.",
               },
               {
                 step: 2,
@@ -515,7 +515,7 @@ export default function LandingPage() {
                 icon: Smartphone,
                 title: "Physical-Tap Verification",
                 description:
-                  "Verification points create an unbroken chain of physical presence proof using TapIn Verify cards.",
+                  "Verification points create an unbroken chain of physical presence proof using TapIn Identity cards.",
               },
               {
                 icon: Lock,
@@ -635,16 +635,17 @@ export default function LandingPage() {
                 className="mb-4 gap-1.5 px-3 py-1 text-sm font-normal"
               >
                 <CreditCard className="h-3.5 w-3.5" />
-                TapIn Verify Cards
+                TapIn Identity Cards
               </Badge>
               <h2 className="text-3xl font-bold tracking-tight">
-                Durable smart cards with hardware security.
+                Human Factor Authentication.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                TapIn Verify cards are credit-card-sized smart cards designed
-                for verified surveys. Each card carries a unique identity that
-                produces verifiable taps — impossible to clone, share, or
-                replay.
+                TapIn Identity cards bring Human Factor Authentication (HFA) to
+                surveys — a physical proof-of-presence that no software can
+                fake. Each credit-card-sized smart card carries a unique
+                cryptographic identity that produces verifiable taps, impossible
+                to clone, share, or replay.
               </p>
               <a
                 href="https://tapin.me"
@@ -695,7 +696,7 @@ export default function LandingPage() {
               Frequently Asked Questions
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Everything you need to know about SurveySeal and TapIn Verify
+              Everything you need to know about SurveySeal and TapIn Identity
               cards.
             </p>
           </div>
@@ -783,7 +784,7 @@ export default function LandingPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 hover:text-foreground"
                   >
-                    TapIn Cards
+                    TapIn Identity Cards
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </li>

@@ -252,7 +252,7 @@ export default function SampleSurveyPage() {
                 How verification points work in this demo
               </div>
               <p>
-                In a live survey, you&apos;d tap a physical TapIn Verify card
+                In a live survey, you&apos;d tap a physical TapIn Identity card
                 on your phone at each verification point. A countdown timer gives you
                 30 seconds to tap. Here, you can click &ldquo;I see the green
                 checkmark&rdquo; or &ldquo;Skip&rdquo; to see how each path works.
@@ -404,7 +404,7 @@ export default function SampleSurveyPage() {
                         <Smartphone className="h-8 w-8 text-primary" />
                       </div>
                       <p className="font-medium text-foreground">
-                        Tap your TapIn Verify card on your phone now
+                        Tap your TapIn Identity card on your phone now
                       </p>
                       <p className="text-sm text-muted-foreground">
                         After tapping, look for the green checkmark on your phone, then click &ldquo;Continue&rdquo; below.

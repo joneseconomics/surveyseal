@@ -79,7 +79,7 @@ export default async function SurveyLandingPage({
             {hasVPs && (
               <p className="text-sm text-muted-foreground">
                 This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Verify card on your phone.
+                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Identity card on your phone.
                 If you don&apos;t have a card, you can skip verification points and still complete the survey.
               </p>
             )}
@@ -123,7 +123,7 @@ export default async function SurveyLandingPage({
             {hasVPs && (
               <p className="text-sm text-muted-foreground">
                 This survey uses TapIn verification. At each verification point, you&apos;ll have{" "}
-                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Verify card on your phone.
+                {survey.verificationPointTimerSeconds} seconds to tap your TapIn Identity card on your phone.
                 If you don&apos;t have a card, you can skip verification points and still complete the survey.
               </p>
             )}

@@ -95,7 +95,7 @@ export function TapInCard({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-primary hover:underline"
           >
-            Order TapIn Verify cards
+            Order TapIn Identity cards
             <ExternalLink className="h-3 w-3" />
           </a>
         </CardDescription>
