@@ -245,71 +245,23 @@ export function CJBuilder({
               </p>
             </div>
           )}
-          {/* Job description: URL or file upload (mutually exclusive) */}
-          {!jobDescFileUrl && (
-            <div className="space-y-2">
-              <Label htmlFor="job-url">Job Description URL (optional)</Label>
-              <div className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input
-                  id="job-url"
-                  value={jobUrl}
-                  onChange={(e) => setJobUrl(e.target.value)}
-                  placeholder="https://example.com/job-posting"
-                  type="url"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Judges will see this job description embedded on the instructions page.
-              </p>
+          {/* URL (optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="job-url">URL (optional)</Label>
+            <div className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Input
+                id="job-url"
+                value={jobUrl}
+                onChange={(e) => setJobUrl(e.target.value)}
+                placeholder="https://example.com/job-posting"
+                type="url"
+              />
             </div>
-          )}
-
-          {!jobUrl && (
-            <div className="space-y-2">
-              <Label>Job Description File Upload (optional)</Label>
-              {jobDescFileName ? (
-                <div className="flex items-center gap-2 rounded-lg border p-3">
-                  <FileText className="h-5 w-5 text-primary shrink-0" />
-                  <span className="flex-1 truncate text-sm">{jobDescFileName}</span>
-                  <button
-                    type="button"
-                    onClick={handleRemoveJobDescFile}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    title="Remove file"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <input
-                    type="file"
-                    id="job-desc-file"
-                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    onChange={handleJobDescFileUpload}
-                    className="hidden"
-                    disabled={uploadingFile}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById("job-desc-file")?.click()}
-                    disabled={uploadingFile}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {uploadingFile ? "Uploading..." : "Upload PDF or Word file"}
-                  </Button>
-                </>
-              )}
-              {uploadError && (
-                <p className="text-xs text-destructive">{uploadError}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Upload a PDF or Word document. Judges will see it on the instructions page.
-              </p>
-            </div>
-          )}
+            <p className="text-xs text-muted-foreground">
+              Judges will see this URL embedded in the instructions page.
+            </p>
+          </div>
           <div className="flex justify-end">
             <Button
               size="sm"
