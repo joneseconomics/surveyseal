@@ -26,7 +26,6 @@ import {
   MonitorSmartphone,
   XCircle,
   Scale,
-  Copy,
   Download,
   Clock,
 } from "lucide-react";
@@ -410,12 +409,6 @@ export default function LandingPage() {
                 title: "Completion Time Estimates",
                 description:
                   "The survey builder estimates how long respondents will take based on question types and complexity, so you can design surveys that respect their time.",
-              },
-              {
-                icon: Copy,
-                title: "Survey Duplication",
-                description:
-                  "Copy any existing survey — including all questions, items, and settings — to create a new version in one click.",
               },
             ].map((feature) => (
               <Card key={feature.title} className="border-0 shadow-none bg-background">
